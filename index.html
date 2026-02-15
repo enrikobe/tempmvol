@@ -24,16 +24,19 @@
             --shadow-md: 0 2px 8px rgba(0,0,0,0.1);
             --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
 
-            /* Tastierino iOS colors */
-            --keypad-bg: #1C3F5C;
+            --keypad-bg: rgba(28, 63, 92, 0.75); /* Semi-trasparente */
             --keypad-btn: #2D5674;
             --keypad-btn-active: #1A3649;
+            --keypad-height: 260px;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            /* DISABILITA ZOOM DA DOPPIO TAP */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -626,7 +629,8 @@
             overflow-x: auto;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            padding-bottom: 260px; /* Spazio per tastierino più piccolo */
+            /* PADDING-BOTTOM AUMENTATO per garantire spazio */
+            padding-bottom: calc(var(--keypad-height) + 40px);
         }
 
         .tablet-table {
@@ -666,9 +670,11 @@
             background: #F0F9F0;
         }
 
+        /* Dimming con transizione più smooth */
         body.keyboard-open .tablet-table tbody tr:not(.focused-row) {
-            opacity: 0.3;
+            opacity: 0.25;
             pointer-events: none;
+            transition: opacity 0.3s ease;
         }
 
         .tablet-table tbody tr.focused-row {
@@ -677,6 +683,7 @@
             position: relative;
             z-index: 10;
             opacity: 1 !important;
+            transition: all 0.3s ease;
         }
 
         .tablet-table td {
@@ -749,23 +756,22 @@
             font-size: 16px;
         }
 
-        /* ====== iOS KEYPAD - STILE ESATTO IMMAGINE ====== */
+        /* ====== iOS KEYPAD SEMI-TRASPARENTE ====== */
         .ios-keypad {
             position: fixed;
             bottom: 0;
             left: 50%;
             transform: translateX(-50%) translateY(100%);
 
-            /* Dimensioni compatte e adattive */
             width: min(340px, 90vw);
             max-width: 340px;
-
-            /* Altezza calcolata per layout 4 righe + padding */
-            height: auto;
+            height: var(--keypad-height);
             padding: 16px 20px 24px;
 
-            /* Stile iOS: blu scuro */
+            /* SEMI-TRASPARENTE con blur */
             background: var(--keypad-bg);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
 
             z-index: 1000;
             transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -783,26 +789,24 @@
             grid-template-rows: repeat(4, 1fr);
             gap: 12px;
             width: 100%;
+            height: 100%;
         }
 
-        /* Tasti stile iOS esatto */
+        /* Tasti con effetto illuminazione */
         .key-btn {
-            /* Dimensioni fisse per mantenere proporzioni */
             width: 100%;
             aspect-ratio: 1;
             max-width: 75px;
             max-height: 75px;
             margin: 0 auto;
 
-            /* Stile: blu scuro con gradient */
             background: linear-gradient(180deg, #3A5F7D 0%, var(--keypad-btn) 50%, #244358 100%);
 
             border: none;
             border-radius: 50%;
 
-            /* Numero bianco ultra-thin */
             font-size: 36px;
-            font-weight: 200; /* Ultra-light come iOS */
+            font-weight: 200;
             color: white;
 
             display: flex;
@@ -813,18 +817,15 @@
 
             cursor: pointer;
             user-select: none;
-            -webkit-tap-highlight-color: transparent;
 
-            /* Shadow per effetto depth */
             box-shadow: 
                 0 1px 0 rgba(255, 255, 255, 0.1) inset,
                 0 2px 4px rgba(0, 0, 0, 0.3);
 
-            transition: all 0.1s ease;
+            transition: all 0.15s ease;
             position: relative;
         }
 
-        /* Lettere piccole sotto i numeri (ABC, DEF, etc.) */
         .key-btn::after {
             content: attr(data-letters);
             font-size: 8px;
@@ -835,20 +836,47 @@
             bottom: 14px;
         }
 
-        /* Tasto 1 e 0 non hanno lettere */
         .key-btn[data-key="1"]::after,
         .key-btn[data-key="0"]::after,
         .key-btn[data-key=","]::after {
             content: '';
         }
 
-        .key-btn:active {
-            background: var(--keypad-btn-active);
+        /* EFFETTO ILLUMINAZIONE PRESSIONE */
+        .key-btn:active,
+        .key-btn.pressed {
+            background: linear-gradient(180deg, #5A8FC0 0%, #4A7FAA 50%, #3A6F94 100%);
             transform: scale(0.95);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) inset;
+            box-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.5),
+                0 0 40px rgba(135, 206, 250, 0.4),
+                0 1px 2px rgba(0, 0, 0, 0.4) inset;
+            color: #FFF;
         }
 
-        /* Tasto backspace: più scuro */
+        /* Animazione glow */
+        @keyframes glow {
+            0% {
+                box-shadow: 
+                    0 0 10px rgba(255, 255, 255, 0.3),
+                    0 0 20px rgba(135, 206, 250, 0.2);
+            }
+            50% {
+                box-shadow: 
+                    0 0 20px rgba(255, 255, 255, 0.6),
+                    0 0 40px rgba(135, 206, 250, 0.5);
+            }
+            100% {
+                box-shadow: 
+                    0 0 10px rgba(255, 255, 255, 0.3),
+                    0 0 20px rgba(135, 206, 250, 0.2);
+            }
+        }
+
+        .key-btn.pressed {
+            animation: glow 0.3s ease-in-out;
+        }
+
         .key-btn.backspace {
             background: linear-gradient(180deg, #2A4A5E 0%, #1E3545 50%, #152836 100%);
             font-size: 24px;
@@ -858,7 +886,6 @@
             content: '';
         }
 
-        /* Tasto virgola */
         .key-btn[data-key=","] {
             font-size: 40px;
             font-weight: 300;
@@ -872,13 +899,14 @@
             bottom: 0;
             z-index: 999;
             display: none;
+            /* Overlay più scuro per migliorare contrasto tastierino */
+            background: rgba(0, 0, 0, 0.3);
         }
 
         #keypadOverlay.visible {
             display: block;
         }
 
-        /* Responsive per schermi più piccoli */
         @media (max-width: 480px) {
             .ios-keypad {
                 width: 100%;
@@ -917,7 +945,6 @@
             }
         }
 
-        /* Safe area per dispositivi con notch */
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
             .ios-keypad {
                 padding-bottom: calc(24px + env(safe-area-inset-bottom));
@@ -1020,7 +1047,6 @@
         <div class="tablet-table-container" id="tabletTableContainer">
         </div>
 
-        <!-- iOS Keypad - Stile Esatto Immagine -->
         <div class="ios-keypad" id="numericKeypad">
             <div class="keypad-grid">
                 <button class="key-btn" data-key="1" data-letters="">1</button>
@@ -1237,6 +1263,27 @@
             }
         }
 
+        // SCROLL INTELLIGENTE per mantenere riga visibile sopra tastierino
+        function scrollRowAboveKeypad(row) {
+            const keypadHeight = 260; // var(--keypad-height)
+            const container = document.getElementById('tabletTableContainer');
+            const rowRect = row.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            // Calcola posizione target: riga deve essere visibile sopra il tastierino
+            const targetY = containerRect.top + 100; // Margine dall'alto
+            const currentY = rowRect.top;
+
+            if (currentY > (window.innerHeight - keypadHeight - 100)) {
+                // La riga è troppo in basso, scrolliamo
+                const scrollAmount = currentY - targetY;
+                container.scrollBy({
+                    top: scrollAmount,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
         window.openKeypad = function(tankId, field, cellEl) {
             if (activeTankId === tankId && activeField === field) return;
 
@@ -1261,8 +1308,9 @@
             document.getElementById('numericKeypad').classList.add('visible');
             document.getElementById('keypadOverlay').classList.add('visible');
 
+            // SCROLL INTELLIGENTE dopo animazione tastierino
             setTimeout(() => {
-                row.scrollIntoView({behavior: 'smooth', block: 'center'});
+                scrollRowAboveKeypad(row);
             }, 100);
         };
 
@@ -1614,7 +1662,7 @@
             const mvolClass = tank.mVol ? 'filled' : '';
 
             return `
-                <tr class="${rowClass}">
+                <tr class="${rowClass}" data-tank-id="${tank.id}">
                     <td><span class="tank-number">${priority}${tank.vasca}</span></td>
                     <td>${tank.tipoVino || ''}</td>
                     <td>${tank.uva || ''}</td>
@@ -1633,12 +1681,19 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // EFFETTO ILLUMINAZIONE sui tasti
             document.querySelectorAll('.key-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    e.preventDefault(); // Previene comportamenti default
+
                     const key = btn.getAttribute('data-key');
 
                     if (!activeCell) return;
+
+                    // Aggiungi classe pressed per effetto visivo
+                    btn.classList.add('pressed');
+                    setTimeout(() => btn.classList.remove('pressed'), 200);
 
                     if (key === 'backspace') {
                         currentValue = currentValue.slice(0, -1);
@@ -1656,6 +1711,15 @@
                         activeCell.textContent = currentValue || '--';
                     }
                 });
+
+                // Previeni eventi secondari che causano zoom
+                btn.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                }, { passive: true });
+
+                btn.addEventListener('touchend', (e) => {
+                    e.stopPropagation();
+                }, { passive: true });
             });
 
             document.getElementById('keypadOverlay').addEventListener('click', closeKeypad);
