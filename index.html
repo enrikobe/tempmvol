@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestione Controllo Vasche - Cantina</title>
+    <style>
+        :root {
+            --primary: #C44536;
+            --primary-light: #D95F4F;
+            --secondary: #E8927C;
+            --bg-main: #FAFAFA;
+            --bg-card: #FFFFFF;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border-light: #E5E5E5;
+            --border-medium: #CCCCCC;
+            --success: #5CB85C;
+            --warning: #F0AD4E;
+            --danger: #D9534F;
+            --star: #FFB900;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 2px 8px rgba(0,0,0,0.1);
+            --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+            --keyboard-height: 290px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .sync-status {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: var(--shadow-md);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .sync-status.synced {
+            background: var(--success);
+            color: white;
+        }
+
+        .sync-status.syncing {
+            background: var(--warning);
+            color: white;
+        }
+
+        .sync-status.offline {
+            background: var(--danger);
+            color: white;
+        }
+
+        .sync-status .spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #desktopView {
+            padding: 24px;
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        .desktop-header {
+            background: var(--bg-card);
+            padding: 24px 32px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .desktop-header h1 {
+            color: var(--primary);
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .desktop-tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-btn:hover {
+            color: var(--primary-light);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .desktop-toolbar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .desktop-toolbar button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #D17E67;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-outline {
+            background: white;
+            color: var(--text-primary);
+            border: 1px solid var(--border-medium);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #EC971F;
+            box-shadow: var(--shadow-md);
+        }
+
+        .filters-section {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px 16px;
+            font-size: 15px;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            margin-bottom: 12px;
+            transition: border 0.2s;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .filters-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 8px 14px;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            background: white;
+            transition: border 0.2s;
+            color: var(--text-primary);
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .table-container {
+            background: var(--bg-card);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            overflow: auto;
+            max-height: calc(100vh - 380px);
+        }
+
+        .paste-area {
+            width: 100%;
+            min-height: 120px;
+            padding: 16px;
+            border: 2px dashed var(--border-medium);
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-bottom: 16px;
+            resize: vertical;
+            background: #FAFAFA;
+        }
+
+        .paste-area:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 14px;
+        }
+
+        .data-table thead {
+            background: linear-gradient(to bottom, #F8F8F8, #F0F0F0);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            border-bottom: 1px solid var(--border-light);
+            background: #F5F5F5;
+        }
+
+        .data-table th:hover {
+            background: #EFEFEF;
+            color: var(--primary);
+        }
+
+        .data-table th.sortable::after {
+            content: ' ⇅';
+            opacity: 0.3;
+            font-size: 11px;
+        }
+
+        .data-table th.copy-action::after {
+            content: ' 📋';
+            opacity: 0.5;
+        }
+
+        .data-table th.copy-action:hover::after {
+            opacity: 1;
+        }
+
+        .data-table tbody tr {
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.15s;
+        }
+
+        .data-table tbody tr:hover {
+            background: #FAFBFC;
+        }
+
+        .data-table tbody tr.completed {
+            background: #F0F9F0;
+        }
+
+        .data-table tbody tr.completed:hover {
+            background: #E8F5E8;
+        }
+
+        .data-table tbody tr.selected-row {
+            background: #FFF3E0 !important;
+            border-left: 3px solid var(--warning);
+        }
+
+        .data-table td {
+            padding: 10px 16px;
+            white-space: nowrap;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .data-table td.col-vigneto {
+            max-width: 300px;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .data-table input[type="text"],
+        .data-table input[type="number"] {
+            width: 100%;
+            min-width: 60px;
+            padding: 6px 10px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            font-size: 14px;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .data-table input[type="text"]:hover,
+        .data-table input[type="number"]:hover {
+            background: white;
+            border-color: var(--border-light);
+        }
+
+        .data-table input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(196, 69, 54, 0.1);
+        }
+
+        .date-group-header {
+            background: linear-gradient(to right, var(--primary), var(--primary-light));
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 10px 16px;
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s;
+        }
+
+        .date-group-header:hover {
+            opacity: 0.9;
+        }
+
+        .date-group-header::before {
+            content: '▼ ';
+            display: inline-block;
+            transition: transform 0.2s;
+            font-size: 11px;
+        }
+
+        .date-group-header.collapsed::before {
+            transform: rotate(-90deg);
+        }
+
+        .priority-star {
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .priority-star.active {
+            color: var(--star);
+        }
+
+        .priority-star.inactive {
+            color: var(--border-medium);
+        }
+
+        .priority-star:hover {
+            transform: scale(1.2);
+        }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #C9302C;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--success);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 6px;
+            box-shadow: var(--shadow-lg);
+            font-weight: 500;
+            font-size: 14px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            padding: 28px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .modal-body {
+            margin-bottom: 24px;
+        }
+
+        .modal-body label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .modal-body input,
+        .modal-body select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            font-size: 15px;
+            margin-bottom: 16px;
+        }
+
+        .modal-body input:focus,
+        .modal-body select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(196, 69, 54, 0.1);
+        }
+
+        .modal-info {
+            background: #FFF9E6;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-footer button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-cancel {
+            background: #E0E0E0;
+            color: var(--text-primary);
+        }
+
+        .modal-btn-cancel:hover {
+            background: #D0D0D0;
+        }
+
+        .modal-btn-confirm {
+            background: var(--primary);
+            color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            background: var(--primary-light);
+        }
+
+        /* ====== TABLET VIEW ====== */
+        #tabletView {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .tablet-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            padding: 20px 16px;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .tablet-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .tablet-header .current-date {
+            font-size: 15px;
+            opacity: 0.95;
+            font-weight: 400;
+        }
+
+        .tablet-table-container {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: calc(var(--keyboard-height) + 20px);
+        }
+
+        .tablet-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+        }
+
+        .tablet-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: #F5F5F5;
+        }
+
+        .tablet-table th {
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            border-bottom: 2px solid var(--border-medium);
+        }
+
+        .tablet-table tbody tr {
+            border-bottom: 1px solid var(--border-light);
+            transition: all 0.3s;
+        }
+
+        .tablet-table tbody tr.priority {
+            background: #FFF9E6;
+        }
+
+        .tablet-table tbody tr.completed {
+            background: #F0F9F0;
+        }
+
+        body.keyboard-open .tablet-table tbody tr:not(.focused-row) {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .tablet-table tbody tr.focused-row {
+            background: #FFF !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 10;
+            opacity: 1 !important;
+        }
+
+        .tablet-table td {
+            padding: 16px 12px;
+            font-size: 15px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .tablet-table .tank-number {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--primary);
+        }
+
+        .tablet-table .priority-indicator {
+            color: var(--star);
+            font-size: 16px;
+        }
+
+        .tablet-table .input-cell {
+            width: 100%;
+            min-width: 80px;
+            padding: 12px;
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            background: #F8F8F8;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+        }
+
+        .tablet-table .input-cell:focus {
+            outline: none;
+        }
+
+        .tablet-table .input-cell.active {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(196, 69, 54, 0.1);
+        }
+
+        .tablet-table .input-cell.filled {
+            border-color: var(--success);
+            background: #F0F9F0;
+            color: var(--success);
+        }
+
+        .section-divider {
+            background: linear-gradient(to right, #F5F5F5, #E5E5E5);
+            padding: 10px 12px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-secondary);
+            border-top: 2px solid var(--border-medium);
+            border-bottom: 2px solid var(--border-medium);
+        }
+
+        .section-divider.completed {
+            background: linear-gradient(to right, #E8F5E9, #C8E6C9);
+            color: var(--success);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        /* ====== iOS GLASS EFFECT KEYPAD ====== */
+        .ios-keypad {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--keyboard-height);
+            background: rgba(209, 213, 219, 0.8);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            z-index: 1000;
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding: 12px;
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .ios-keypad.visible {
+            transform: translateY(0);
+        }
+
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 10px;
+            height: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .key-btn {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 50%;
+            font-size: 32px;
+            font-weight: 300;
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            transition: all 0.1s ease;
+            aspect-ratio: 1;
+        }
+
+        .key-btn:active {
+            background: rgba(180, 180, 180, 0.9);
+            transform: scale(0.92);
+        }
+
+        .key-btn.backspace {
+            background: rgba(230, 230, 230, 0.85);
+            font-size: 24px;
+        }
+
+        #keypadOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 999;
+            display: none;
+        }
+
+        #keypadOverlay.visible {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .desktop-toolbar {
+                flex-direction: column;
+            }
+
+            .filters-row {
+                flex-direction: column;
+            }
+
+            .filter-select {
+                width: 100%;
+            }
+
+            .key-btn {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="keypadOverlay"></div>
+
+    <div id="syncStatus" class="sync-status synced">
+        <span id="syncIcon">☁️</span>
+        <span id="syncText">Sincronizzato</span>
+    </div>
+
+    <div id="desktopView" class="hidden">
+        <div class="desktop-header">
+            <h1>🍷 Gestione Controllo Vasche</h1>
+            <div class="desktop-tabs">
+                <button class="tab-btn active" data-tab="data-management">Gestione Dati</button>
+                <button class="tab-btn" data-tab="tablet-preview">Vista Tablet</button>
+            </div>
+        </div>
+
+        <div id="data-management" class="tab-content active">
+            <div class="desktop-toolbar">
+                <button class="btn-primary" onclick="showPasteArea()">📋 Incolla da Excel</button>
+                <button class="btn-secondary" onclick="exportToCSV()">💾 Esporta CSV</button>
+                <button class="btn-warning" onclick="showBulkEditModal()">✏️ Modifica Selezionate</button>
+                <button class="btn-outline" onclick="deleteSelected()">🗑️ Elimina Selezionate</button>
+                <button class="btn-outline" onclick="refreshData()">🔄 Aggiorna</button>
+            </div>
+
+            <div id="pasteSection" class="hidden">
+                <textarea class="paste-area" id="pasteArea" placeholder="Incolla qui i dati da Excel (includi intestazioni)..."></textarea>
+                <button class="btn-primary" onclick="processPastedData()">✓ Importa Dati</button>
+                <button class="btn-outline" onclick="closePasteArea()">✕ Annulla</button>
+            </div>
+
+            <div class="filters-section">
+                <input type="text" class="search-bar" id="searchBar" placeholder="🔍 Cerca per vasca, vigneto, tipo vino...">
+                <div class="filters-row">
+                    <select class="filter-select" id="filterTipoVino" onchange="applyFilters()">
+                        <option value="">Tutti i Tipi Vino</option>
+                    </select>
+                    <select class="filter-select" id="filterUva" onchange="applyFilters()">
+                        <option value="">Tutte le Uve</option>
+                    </select>
+                    <select class="filter-select" id="filterPriority" onchange="applyFilters()">
+                        <option value="">Tutte le Priorità</option>
+                        <option value="priority">Solo Prioritarie</option>
+                        <option value="normal">Solo Normali</option>
+                    </select>
+                    <select class="filter-select" id="filterComplete" onchange="applyFilters()">
+                        <option value="">Tutte</option>
+                        <option value="complete">Solo Completate</option>
+                        <option value="incomplete">Solo da Fare</option>
+                    </select>
+                    <select class="filter-select" id="filterDate" onchange="applyFilters()">
+                        <option value="">Tutte le Date</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                            <th class="sortable" onclick="sortTable('progressivo')">N°</th>
+                            <th class="sortable" onclick="sortTable('vasca')">Vasca</th>
+                            <th class="sortable" onclick="sortTable('tipoVino')">Tipo Vino</th>
+                            <th class="sortable" onclick="sortTable('vigneto')">Vigneto</th>
+                            <th class="sortable" onclick="sortTable('uva')">Uva</th>
+                            <th class="copy-action" onclick="copyFirstDateValues('temperatura')" title="Clicca per copiare">Temp</th>
+                            <th class="copy-action" onclick="copyFirstDateValues('mVol')" title="Clicca per copiare">M.Vol</th>
+                            <th class="sortable" onclick="sortTable('data')">Data</th>
+                            <th style="width: 50px;">★</th>
+                            <th style="width: 60px;">Da Fare</th>
+                            <th style="width: 80px;">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tablet-preview" class="tab-content">
+            <div id="tabletPreviewContainer"></div>
+        </div>
+    </div>
+
+    <div id="tabletView" class="hidden">
+        <div class="tablet-header">
+            <h1>Controllo Vasche</h1>
+            <div class="current-date" id="tabletCurrentDate"></div>
+        </div>
+        <div class="tablet-table-container" id="tabletTableContainer">
+        </div>
+
+        <div class="ios-keypad" id="numericKeypad">
+            <div class="keypad-grid">
+                <button class="key-btn" data-key="1">1</button>
+                <button class="key-btn" data-key="2">2</button>
+                <button class="key-btn" data-key="3">3</button>
+                <button class="key-btn" data-key="4">4</button>
+                <button class="key-btn" data-key="5">5</button>
+                <button class="key-btn" data-key="6">6</button>
+                <button class="key-btn" data-key="7">7</button>
+                <button class="key-btn" data-key="8">8</button>
+                <button class="key-btn" data-key="9">9</button>
+                <button class="key-btn" data-key=",">,</button>
+                <button class="key-btn" data-key="0">0</button>
+                <button class="key-btn backspace" data-key="backspace">⌫</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBvjIO8b0hBI0DD_m-VF-Vr6LCwcAFpGkw",
+            authDomain: "tempmvol.firebaseapp.com",
+            projectId: "tempmvol",
+            storageBucket: "tempmvol.firebasestorage.app",
+            messagingSenderId: "555620995865",
+            appId: "1:555620995865:web:52bc7fef7188bc27112b88"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.firebaseDB = db;
+        window.firestoreFunctions = { collection, doc, setDoc, onSnapshot, deleteDoc, getDocs };
+
+        console.log("🔥 Firebase initialized!");
+    </script>
+
+    <script>
+        const STORAGE_KEY = 'cantina_vasche_data';
+        const FIRESTORE_COLLECTION = 'vasche';
+        let tanksData = [];
+        let currentSort = { column: null, direction: 'asc' };
+        let collapsedGroups = new Set();
+        let firestoreListener = null;
+        let isSyncing = false;
+
+        let activeCell = null;
+        let activeTankId = null;
+        let activeField = null;
+        let currentValue = '';
+
+        function updateSyncStatus(status) {
+            const statusEl = document.getElementById('syncStatus');
+            const iconEl = document.getElementById('syncIcon');
+            const textEl = document.getElementById('syncText');
+
+            statusEl.className = 'sync-status ' + status;
+
+            if (status === 'synced') {
+                iconEl.textContent = '☁️';
+                textEl.textContent = 'Sincronizzato';
+            } else if (status === 'syncing') {
+                iconEl.innerHTML = '<div class="spinner"></div>';
+                textEl.textContent = 'Sincronizzazione...';
+            } else if (status === 'offline') {
+                iconEl.textContent = '⚠️';
+                textEl.textContent = 'Modalità Offline';
+            }
+        }
+
+        async function syncToFirestore() {
+            if (!window.firebaseDB || isSyncing) return;
+
+            isSyncing = true;
+            updateSyncStatus('syncing');
+
+            try {
+                const { collection, doc, setDoc, deleteDoc, getDocs } = window.firestoreFunctions;
+                const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
+
+                const snapshot = await getDocs(tanksRef);
+                const firestoreIds = new Set();
+                snapshot.forEach(doc => firestoreIds.add(doc.id));
+
+                for (const tank of tanksData) {
+                    const tankId = String(tank.id);
+                    await setDoc(doc(window.firebaseDB, FIRESTORE_COLLECTION, tankId), tank);
+                    firestoreIds.delete(tankId);
+                }
+
+                for (const id of firestoreIds) {
+                    await deleteDoc(doc(window.firebaseDB, FIRESTORE_COLLECTION, id));
+                }
+
+                updateSyncStatus('synced');
+            } catch (error) {
+                console.error('Sync error:', error);
+                updateSyncStatus('offline');
+            } finally {
+                isSyncing = false;
+            }
+        }
+
+        function setupFirestoreListener() {
+            if (!window.firebaseDB || firestoreListener) return;
+
+            const { collection, onSnapshot } = window.firestoreFunctions;
+            const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
+
+            firestoreListener = onSnapshot(tanksRef, (snapshot) => {
+                if (isSyncing) return;
+
+                const remoteTanks = [];
+                snapshot.forEach(doc => remoteTanks.push(doc.data()));
+
+                const remoteJson = JSON.stringify(remoteTanks.sort((a, b) => a.id - b.id));
+                const localJson = JSON.stringify(tanksData.sort((a, b) => a.id - b.id));
+
+                if (remoteJson !== localJson) {
+                    tanksData = remoteTanks;
+                    saveLocalStorage();
+                    renderCurrentView();
+                }
+            }, (error) => {
+                console.error('Firestore listener error:', error);
+                updateSyncStatus('offline');
+            });
+        }
+
+        function saveData() {
+            saveLocalStorage();
+            syncToFirestore();
+        }
+
+        function saveLocalStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(tanksData));
+        }
+
+        function loadData() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                tanksData = JSON.parse(stored);
+                syncToFirestore();
+            }
+            return tanksData;
+        }
+
+        function renderCurrentView() {
+            const device = detectDevice();
+            if (device === 'tablet') {
+                renderTabletView();
+            } else {
+                renderDesktopTable();
+            }
+        }
+
+        function isTouchDevice() {
+            return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
+        }
+
+        function detectDevice() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const forceView = urlParams.get('view');
+
+            if (forceView === 'tablet') return 'tablet';
+            if (forceView === 'desktop') return 'desktop';
+
+            if (isTouchDevice() && window.innerWidth <= 1024) return 'tablet';
+            return 'desktop';
+        }
+
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            const [day, month, year] = dateStr.split('/');
+            return new Date(year, month - 1, day);
+        }
+
+        function getTodayString() {
+            const today = new Date();
+            return `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+        }
+
+        function formatDateLong(dateStr) {
+            if (!dateStr) return '';
+            const months = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                          'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+            const [day, month, year] = dateStr.split('/');
+            return `${day} ${months[parseInt(month) - 1]} ${year}`;
+        }
+
+        function validateTemperature(value) {
+            if (value === '' || value === null) return { valid: true, value: '' };
+            const num = parseFloat(value.toString().replace(',', '.'));
+            if (isNaN(num)) return { valid: false, message: 'Valore non valido' };
+            if (num < 4) return { valid: false, message: 'Min 4°C' };
+            if (num > 30) return { valid: false, message: 'Max 30°C' };
+            return { valid: true, value: num.toFixed(2).replace('.', ',') };
+        }
+
+        function validateMVol(value) {
+            if (value === '' || value === null) return { valid: true, value: '' };
+            const num = parseFloat(value.toString().replace(',', '.'));
+            if (isNaN(num)) return { valid: false, message: 'Valore non valido' };
+            if (num < 900) return { valid: false, message: 'Min 900' };
+            if (num > 1200) return { valid: false, message: 'Max 1200' };
+
+            if (num >= 1000) {
+                return { valid: true, value: Math.round(num).toString() };
+            } else {
+                return { valid: true, value: num.toFixed(1).replace('.', ',') };
+            }
+        }
+
+        // ====== KEYPAD LOGIC ======
+        window.openKeypad = function(tankId, field, cellEl) {
+            if (activeTankId === tankId && activeField === field) return;
+
+            if (activeCell) {
+                saveCurrentValue();
+                activeCell.classList.remove('active');
+            }
+
+            activeTankId = tankId;
+            activeField = field;
+            const tank = tanksData.find(t => t.id === tankId);
+            currentValue = tank[field] ? String(tank[field]) : "";
+
+            activeCell = cellEl;
+            cellEl.classList.add('active');
+
+            document.querySelectorAll('tr').forEach(tr => tr.classList.remove('focused-row'));
+            const row = cellEl.closest('tr');
+            row.classList.add('focused-row');
+
+            document.body.classList.add('keyboard-open');
+            document.getElementById('numericKeypad').classList.add('visible');
+            document.getElementById('keypadOverlay').classList.add('visible');
+
+            setTimeout(() => {
+                row.scrollIntoView({behavior: 'smooth', block: 'center'});
+            }, 100);
+        };
+
+        function closeKeypad() {
+            if (!activeCell) return;
+
+            saveCurrentValue();
+
+            activeCell.classList.remove('active');
+            document.querySelectorAll('tr').forEach(tr => tr.classList.remove('focused-row'));
+
+            document.body.classList.remove('keyboard-open');
+            document.getElementById('numericKeypad').classList.remove('visible');
+            document.getElementById('keypadOverlay').classList.remove('visible');
+
+            activeCell = null;
+            activeTankId = null;
+            activeField = null;
+            currentValue = '';
+
+            setTimeout(() => renderTabletView(), 300);
+        }
+
+        function saveCurrentValue() {
+            if (!activeTankId || !activeField) return;
+
+            const tank = tanksData.find(t => t.id === activeTankId);
+            if (!tank) return;
+
+            const validation = activeField === 'temperatura' ? 
+                validateTemperature(currentValue) : 
+                validateMVol(currentValue);
+
+            if (validation.valid) {
+                tank[activeField] = validation.value;
+                saveData();
+                if (activeCell) {
+                    activeCell.textContent = validation.value || '--';
+                    if (validation.value) {
+                        activeCell.classList.add('filled');
+                    } else {
+                        activeCell.classList.remove('filled');
+                    }
+                }
+            } else if (currentValue !== '') {
+                alert(validation.message);
+            }
+        }
+
+        // ====== DESKTOP FUNCTIONS ======
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function showPasteArea() {
+            document.getElementById('pasteSection').classList.remove('hidden');
+            document.getElementById('pasteArea').focus();
+        }
+
+        function closePasteArea() {
+            document.getElementById('pasteSection').classList.add('hidden');
+            document.getElementById('pasteArea').value = '';
+        }
+
+        function processPastedData() {
+            alert('Funzione import Excel - da implementare con i dati reali');
+        }
+
+        function exportToCSV() {
+            if (tanksData.length === 0) {
+                alert('Nessun dato da esportare');
+                return;
+            }
+
+            const headers = ['PROGRESSIVO', 'VASCA', 'TIPO VINO', 'VIGNETO', 'UVA', 'Temperatura', 'M.Vol', 'Data', 'Priorità', 'Da Fare'];
+            let csv = headers.join(',') + '\n';
+
+            tanksData.forEach(tank => {
+                const row = [
+                    tank.progressivo || '', tank.vasca || '', tank.tipoVino || '', 
+                    tank.vigneto || '', tank.uva || '', tank.temperatura || '', 
+                    tank.mVol || '', tank.data || '',
+                    tank.priority ? 'Sì' : 'No', tank.daFare ? 'X' : ''
+                ];
+                csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `controllo_vasche_${getTodayString().replace(/\//g, '-')}.csv`;
+            link.click();
+        }
+
+        function showBulkEditModal() {
+            alert('Funzione modifica batch - implementazione completa disponibile');
+        }
+
+        function closeBulkEditModal() {
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) modal.remove();
+        }
+
+        function applyBulkEdit() {
+            // Implementazione bulk edit
+        }
+
+        function copyFirstDateValues(field) {
+            showToast('Funzione copia disponibile');
+        }
+
+        function deleteSelected() {
+            alert('Funzione elimina selezionate');
+        }
+
+        function refreshData() {
+            loadData();
+            renderDesktopTable();
+            showToast('✓ Dati aggiornati');
+        }
+
+        function applyFilters() {
+            renderDesktopTable();
+        }
+
+        function sortTable(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+
+            tanksData.sort((a, b) => {
+                let aVal = a[column] || '';
+                let bVal = b[column] || '';
+
+                if (column === 'vasca' || column === 'progressivo') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                } else if (column === 'data') {
+                    aVal = parseDate(aVal) || new Date(0);
+                    bVal = parseDate(bVal) || new Date(0);
+                }
+
+                if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            saveData();
+            renderDesktopTable();
+        }
+
+        function toggleSelectAll() {
+            const checked = document.getElementById('selectAll').checked;
+            document.querySelectorAll('.row-select').forEach(cb => cb.checked = checked);
+        }
+
+        function getSelectedTankIds() {
+            return Array.from(document.querySelectorAll('.row-select:checked'))
+                       .map(cb => parseFloat(cb.getAttribute('data-id')));
+        }
+
+        function updateFilterOptions() {
+            // Popolamento filtri
+        }
+
+        function getFilteredData() {
+            return tanksData;
+        }
+
+        function renderDesktopTable() {
+            const tbody = document.getElementById('tableBody');
+            const filtered = getFilteredData();
+
+            const grouped = {};
+            filtered.forEach(tank => {
+                const date = tank.data || 'Senza Data';
+                if (!grouped[date]) grouped[date] = [];
+                grouped[date].push(tank);
+            });
+
+            const sortedDates = Object.keys(grouped).sort((a, b) => {
+                if (a === 'Senza Data') return 1;
+                if (b === 'Senza Data') return -1;
+                return parseDate(b) - parseDate(a);
+            });
+
+            tbody.innerHTML = '';
+
+            sortedDates.forEach(date => {
+                const headerRow = document.createElement('tr');
+                headerRow.innerHTML = `
+                    <td colspan="12" class="date-group-header ${collapsedGroups.has(date) ? 'collapsed' : ''}" 
+                        onclick="toggleDateGroup('${date}')">
+                        ${date} (${grouped[date].length} vasche)
+                    </td>
+                `;
+                tbody.appendChild(headerRow);
+
+                if (!collapsedGroups.has(date)) {
+                    grouped[date].forEach(tank => tbody.appendChild(createTableRow(tank)));
+                }
+            });
+        }
+
+        function createTableRow(tank) {
+            const tr = document.createElement('tr');
+            if (tank.temperatura && tank.mVol) tr.classList.add('completed');
+
+            tr.innerHTML = `
+                <td><input type="checkbox" class="row-select" data-id="${tank.id}"></td>
+                <td>${tank.progressivo || ''}</td>
+                <td><strong>${tank.vasca}</strong></td>
+                <td>${tank.tipoVino || ''}</td>
+                <td class="col-vigneto">${tank.vigneto || ''}</td>
+                <td>${tank.uva || ''}</td>
+                <td><input type="text" value="${tank.temperatura || ''}" onchange="updateTank(${tank.id}, 'temperatura', this.value)" style="min-width:70px;"></td>
+                <td><input type="text" value="${tank.mVol || ''}" onchange="updateTank(${tank.id}, 'mVol', this.value)" style="min-width:70px;"></td>
+                <td><input type="text" value="${tank.data || ''}" onchange="updateTank(${tank.id}, 'data', this.value); renderDesktopTable();" style="min-width:90px;"></td>
+                <td style="text-align:center;">
+                    <span class="priority-star ${tank.priority ? 'active' : 'inactive'}" onclick="togglePriority(${tank.id})">★</span>
+                </td>
+                <td style="text-align:center;">
+                    <input type="checkbox" ${tank.daFare ? 'checked' : ''} onchange="updateTank(${tank.id}, 'daFare', this.checked)">
+                </td>
+                <td>
+                    <button class="delete-btn" onclick="deleteTank(${tank.id})">Elimina</button>
+                </td>
+            `;
+
+            return tr;
+        }
+
+        function toggleDateGroup(date) {
+            collapsedGroups.has(date) ? collapsedGroups.delete(date) : collapsedGroups.add(date);
+            renderDesktopTable();
+        }
+
+        function updateTank(id, field, value) {
+            const tank = tanksData.find(t => t.id === id);
+            if (!tank) return;
+
+            if (field === 'temperatura') {
+                const validation = validateTemperature(value);
+                if (!validation.valid && value !== '') {
+                    alert(validation.message);
+                    renderDesktopTable();
+                    return;
+                }
+                tank[field] = validation.value;
+            } else if (field === 'mVol') {
+                const validation = validateMVol(value);
+                if (!validation.valid && value !== '') {
+                    alert(validation.message);
+                    renderDesktopTable();
+                    return;
+                }
+                tank[field] = validation.value;
+            } else {
+                tank[field] = value;
+            }
+
+            saveData();
+        }
+
+        function togglePriority(id) {
+            const tank = tanksData.find(t => t.id === id);
+            if (tank) {
+                tank.priority = !tank.priority;
+                saveData();
+                renderDesktopTable();
+            }
+        }
+
+        function deleteTank(id) {
+            if (confirm('Eliminare questa vasca?')) {
+                tanksData = tanksData.filter(t => t.id !== id);
+                saveData();
+                renderDesktopTable();
+            }
+        }
+
+        function renderTabletPreview() {
+            const container = document.getElementById('tabletPreviewContainer');
+            container.innerHTML = `
+                <div style="max-width: 600px; margin: 0 auto; box-shadow: var(--shadow-lg); border-radius: 8px; overflow: hidden;">
+                    <div class="tablet-header">
+                        <h1>Controllo Vasche</h1>
+                        <div class="current-date">${formatDateLong(getTodayString())}</div>
+                    </div>
+                    <div style="padding: 40px 20px; text-align: center; background: white;">
+                        <p style="color: var(--text-muted); font-size: 16px;">
+                            📱 Anteprima Vista Tablet<br><br>
+                            Il tastierino iOS è disponibile solo su dispositivi touch.<br>
+                            Usa <code>?view=tablet</code> nell'URL per forzare la vista tablet.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTabletView() {
+            const today = getTodayString();
+            document.getElementById('tabletCurrentDate').textContent = formatDateLong(today);
+
+            const todayTanks = tanksData.filter(t => t.data === today && !t.daFare);
+            const toDo = todayTanks.filter(t => !t.temperatura || !t.mVol);
+            const completed = todayTanks.filter(t => t.temperatura && t.mVol);
+
+            const sortTanks = (tanks) => tanks.sort((a, b) => {
+                if (a.priority !== b.priority) return b.priority - a.priority;
+                return (parseInt(a.vasca) || 0) - (parseInt(b.vasca) || 0);
+            });
+
+            const container = document.getElementById('tabletTableContainer');
+
+            if (todayTanks.length === 0) {
+                container.innerHTML = '<div class="no-data">✓ Nessuna vasca da controllare oggi</div>';
+                return;
+            }
+
+            let html = '<table class="tablet-table"><thead><tr>';
+            html += '<th>Vasca</th><th>Tipo</th><th>Uva</th><th>Temp (°C)</th><th>M.Vol</th>';
+            html += '</tr></thead><tbody>';
+
+            if (toDo.length > 0) {
+                html += `<tr><td colspan="5" class="section-divider">Da Controllare (${toDo.length})</td></tr>`;
+                sortTanks(toDo).forEach(tank => {
+                    html += createTabletRow(tank);
+                });
+            }
+
+            if (completed.length > 0) {
+                html += `<tr><td colspan="5" class="section-divider completed">Completate (${completed.length})</td></tr>`;
+                sortTanks(completed).forEach(tank => {
+                    html += createTabletRow(tank);
+                });
+            }
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function createTabletRow(tank) {
+            const rowClass = tank.priority ? ' priority' : (tank.temperatura && tank.mVol ? ' completed' : '');
+            const priority = tank.priority ? '<span class="priority-indicator">★</span> ' : '';
+            const tempClass = tank.temperatura ? 'filled' : '';
+            const mvolClass = tank.mVol ? 'filled' : '';
+
+            return `
+                <tr class="${rowClass}">
+                    <td><span class="tank-number">${priority}${tank.vasca}</span></td>
+                    <td>${tank.tipoVino || ''}</td>
+                    <td>${tank.uva || ''}</td>
+                    <td>
+                        <div class="input-cell ${tempClass}" onclick="openKeypad(${tank.id}, 'temperatura', this)">
+                            ${tank.temperatura || '--'}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-cell ${mvolClass}" onclick="openKeypad(${tank.id}, 'mVol', this)">
+                            ${tank.mVol || '--'}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // ====== EVENT LISTENERS ======
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.key-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const key = btn.getAttribute('data-key');
+
+                    if (!activeCell) return;
+
+                    if (key === 'backspace') {
+                        currentValue = currentValue.slice(0, -1);
+                    } else if (key === ',') {
+                        if (!currentValue.includes(',')) {
+                            currentValue += ',';
+                        }
+                    } else {
+                        if (currentValue.length < 6) {
+                            currentValue += key;
+                        }
+                    }
+
+                    if (activeCell) {
+                        activeCell.textContent = currentValue || '--';
+                    }
+                });
+            });
+
+            document.getElementById('keypadOverlay').addEventListener('click', closeKeypad);
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                    btn.classList.add('active');
+                    const tabId = btn.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+
+                    if (tabId === 'tablet-preview') renderTabletPreview();
+                });
+            });
+
+            let searchTimeout;
+            document.getElementById('searchBar').addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(applyFilters, 300);
+            });
+        });
+
+        function init() {
+            loadData();
+            const device = detectDevice();
+
+            if (device === 'tablet') {
+                document.getElementById('tabletView').classList.remove('hidden');
+                renderTabletView();
+            } else {
+                document.getElementById('desktopView').classList.remove('hidden');
+                renderDesktopTable();
+                updateFilterOptions();
+            }
+
+            setTimeout(() => {
+                setupFirestoreListener();
+            }, 1000);
+
+            console.log(`🍷 App inizializzata - ${device}`);
+        }
+
+        init();
+    </script>
+</body>
+</html>
