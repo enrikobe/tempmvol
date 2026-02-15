@@ -23,7 +23,11 @@
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
             --shadow-md: 0 2px 8px rgba(0,0,0,0.1);
             --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
-            --keyboard-height: 290px;
+
+            /* Tastierino iOS colors */
+            --keypad-bg: #1C3F5C;
+            --keypad-btn: #2D5674;
+            --keypad-btn-active: #1A3649;
         }
 
         * {
@@ -622,7 +626,7 @@
             overflow-x: auto;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            padding-bottom: calc(var(--keyboard-height) + 20px);
+            padding-bottom: 260px; /* Spazio per tastierino più piccolo */
         }
 
         .tablet-table {
@@ -745,66 +749,119 @@
             font-size: 16px;
         }
 
-        /* ====== iOS GLASS EFFECT KEYPAD ====== */
+        /* ====== iOS KEYPAD - STILE ESATTO IMMAGINE ====== */
         .ios-keypad {
             position: fixed;
             bottom: 0;
-            left: 0;
-            right: 0;
-            height: var(--keyboard-height);
-            background: rgba(209, 213, 219, 0.8);
-            backdrop-filter: blur(40px) saturate(180%);
-            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+
+            /* Dimensioni compatte e adattive */
+            width: min(340px, 90vw);
+            max-width: 340px;
+
+            /* Altezza calcolata per layout 4 righe + padding */
+            height: auto;
+            padding: 16px 20px 24px;
+
+            /* Stile iOS: blu scuro */
+            background: var(--keypad-bg);
+
             z-index: 1000;
-            transform: translateY(100%);
             transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            padding: 12px;
-            padding-bottom: max(20px, env(safe-area-inset-bottom));
-            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.15);
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
         }
 
         .ios-keypad.visible {
-            transform: translateY(0);
+            transform: translateX(-50%) translateY(0);
         }
 
         .keypad-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(4, 1fr);
-            gap: 10px;
-            height: 100%;
-            max-width: 400px;
-            margin: 0 auto;
+            gap: 12px;
+            width: 100%;
         }
 
+        /* Tasti stile iOS esatto */
         .key-btn {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            /* Dimensioni fisse per mantenere proporzioni */
+            width: 100%;
+            aspect-ratio: 1;
+            max-width: 75px;
+            max-height: 75px;
+            margin: 0 auto;
+
+            /* Stile: blu scuro con gradient */
+            background: linear-gradient(180deg, #3A5F7D 0%, var(--keypad-btn) 50%, #244358 100%);
+
             border: none;
             border-radius: 50%;
-            font-size: 32px;
-            font-weight: 300;
-            color: #000;
+
+            /* Numero bianco ultra-thin */
+            font-size: 36px;
+            font-weight: 200; /* Ultra-light come iOS */
+            color: white;
+
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 0;
+
             cursor: pointer;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+
+            /* Shadow per effetto depth */
+            box-shadow: 
+                0 1px 0 rgba(255, 255, 255, 0.1) inset,
+                0 2px 4px rgba(0, 0, 0, 0.3);
+
             transition: all 0.1s ease;
-            aspect-ratio: 1;
+            position: relative;
+        }
+
+        /* Lettere piccole sotto i numeri (ABC, DEF, etc.) */
+        .key-btn::after {
+            content: attr(data-letters);
+            font-size: 8px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.6);
+            position: absolute;
+            bottom: 14px;
+        }
+
+        /* Tasto 1 e 0 non hanno lettere */
+        .key-btn[data-key="1"]::after,
+        .key-btn[data-key="0"]::after,
+        .key-btn[data-key=","]::after {
+            content: '';
         }
 
         .key-btn:active {
-            background: rgba(180, 180, 180, 0.9);
-            transform: scale(0.92);
+            background: var(--keypad-btn-active);
+            transform: scale(0.95);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) inset;
         }
 
+        /* Tasto backspace: più scuro */
         .key-btn.backspace {
-            background: rgba(230, 230, 230, 0.85);
+            background: linear-gradient(180deg, #2A4A5E 0%, #1E3545 50%, #152836 100%);
             font-size: 24px;
+        }
+
+        .key-btn.backspace::after {
+            content: '';
+        }
+
+        /* Tasto virgola */
+        .key-btn[data-key=","] {
+            font-size: 40px;
+            font-weight: 300;
         }
 
         #keypadOverlay {
@@ -821,6 +878,31 @@
             display: block;
         }
 
+        /* Responsive per schermi più piccoli */
+        @media (max-width: 480px) {
+            .ios-keypad {
+                width: 100%;
+                max-width: 100%;
+                border-radius: 16px 16px 0 0;
+                padding: 12px 16px 20px;
+            }
+
+            .keypad-grid {
+                gap: 10px;
+            }
+
+            .key-btn {
+                max-width: 70px;
+                max-height: 70px;
+                font-size: 32px;
+            }
+
+            .key-btn::after {
+                font-size: 7px;
+                bottom: 12px;
+            }
+        }
+
         @media (max-width: 768px) {
             .desktop-toolbar {
                 flex-direction: column;
@@ -833,9 +915,12 @@
             .filter-select {
                 width: 100%;
             }
+        }
 
-            .key-btn {
-                font-size: 28px;
+        /* Safe area per dispositivi con notch */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .ios-keypad {
+                padding-bottom: calc(24px + env(safe-area-inset-bottom));
             }
         }
     </style>
@@ -935,20 +1020,21 @@
         <div class="tablet-table-container" id="tabletTableContainer">
         </div>
 
+        <!-- iOS Keypad - Stile Esatto Immagine -->
         <div class="ios-keypad" id="numericKeypad">
             <div class="keypad-grid">
-                <button class="key-btn" data-key="1">1</button>
-                <button class="key-btn" data-key="2">2</button>
-                <button class="key-btn" data-key="3">3</button>
-                <button class="key-btn" data-key="4">4</button>
-                <button class="key-btn" data-key="5">5</button>
-                <button class="key-btn" data-key="6">6</button>
-                <button class="key-btn" data-key="7">7</button>
-                <button class="key-btn" data-key="8">8</button>
-                <button class="key-btn" data-key="9">9</button>
-                <button class="key-btn" data-key=",">,</button>
-                <button class="key-btn" data-key="0">0</button>
-                <button class="key-btn backspace" data-key="backspace">⌫</button>
+                <button class="key-btn" data-key="1" data-letters="">1</button>
+                <button class="key-btn" data-key="2" data-letters="ABC">2</button>
+                <button class="key-btn" data-key="3" data-letters="DEF">3</button>
+                <button class="key-btn" data-key="4" data-letters="GHI">4</button>
+                <button class="key-btn" data-key="5" data-letters="JKL">5</button>
+                <button class="key-btn" data-key="6" data-letters="MNO">6</button>
+                <button class="key-btn" data-key="7" data-letters="PQRS">7</button>
+                <button class="key-btn" data-key="8" data-letters="TUV">8</button>
+                <button class="key-btn" data-key="9" data-letters="WXYZ">9</button>
+                <button class="key-btn" data-key="," data-letters="">,</button>
+                <button class="key-btn" data-key="0" data-letters="">0</button>
+                <button class="key-btn backspace" data-key="backspace" data-letters="">⌫</button>
             </div>
         </div>
     </div>
@@ -1151,7 +1237,6 @@
             }
         }
 
-        // ====== KEYPAD LOGIC ======
         window.openKeypad = function(tankId, field, cellEl) {
             if (activeTankId === tankId && activeField === field) return;
 
@@ -1227,7 +1312,6 @@
             }
         }
 
-        // ====== DESKTOP FUNCTIONS ======
         function showToast(message) {
             const toast = document.createElement('div');
             toast.className = 'toast';
@@ -1285,9 +1369,7 @@
             if (modal) modal.remove();
         }
 
-        function applyBulkEdit() {
-            // Implementazione bulk edit
-        }
+        function applyBulkEdit() {}
 
         function copyFirstDateValues(field) {
             showToast('Funzione copia disponibile');
@@ -1346,9 +1428,7 @@
                        .map(cb => parseFloat(cb.getAttribute('data-id')));
         }
 
-        function updateFilterOptions() {
-            // Popolamento filtri
-        }
+        function updateFilterOptions() {}
 
         function getFilteredData() {
             return tanksData;
@@ -1552,7 +1632,6 @@
             `;
         }
 
-        // ====== EVENT LISTENERS ======
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.key-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
