@@ -79,7 +79,6 @@
             display: none !important;
         }
 
-        /* LOADING OVERLAY */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -506,7 +505,6 @@
             transform: scale(1.2);
         }
 
-        /* ICONA DELETE */
         .delete-icon {
             background: transparent;
             color: var(--danger);
@@ -815,16 +813,15 @@
             border-bottom: 1px solid var(--border-light);
         }
 
-        /* TESTO VASCA INGRANDITO */
         .tablet-table .tank-number {
             font-weight: 700;
-            font-size: 22px; /* Era 17px - INGRANDITO */
+            font-size: 22px;
             color: var(--primary);
         }
 
         .tablet-table .priority-indicator {
             color: var(--star);
-            font-size: 18px; /* Era 15px */
+            font-size: 18px;
         }
 
         .tablet-table .input-cell {
@@ -880,23 +877,24 @@
             font-size: 16px;
         }
 
-        /* OVERLAY DIETRO TASTIERINO - z-index BASSO */
+        /* OVERLAY - z-index basso, NON blocca eventi tastierino */
         #keypadOverlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            z-index: 999; /* SOTTO il tastierino */
+            z-index: 500;
             display: none;
             background: rgba(0, 0, 0, 0.35);
+            pointer-events: auto;
         }
 
         #keypadOverlay.visible {
             display: block;
         }
 
-        /* TASTIERINO - z-index ALTO sopra overlay */
+        /* TASTIERINO - z-index MOLTO ALTO */
         .ios-keypad {
             position: fixed;
             bottom: 0;
@@ -913,12 +911,11 @@
             backdrop-filter: blur(30px) saturate(150%);
             -webkit-backdrop-filter: blur(30px) saturate(150%);
 
-            z-index: 1001; /* SOPRA overlay */
+            z-index: 10000;
             transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
 
-            /* IMPORTANTE: permetti pointer events */
             pointer-events: auto;
         }
 
@@ -935,7 +932,6 @@
             height: 100%;
             max-width: 420px;
             margin: 0 auto;
-            pointer-events: auto; /* FORZA eventi */
         }
 
         .key-btn {
@@ -967,10 +963,6 @@
 
             transition: all 0.15s ease;
             position: relative;
-
-            /* FORZA pointer events */
-            pointer-events: auto !important;
-            touch-action: manipulation;
         }
 
         .key-btn:active,
@@ -1129,7 +1121,6 @@
         <p>Questa applicazione funziona solo in modalità portrait</p>
     </div>
 
-    <!-- OVERLAY DIETRO (z-index: 999) -->
     <div id="keypadOverlay"></div>
 
     <div id="desktopView" class="hidden desktop-view">
@@ -1216,16 +1207,15 @@
             <h1>Controllo Vasche</h1>
             <div class="current-date" id="tabletCurrentDate"></div>
 
-            <div id="syncStatus" class="sync-status synced">
-                <span id="syncIcon">☁️</span>
+            <div id="syncStatus" class="sync-status offline">
+                <span id="syncIcon">⚠️</span>
             </div>
         </div>
         <div class="tablet-table-container" id="tabletTableContainer">
         </div>
 
-        <!-- TASTIERINO SOPRA (z-index: 1001) -->
         <div class="ios-keypad" id="numericKeypad">
-            <div class="keypad-grid">
+            <div class="keypad-grid" id="keypadGrid">
                 <button class="key-btn" data-key="1">1</button>
                 <button class="key-btn" data-key="2">2</button>
                 <button class="key-btn" data-key="3">3</button>
@@ -1267,20 +1257,20 @@
     <script>
         const STORAGE_KEY = 'cantina_vasche_data';
         const FIRESTORE_COLLECTION = 'vasche';
-        const SYNC_STATE_KEY = 'cantina_sync_state';
 
         let tanksData = [];
         let currentSort = { column: null, direction: 'asc' };
         let collapsedGroups = new Set();
         let firestoreListener = null;
         let isSyncing = false;
-        let isInitializing = true;
+        let isInitializing = false;
         let dataLoadedFromFirebase = false;
 
-        let activeCell = null;
-        let activeTankId = null;
-        let activeField = null;
-        let currentValue = '';
+        // VARIABILI GLOBALI TASTIERINO
+        window.activeCell = null;
+        window.activeTankId = null;
+        window.activeField = null;
+        window.currentValue = '';
 
         document.addEventListener('gesturestart', (e) => e.preventDefault());
         document.addEventListener('gesturechange', (e) => e.preventDefault());
@@ -1314,7 +1304,6 @@
             });
         }
 
-        // LOADING OVERLAY
         function showLoading(message, submessage = '') {
             let overlay = document.getElementById('loadingOverlay');
             if (!overlay) {
@@ -1340,65 +1329,72 @@
             }
         }
 
-        // INIZIALIZZAZIONE TABLET CON DOWNLOAD FIREBASE
+        // INIZIALIZZAZIONE TABLET SEMPLIFICATA
         async function initializeTabletMode() {
-            console.log('🔵 Inizializzazione modalità tablet...');
+            console.log('🔵 Inizializzazione tablet...');
+            isInitializing = true;
 
-            showLoading('Connessione a Firebase...', 'Attendere prego');
+            showLoading('Caricamento dati...', 'Connessione a Firebase');
 
             try {
-                // 1. Verifica connessione
-                if (!window.firebaseDB) {
-                    throw new Error('Firebase non inizializzato');
-                }
-
-                showLoading('Download dati...', 'Sincronizzazione in corso');
-
-                // 2. Download dati da Firebase
-                const { collection, getDocs } = window.firestoreFunctions;
-                const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
-                const snapshot = await getDocs(tanksRef);
-
-                const remoteTanks = [];
-                snapshot.forEach(doc => remoteTanks.push(doc.data()));
-
-                console.log(`✅ Scaricati ${remoteTanks.length} record da Firebase`);
-
-                // 3. Salva in locale
-                tanksData = remoteTanks;
-                saveLocalStorage();
-                dataLoadedFromFirebase = true;
-
-                // 4. Setup listener per sync in tempo reale
-                setupFirestoreListener();
-
-                showLoading('Caricamento interfaccia...', 'Quasi pronto');
-
-                // 5. Render interfaccia
-                await new Promise(resolve => setTimeout(resolve, 500));
-                renderTabletView();
-
-                hideLoading();
-                updateSyncStatus('synced');
-                console.log('✅ Inizializzazione completata');
-
-            } catch (error) {
-                console.error('❌ Errore inizializzazione:', error);
-
-                // Fallback: carica da localStorage
-                console.log('⚠️ Caricamento da localStorage (modalità offline)');
+                // Carica prima da localStorage
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     tanksData = JSON.parse(stored);
-                    renderTabletView();
+                    console.log(`📦 Caricati ${tanksData.length} record da localStorage`);
                 }
 
+                // Prova a connettersi a Firebase
+                if (window.firebaseDB) {
+                    try {
+                        const { collection, getDocs } = window.firestoreFunctions;
+                        const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
+
+                        // Timeout 5 secondi
+                        const downloadPromise = getDocs(tanksRef);
+                        const timeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('timeout')), 5000)
+                        );
+
+                        const snapshot = await Promise.race([downloadPromise, timeoutPromise]);
+
+                        const remoteTanks = [];
+                        snapshot.forEach(doc => remoteTanks.push(doc.data()));
+
+                        console.log(`✅ Scaricati ${remoteTanks.length} record da Firebase`);
+
+                        tanksData = remoteTanks;
+                        saveLocalStorage();
+                        dataLoadedFromFirebase = true;
+
+                        // Setup listener
+                        setupFirestoreListener();
+                        updateSyncStatus('synced');
+
+                    } catch (fbError) {
+                        console.warn('⚠️ Firebase timeout o errore:', fbError.message);
+                        console.log('📦 Uso localStorage (modalità offline)');
+                        updateSyncStatus('offline');
+                        showToast('📵 Modalità offline');
+                    }
+                } else {
+                    console.warn('⚠️ Firebase non disponibile');
+                    updateSyncStatus('offline');
+                }
+
+                // Render interfaccia
+                renderTabletView();
                 hideLoading();
+
+            } catch (error) {
+                console.error('❌ Errore inizializzazione:', error);
                 updateSyncStatus('offline');
-                showToast('⚠️ Modalità offline - i dati verranno sincronizzati alla riconnessione');
+                hideLoading();
+                showToast('⚠️ Errore caricamento - dati locali');
             }
 
             isInitializing = false;
+            console.log('✅ Inizializzazione completata');
         }
 
         function sanitizeNumericInput(input) {
@@ -1436,16 +1432,12 @@
             } else if (status === 'offline') {
                 iconEl.textContent = '⚠️';
             }
+
+            console.log(`📡 Sync status: ${status}`);
         }
 
         async function syncToFirestore() {
-            // NON sincronizzare durante inizializzazione
-            if (isInitializing || !dataLoadedFromFirebase) {
-                console.log('⏸️ Sync bloccato: dati non ancora scaricati');
-                return;
-            }
-
-            if (!window.firebaseDB || isSyncing) return;
+            if (isInitializing || !window.firebaseDB || isSyncing) return;
 
             isSyncing = true;
             updateSyncStatus('syncing');
@@ -1469,6 +1461,7 @@
                 }
 
                 updateSyncStatus('synced');
+                dataLoadedFromFirebase = true;
                 console.log('✅ Sync completato');
             } catch (error) {
                 console.error('❌ Sync error:', error);
@@ -1494,32 +1487,31 @@
                 const localJson = JSON.stringify(tanksData.sort((a, b) => a.id - b.id));
 
                 if (remoteJson !== localJson) {
-                    console.log('🔄 Aggiornamento remoto ricevuto');
+                    console.log('🔄 Aggiornamento remoto');
                     tanksData = remoteTanks;
                     saveLocalStorage();
                     renderCurrentView();
                 }
             }, (error) => {
-                console.error('❌ Firestore listener error:', error);
+                console.error('❌ Listener error:', error);
                 updateSyncStatus('offline');
             });
         }
 
-        // Riconnessione automatica
         window.addEventListener('online', () => {
-            console.log('🌐 Connessione ripristinata');
+            console.log('🌐 Online');
             syncToFirestore();
         });
 
         window.addEventListener('offline', () => {
-            console.log('📵 Connessione persa');
+            console.log('📵 Offline');
             updateSyncStatus('offline');
-            showToast('📵 Offline - salvataggio locale attivo');
+            showToast('📵 Modalità offline');
         });
 
         function saveData() {
             saveLocalStorage();
-            if (dataLoadedFromFirebase) {
+            if (dataLoadedFromFirebase && window.firebaseDB) {
                 syncToFirestore();
             }
         }
@@ -1632,22 +1624,23 @@
             }
         }
 
+        // APERTURA TASTIERINO
         window.openKeypad = function(tankId, field, cellEl) {
-            console.log('🔵 openKeypad called:', tankId, field);
+            console.log('🔵 openKeypad:', tankId, field);
 
-            if (activeTankId === tankId && activeField === field) return;
+            if (window.activeTankId === tankId && window.activeField === field) return;
 
-            if (activeCell) {
+            if (window.activeCell) {
                 saveCurrentValue();
-                activeCell.classList.remove('active');
+                window.activeCell.classList.remove('active');
             }
 
-            activeTankId = tankId;
-            activeField = field;
+            window.activeTankId = tankId;
+            window.activeField = field;
             const tank = tanksData.find(t => t.id === tankId);
-            currentValue = tank[field] ? String(tank[field]) : "";
+            window.currentValue = tank[field] ? String(tank[field]) : "";
 
-            activeCell = cellEl;
+            window.activeCell = cellEl;
             cellEl.classList.add('active');
 
             document.querySelectorAll('tr').forEach(tr => tr.classList.remove('focused-row'));
@@ -1658,57 +1651,91 @@
             document.getElementById('numericKeypad').classList.add('visible');
             document.getElementById('keypadOverlay').classList.add('visible');
 
+            console.log('✅ Tastierino aperto, valore:', window.currentValue);
+
             setTimeout(() => {
                 scrollRowAboveKeypad(row);
             }, 100);
         };
 
+        // CHIUSURA TASTIERINO
         function closeKeypad() {
-            console.log('🔴 closeKeypad called');
-            if (!activeCell) return;
+            console.log('🔴 closeKeypad');
+            if (!window.activeCell) return;
 
             saveCurrentValue();
 
-            activeCell.classList.remove('active');
+            window.activeCell.classList.remove('active');
             document.querySelectorAll('tr').forEach(tr => tr.classList.remove('focused-row'));
 
             document.body.classList.remove('keyboard-open');
             document.getElementById('numericKeypad').classList.remove('visible');
             document.getElementById('keypadOverlay').classList.remove('visible');
 
-            activeCell = null;
-            activeTankId = null;
-            activeField = null;
-            currentValue = '';
+            window.activeCell = null;
+            window.activeTankId = null;
+            window.activeField = null;
+            window.currentValue = '';
 
             setTimeout(() => renderTabletView(), 300);
         }
 
+        // SALVATAGGIO VALORE
         function saveCurrentValue() {
-            if (!activeTankId || !activeField) return;
+            if (!window.activeTankId || !window.activeField) return;
 
-            const tank = tanksData.find(t => t.id === activeTankId);
+            const tank = tanksData.find(t => t.id === window.activeTankId);
             if (!tank) return;
 
-            const validation = activeField === 'temperatura' ? 
-                validateTemperature(currentValue) : 
-                validateMVol(currentValue);
+            const validation = window.activeField === 'temperatura' ? 
+                validateTemperature(window.currentValue) : 
+                validateMVol(window.currentValue);
 
             if (validation.valid) {
-                tank[activeField] = validation.value;
+                tank[window.activeField] = validation.value;
                 saveData();
-                if (activeCell) {
-                    activeCell.textContent = validation.value || '--';
+                if (window.activeCell) {
+                    window.activeCell.textContent = validation.value || '--';
                     if (validation.value) {
-                        activeCell.classList.add('filled');
+                        window.activeCell.classList.add('filled');
                     } else {
-                        activeCell.classList.remove('filled');
+                        window.activeCell.classList.remove('filled');
                     }
                 }
-            } else if (currentValue !== '') {
+                console.log('💾 Salvato:', validation.value);
+            } else if (window.currentValue !== '') {
                 alert(validation.message);
             }
         }
+
+        // HANDLER TASTO - FUNZIONE GLOBALE SEMPLICE
+        window.handleKeyPress = function(key) {
+            console.log('⌨️ handleKeyPress:', key, 'currentValue:', window.currentValue);
+
+            if (!window.activeCell) {
+                console.warn('⚠️ No active cell!');
+                return;
+            }
+
+            if (key === 'backspace') {
+                window.currentValue = window.currentValue.slice(0, -1);
+            } else if (key === ',') {
+                if (!window.currentValue.includes(',')) {
+                    window.currentValue += ',';
+                }
+            } else {
+                if (window.currentValue.length < 6) {
+                    window.currentValue += key;
+                }
+            }
+
+            console.log('✏️ Nuovo valore:', window.currentValue);
+
+            // UPDATE UI
+            if (window.activeCell) {
+                window.activeCell.textContent = window.currentValue || '--';
+            }
+        };
 
         function showToast(message) {
             const toast = document.createElement('div');
@@ -1718,7 +1745,6 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // AGGIUNGI RIGA DESKTOP
         window.showAddRowModal = function() {
             const modal = document.createElement('div');
             modal.className = 'modal-overlay';
@@ -1797,7 +1823,7 @@
             saveData();
             renderDesktopTable();
             document.querySelector('.modal-overlay').remove();
-            showToast('✓ Vasca aggiunta con successo');
+            showToast('✓ Vasca aggiunta');
         };
 
         function showPasteArea() {
@@ -1811,7 +1837,7 @@
         }
 
         function processPastedData() {
-            alert('Funzione import Excel - da implementare con i dati reali');
+            alert('Funzione import Excel - da implementare');
         }
 
         function exportToCSV() {
@@ -1841,15 +1867,8 @@
         }
 
         function showBulkEditModal() {
-            alert('Funzione modifica batch - implementazione completa disponibile');
+            alert('Funzione modifica batch');
         }
-
-        function closeBulkEditModal() {
-            const modal = document.querySelector('.modal-overlay');
-            if (modal) modal.remove();
-        }
-
-        function applyBulkEdit() {}
 
         function copyFirstDateValues(field) {
             showToast('Funzione copia disponibile');
@@ -1862,7 +1881,7 @@
                 return;
             }
 
-            if (confirm(`Eliminare ${selected.length} vasche selezionate?`)) {
+            if (confirm(`Eliminare ${selected.length} vasche?`)) {
                 tanksData = tanksData.filter(t => !selected.includes(t.id));
                 saveData();
                 renderDesktopTable();
@@ -2242,83 +2261,42 @@
             `;
         }
 
+        // SETUP TASTIERINO - APPROCCIO DIRETTO
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🟢 DOM Loaded - Setup tastierino...');
+            console.log('🟢 Setup tastierino...');
 
-            // FIX DEFINITIVO: gestione eventi SOLO sui tasti, NO propagazione
-            const keypad = document.getElementById('numericKeypad');
+            // OVERLAY: chiudi solo se click diretto
             const overlay = document.getElementById('keypadOverlay');
-
-            // BLOCCA propagazione su TUTTO il tastierino
-            keypad.addEventListener('click', (e) => {
-                e.stopPropagation();
-            }, true);
-
-            keypad.addEventListener('touchstart', (e) => {
-                e.stopPropagation();
-            }, { passive: true, capture: true });
-
-            keypad.addEventListener('touchend', (e) => {
-                e.stopPropagation();
-            }, { passive: false, capture: true });
-
-            // Handler tasti
-            document.querySelectorAll('.key-btn').forEach(btn => {
-                const handlePress = () => {
-                    const key = btn.getAttribute('data-key');
-                    console.log('⌨️ Key pressed:', key);
-
-                    if (!activeCell) {
-                        console.log('⚠️ No active cell');
-                        return;
-                    }
-
-                    btn.classList.add('pressed');
-                    setTimeout(() => btn.classList.remove('pressed'), 200);
-
-                    if (key === 'backspace') {
-                        currentValue = currentValue.slice(0, -1);
-                    } else if (key === ',') {
-                        if (!currentValue.includes(',')) {
-                            currentValue += ',';
-                        }
-                    } else {
-                        if (currentValue.length < 6) {
-                            currentValue += key;
-                        }
-                    }
-
-                    if (activeCell) {
-                        activeCell.textContent = currentValue || '--';
-                    }
-                };
-
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    handlePress();
-                });
-
-                btn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handlePress();
-                    console.log('🟢 Touch handled');
-                }, { passive: false });
-            });
-
-            // Overlay: chiudi SOLO se click DIRETTO
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
                     closeKeypad();
                 }
             });
 
-            overlay.addEventListener('touchend', (e) => {
-                if (e.target === overlay) {
+            // TASTI: setup DIRETTO con onclick inline
+            const buttons = document.querySelectorAll('#numericKeypad .key-btn');
+            buttons.forEach(btn => {
+                const key = btn.getAttribute('data-key');
+
+                // MOUSE CLICK
+                btn.onclick = function(e) {
+                    e.stopPropagation();
+                    console.log('🖱️ Click:', key);
+                    this.classList.add('pressed');
+                    setTimeout(() => this.classList.remove('pressed'), 200);
+                    window.handleKeyPress(key);
+                };
+
+                // TOUCH
+                btn.addEventListener('touchend', function(e) {
                     e.preventDefault();
-                    closeKeypad();
-                }
-            }, { passive: false });
+                    e.stopPropagation();
+                    console.log('👆 Touch:', key);
+                    this.classList.add('pressed');
+                    setTimeout(() => this.classList.remove('pressed'), 200);
+                    window.handleKeyPress(key);
+                }, { passive: false });
+            });
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -2339,7 +2317,7 @@
                 searchTimeout = setTimeout(applyFilters, 300);
             });
 
-            console.log('✅ Tastierino setup completato');
+            console.log('✅ Setup completato');
         });
 
         function init() {
@@ -2347,20 +2325,20 @@
 
             if (device === 'tablet') {
                 document.getElementById('tabletView').classList.remove('hidden');
-                // INIZIALIZZAZIONE TABLET CON DOWNLOAD FIREBASE
                 initializeTabletMode();
-                console.log('📱 Tablet mode - inizializzazione Firebase...');
+                console.log('📱 Tablet mode');
             } else {
                 loadData();
                 document.getElementById('desktopView').classList.remove('hidden');
                 renderDesktopTable();
                 updateFilterOptions();
-                console.log('🖥️ Desktop mode active');
+                console.log('🖥️ Desktop mode');
 
-                // Desktop: setup listener dopo breve delay
                 setTimeout(() => {
-                    dataLoadedFromFirebase = true;
-                    setupFirestoreListener();
+                    if (window.firebaseDB) {
+                        dataLoadedFromFirebase = true;
+                        setupFirestoreListener();
+                    }
                 }, 2000);
             }
         }
