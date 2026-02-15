@@ -2,7 +2,10 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Gestione Controllo Vasche - Cantina</title>
     <style>
         :root {
@@ -24,19 +27,27 @@
             --shadow-md: 0 2px 8px rgba(0,0,0,0.1);
             --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
 
-            --keypad-bg: rgba(28, 63, 92, 0.75); /* Semi-trasparente */
-            --keypad-btn: #2D5674;
-            --keypad-btn-active: #1A3649;
-            --keypad-height: 260px;
+            /* Tastierino semi-trasparente */
+            --keypad-bg: rgba(28, 63, 92, 0.5);
+            --keypad-btn: rgba(45, 86, 116, 0.6);
+            --keypad-btn-active: rgba(26, 54, 73, 0.8);
+            --keypad-height: 240px;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            /* DISABILITA ZOOM DA DOPPIO TAP */
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            overflow: hidden;
+            -webkit-text-size-adjust: 100%;
         }
 
         body {
@@ -50,20 +61,20 @@
             display: none !important;
         }
 
+        /* Sync status - SOLO ICONA in header */
         .sync-status {
-            position: fixed;
-            bottom: 16px;
-            left: 16px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            box-shadow: var(--shadow-md);
-            z-index: 9998;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 16px;
             transition: all 0.3s;
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
         .sync-status.synced {
@@ -82,8 +93,8 @@
         }
 
         .sync-status .spinner {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
             border: 2px solid rgba(255,255,255,0.3);
             border-top-color: white;
             border-radius: 50%;
@@ -98,6 +109,8 @@
             padding: 24px;
             max-width: 1920px;
             margin: 0 auto;
+            height: 100vh;
+            overflow-y: auto;
         }
 
         .desktop-header {
@@ -593,44 +606,48 @@
             background: var(--primary-light);
         }
 
-        /* ====== TABLET VIEW ====== */
+        /* ====== TABLET VIEW - FULLSCREEN ====== */
         #tabletView {
-            min-height: 100vh;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
             display: flex;
             flex-direction: column;
-            position: relative;
+            overflow: hidden;
         }
 
+        /* Header COMPATTO */
         .tablet-header {
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
             color: white;
-            padding: 20px 16px;
+            padding: 10px 16px; /* RIDOTTO da 20px a 10px */
             text-align: center;
             box-shadow: var(--shadow-md);
-            position: sticky;
-            top: 0;
+            flex-shrink: 0;
+            position: relative;
             z-index: 100;
         }
 
         .tablet-header h1 {
-            font-size: 20px;
+            font-size: 18px; /* RIDOTTO da 20px */
             font-weight: 600;
-            margin-bottom: 4px;
+            margin-bottom: 2px; /* RIDOTTO da 4px */
         }
 
         .tablet-header .current-date {
-            font-size: 15px;
+            font-size: 13px; /* RIDOTTO da 15px */
             opacity: 0.95;
             font-weight: 400;
         }
 
         .tablet-table-container {
             flex: 1;
-            overflow-x: auto;
+            overflow-x: hidden;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            /* PADDING-BOTTOM AUMENTATO per garantire spazio */
-            padding-bottom: calc(var(--keypad-height) + 40px);
+            padding-bottom: calc(var(--keypad-height) + 20px);
         }
 
         .tablet-table {
@@ -648,10 +665,10 @@
         }
 
         .tablet-table th {
-            padding: 14px 12px;
+            padding: 12px 10px; /* RIDOTTO padding laterale */
             text-align: left;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px; /* RIDOTTO da 13px */
             color: var(--text-secondary);
             white-space: nowrap;
             border-bottom: 2px solid var(--border-medium);
@@ -670,7 +687,6 @@
             background: #F0F9F0;
         }
 
-        /* Dimming con transizione più smooth */
         body.keyboard-open .tablet-table tbody tr:not(.focused-row) {
             opacity: 0.25;
             pointer-events: none;
@@ -687,29 +703,29 @@
         }
 
         .tablet-table td {
-            padding: 16px 12px;
-            font-size: 15px;
+            padding: 14px 10px; /* RIDOTTO padding laterale */
+            font-size: 14px; /* RIDOTTO da 15px */
             border-bottom: 1px solid var(--border-light);
         }
 
         .tablet-table .tank-number {
             font-weight: 700;
-            font-size: 18px;
+            font-size: 17px; /* RIDOTTO da 18px */
             color: var(--primary);
         }
 
         .tablet-table .priority-indicator {
             color: var(--star);
-            font-size: 16px;
+            font-size: 15px; /* RIDOTTO da 16px */
         }
 
         .tablet-table .input-cell {
             width: 100%;
-            min-width: 80px;
-            padding: 12px;
+            min-width: 70px; /* RIDOTTO da 80px */
+            padding: 10px; /* RIDOTTO da 12px */
             border: 2px solid var(--border-light);
             border-radius: 8px;
-            font-size: 18px;
+            font-size: 17px; /* RIDOTTO da 18px */
             font-weight: 600;
             text-align: center;
             background: #F8F8F8;
@@ -736,9 +752,9 @@
 
         .section-divider {
             background: linear-gradient(to right, #F5F5F5, #E5E5E5);
-            padding: 10px 12px;
+            padding: 8px 10px; /* RIDOTTO */
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px; /* RIDOTTO da 14px */
             color: var(--text-secondary);
             border-top: 2px solid var(--border-medium);
             border-bottom: 2px solid var(--border-medium);
@@ -756,56 +772,58 @@
             font-size: 16px;
         }
 
-        /* ====== iOS KEYPAD SEMI-TRASPARENTE ====== */
+        /* ====== TASTIERINO COMPATTO E TRASPARENTE ====== */
         .ios-keypad {
             position: fixed;
             bottom: 0;
-            left: 50%;
-            transform: translateX(-50%) translateY(100%);
+            left: 0;
+            right: 0;
+            transform: translateY(100%);
 
-            width: min(340px, 90vw);
-            max-width: 340px;
+            width: 100%;
             height: var(--keypad-height);
-            padding: 16px 20px 24px;
+            padding: 10px 16px 16px; /* RIDOTTO padding top */
 
-            /* SEMI-TRASPARENTE con blur */
+            /* SEMI-TRASPARENTE AUMENTATO */
             background: var(--keypad-bg);
-            backdrop-filter: blur(20px) saturate(150%);
-            -webkit-backdrop-filter: blur(20px) saturate(150%);
+            backdrop-filter: blur(30px) saturate(150%);
+            -webkit-backdrop-filter: blur(30px) saturate(150%);
 
             z-index: 1000;
             transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .ios-keypad.visible {
-            transform: translateX(-50%) translateY(0);
+            transform: translateY(0);
         }
 
         .keypad-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(4, 1fr);
-            gap: 12px;
+            gap: 8px; /* RIDOTTO da 12px */
             width: 100%;
             height: 100%;
+            max-width: 360px;
+            margin: 0 auto;
         }
 
-        /* Tasti con effetto illuminazione */
+        /* Tasti SEMI-TRASPARENTI con effetto illuminazione */
         .key-btn {
             width: 100%;
             aspect-ratio: 1;
-            max-width: 75px;
-            max-height: 75px;
-            margin: 0 auto;
 
-            background: linear-gradient(180deg, #3A5F7D 0%, var(--keypad-btn) 50%, #244358 100%);
+            /* SEMI-TRASPARENTE */
+            background: var(--keypad-btn);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
 
-            border: none;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 50%;
 
-            font-size: 36px;
+            font-size: 32px; /* RIDOTTO da 36px */
             font-weight: 200;
             color: white;
 
@@ -819,8 +837,8 @@
             user-select: none;
 
             box-shadow: 
-                0 1px 0 rgba(255, 255, 255, 0.1) inset,
-                0 2px 4px rgba(0, 0, 0, 0.3);
+                0 1px 0 rgba(255, 255, 255, 0.2) inset,
+                0 2px 6px rgba(0, 0, 0, 0.3);
 
             transition: all 0.15s ease;
             position: relative;
@@ -828,12 +846,12 @@
 
         .key-btn::after {
             content: attr(data-letters);
-            font-size: 8px;
+            font-size: 7px; /* RIDOTTO da 8px */
             font-weight: 500;
-            letter-spacing: 1px;
-            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.5);
             position: absolute;
-            bottom: 14px;
+            bottom: 10px; /* RIDOTTO da 14px */
         }
 
         .key-btn[data-key="1"]::after,
@@ -842,34 +860,29 @@
             content: '';
         }
 
-        /* EFFETTO ILLUMINAZIONE PRESSIONE */
+        /* EFFETTO ILLUMINAZIONE AUMENTATO */
         .key-btn:active,
         .key-btn.pressed {
-            background: linear-gradient(180deg, #5A8FC0 0%, #4A7FAA 50%, #3A6F94 100%);
+            background: rgba(90, 143, 192, 0.8);
             transform: scale(0.95);
             box-shadow: 
-                0 0 20px rgba(255, 255, 255, 0.5),
-                0 0 40px rgba(135, 206, 250, 0.4),
+                0 0 25px rgba(255, 255, 255, 0.6),
+                0 0 50px rgba(135, 206, 250, 0.5),
                 0 1px 2px rgba(0, 0, 0, 0.4) inset;
             color: #FFF;
+            border-color: rgba(255, 255, 255, 0.4);
         }
 
-        /* Animazione glow */
         @keyframes glow {
-            0% {
+            0%, 100% {
                 box-shadow: 
-                    0 0 10px rgba(255, 255, 255, 0.3),
-                    0 0 20px rgba(135, 206, 250, 0.2);
+                    0 0 15px rgba(255, 255, 255, 0.4),
+                    0 0 30px rgba(135, 206, 250, 0.3);
             }
             50% {
                 box-shadow: 
-                    0 0 20px rgba(255, 255, 255, 0.6),
-                    0 0 40px rgba(135, 206, 250, 0.5);
-            }
-            100% {
-                box-shadow: 
-                    0 0 10px rgba(255, 255, 255, 0.3),
-                    0 0 20px rgba(135, 206, 250, 0.2);
+                    0 0 25px rgba(255, 255, 255, 0.7),
+                    0 0 50px rgba(135, 206, 250, 0.6);
             }
         }
 
@@ -878,8 +891,8 @@
         }
 
         .key-btn.backspace {
-            background: linear-gradient(180deg, #2A4A5E 0%, #1E3545 50%, #152836 100%);
-            font-size: 24px;
+            background: rgba(42, 74, 94, 0.6);
+            font-size: 22px; /* RIDOTTO da 24px */
         }
 
         .key-btn.backspace::after {
@@ -887,7 +900,7 @@
         }
 
         .key-btn[data-key=","] {
-            font-size: 40px;
+            font-size: 36px; /* RIDOTTO da 40px */
             font-weight: 300;
         }
 
@@ -899,35 +912,35 @@
             bottom: 0;
             z-index: 999;
             display: none;
-            /* Overlay più scuro per migliorare contrasto tastierino */
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.35);
         }
 
         #keypadOverlay.visible {
             display: block;
         }
 
+        /* Responsive per schermi più piccoli */
         @media (max-width: 480px) {
-            .ios-keypad {
-                width: 100%;
-                max-width: 100%;
-                border-radius: 16px 16px 0 0;
-                padding: 12px 16px 20px;
-            }
-
             .keypad-grid {
-                gap: 10px;
+                gap: 6px;
+                max-width: 100%;
             }
 
             .key-btn {
-                max-width: 70px;
-                max-height: 70px;
-                font-size: 32px;
+                font-size: 28px;
             }
 
             .key-btn::after {
-                font-size: 7px;
-                bottom: 12px;
+                font-size: 6px;
+                bottom: 8px;
+            }
+
+            .tablet-header h1 {
+                font-size: 16px;
+            }
+
+            .tablet-header .current-date {
+                font-size: 12px;
             }
         }
 
@@ -945,9 +958,18 @@
             }
         }
 
+        /* Safe area per dispositivi con notch */
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
             .ios-keypad {
-                padding-bottom: calc(24px + env(safe-area-inset-bottom));
+                padding-bottom: calc(16px + env(safe-area-inset-bottom));
+            }
+        }
+
+        /* FULLSCREEN MODE ENFORCEMENT */
+        @media (display-mode: standalone) {
+            body {
+                -webkit-user-select: none;
+                user-select: none;
             }
         }
     </style>
@@ -955,11 +977,6 @@
 <body>
 
     <div id="keypadOverlay"></div>
-
-    <div id="syncStatus" class="sync-status synced">
-        <span id="syncIcon">☁️</span>
-        <span id="syncText">Sincronizzato</span>
-    </div>
 
     <div id="desktopView" class="hidden">
         <div class="desktop-header">
@@ -1043,6 +1060,11 @@
         <div class="tablet-header">
             <h1>Controllo Vasche</h1>
             <div class="current-date" id="tabletCurrentDate"></div>
+
+            <!-- Sync status - SOLO ICONA -->
+            <div id="syncStatus" class="sync-status synced">
+                <span id="syncIcon">☁️</span>
+            </div>
         </div>
         <div class="tablet-table-container" id="tabletTableContainer">
         </div>
@@ -1101,22 +1123,40 @@
         let activeField = null;
         let currentValue = '';
 
+        // FORZA FULLSCREEN su mobile
+        function enterFullscreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(err => console.log('Fullscreen denied:', err));
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+        }
+
+        // Previeni zoom con gesture
+        document.addEventListener('gesturestart', (e) => e.preventDefault());
+        document.addEventListener('gesturechange', (e) => e.preventDefault());
+        document.addEventListener('gestureend', (e) => e.preventDefault());
+
+        // Previeni zoom con wheel
+        document.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) e.preventDefault();
+        }, { passive: false });
+
         function updateSyncStatus(status) {
             const statusEl = document.getElementById('syncStatus');
             const iconEl = document.getElementById('syncIcon');
-            const textEl = document.getElementById('syncText');
 
             statusEl.className = 'sync-status ' + status;
 
             if (status === 'synced') {
                 iconEl.textContent = '☁️';
-                textEl.textContent = 'Sincronizzato';
             } else if (status === 'syncing') {
                 iconEl.innerHTML = '<div class="spinner"></div>';
-                textEl.textContent = 'Sincronizzazione...';
             } else if (status === 'offline') {
                 iconEl.textContent = '⚠️';
-                textEl.textContent = 'Modalità Offline';
             }
         }
 
@@ -1263,19 +1303,16 @@
             }
         }
 
-        // SCROLL INTELLIGENTE per mantenere riga visibile sopra tastierino
         function scrollRowAboveKeypad(row) {
-            const keypadHeight = 260; // var(--keypad-height)
+            const keypadHeight = 240;
             const container = document.getElementById('tabletTableContainer');
             const rowRect = row.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
 
-            // Calcola posizione target: riga deve essere visibile sopra il tastierino
-            const targetY = containerRect.top + 100; // Margine dall'alto
+            const targetY = containerRect.top + 80;
             const currentY = rowRect.top;
 
             if (currentY > (window.innerHeight - keypadHeight - 100)) {
-                // La riga è troppo in basso, scrolliamo
                 const scrollAmount = currentY - targetY;
                 container.scrollBy({
                     top: scrollAmount,
@@ -1308,7 +1345,6 @@
             document.getElementById('numericKeypad').classList.add('visible');
             document.getElementById('keypadOverlay').classList.add('visible');
 
-            // SCROLL INTELLIGENTE dopo animazione tastierino
             setTimeout(() => {
                 scrollRowAboveKeypad(row);
             }, 100);
@@ -1601,6 +1637,7 @@
                     <div class="tablet-header">
                         <h1>Controllo Vasche</h1>
                         <div class="current-date">${formatDateLong(getTodayString())}</div>
+                        <div class="sync-status synced">☁️</div>
                     </div>
                     <div style="padding: 40px 20px; text-align: center; background: white;">
                         <p style="color: var(--text-muted); font-size: 16px;">
@@ -1681,17 +1718,15 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // EFFETTO ILLUMINAZIONE sui tasti
             document.querySelectorAll('.key-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    e.preventDefault(); // Previene comportamenti default
+                    e.preventDefault();
 
                     const key = btn.getAttribute('data-key');
 
                     if (!activeCell) return;
 
-                    // Aggiungi classe pressed per effetto visivo
                     btn.classList.add('pressed');
                     setTimeout(() => btn.classList.remove('pressed'), 200);
 
@@ -1712,7 +1747,6 @@
                     }
                 });
 
-                // Previeni eventi secondari che causano zoom
                 btn.addEventListener('touchstart', (e) => {
                     e.stopPropagation();
                 }, { passive: true });
@@ -1751,6 +1785,13 @@
             if (device === 'tablet') {
                 document.getElementById('tabletView').classList.remove('hidden');
                 renderTabletView();
+
+                // Prova fullscreen dopo 1 sec
+                setTimeout(() => {
+                    if (isTouchDevice()) {
+                        enterFullscreen();
+                    }
+                }, 1000);
             } else {
                 document.getElementById('desktopView').classList.remove('hidden');
                 renderDesktopTable();
