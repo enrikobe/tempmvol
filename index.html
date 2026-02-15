@@ -29,2111 +29,605 @@
             --shadow-md: 0 2px 8px rgba(0,0,0,0.1);
             --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
 
-            --keypad-bg: rgba(40, 40, 40, 0.85);
-            --keypad-btn: rgba(60, 60, 60, 0.7);
-            --keypad-btn-active: rgba(80, 80, 80, 0.9);
-            --keypad-height: 260px;
+            --keypad-bg: rgba(40, 40, 40, 0.95);
+            --keypad-btn: rgba(60, 60, 60, 0.8);
+            --keypad-btn-active: rgba(90, 90, 90, 1);
+            --keypad-height: 280px;
             --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
-        }
-
-        .desktop-view input,
-        .desktop-view textarea {
-            -webkit-user-select: text;
-            -moz-user-select: text;
-            user-select: text;
-        }
-
-        html {
-            width: 100%;
-            height: 100%;
-            position: fixed;
-            overflow: hidden;
-            -webkit-text-size-adjust: 100%;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+        .desktop-view input, .desktop-view textarea { user-select: text; -webkit-user-select: text; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg-main);
             color: var(--text-primary);
-            line-height: 1.5;
-            width: 100%;
-            height: 100%;
-            position: fixed;
-            overflow: hidden;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 99999;
-            color: white;
-        }
-
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        .loading-text {
-            font-size: 18px;
-            font-weight: 500;
-            text-align: center;
-        }
-
-        .loading-subtext {
-            font-size: 14px;
-            opacity: 0.8;
-            margin-top: 8px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .sync-status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            font-size: 16px;
-            transition: all 0.3s;
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        .sync-status.synced {
-            background: var(--success);
-            color: white;
-        }
-
-        .sync-status.syncing {
-            background: var(--warning);
-            color: white;
-        }
-
-        .sync-status.offline {
-            background: var(--danger);
-            color: white;
-        }
-
-        .sync-status .spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        #desktopView {
-            padding: 24px;
-            max-width: 1920px;
-            margin: 0 auto;
             height: 100vh;
-            overflow-y: auto;
-        }
-
-        .desktop-header {
-            background: var(--bg-card);
-            padding: 24px 32px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 24px;
-            border-left: 4px solid var(--primary);
-        }
-
-        .desktop-header h1 {
-            color: var(--primary);
-            font-size: 26px;
-            font-weight: 600;
-            margin-bottom: 16px;
-        }
-
-        .desktop-tabs {
-            display: flex;
-            gap: 8px;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .tab-btn {
-            padding: 10px 20px;
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            transition: all 0.2s;
-        }
-
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-
-        .tab-btn:hover {
-            color: var(--primary-light);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .desktop-toolbar {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .desktop-toolbar button {
-            padding: 10px 18px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-light);
-            box-shadow: var(--shadow-md);
-        }
-
-        .btn-secondary {
-            background: var(--secondary);
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #D17E67;
-            box-shadow: var(--shadow-md);
-        }
-
-        .btn-outline {
-            background: white;
-            color: var(--text-primary);
-            border: 1px solid var(--border-medium);
-        }
-
-        .btn-outline:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .btn-warning {
-            background: var(--warning);
-            color: white;
-        }
-
-        .btn-warning:hover {
-            background: #EC971F;
-            box-shadow: var(--shadow-md);
-        }
-
-        .filters-section {
-            background: var(--bg-card);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 20px;
-        }
-
-        .search-bar {
-            width: 100%;
-            padding: 10px 16px;
-            font-size: 15px;
-            border: 1px solid var(--border-light);
-            border-radius: 6px;
-            margin-bottom: 12px;
-            transition: border 0.2s;
-        }
-
-        .search-bar:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .filters-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .filter-select {
-            padding: 8px 14px;
-            border: 1px solid var(--border-light);
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            background: white;
-            transition: border 0.2s;
-            color: var(--text-primary);
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .table-container {
-            background: var(--bg-card);
-            border-radius: 8px;
-            box-shadow: var(--shadow-sm);
-            overflow: auto;
-            max-height: calc(100vh - 380px);
-        }
-
-        .paste-area {
-            width: 100%;
-            min-height: 120px;
-            padding: 16px;
-            border: 2px dashed var(--border-medium);
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            margin-bottom: 16px;
-            resize: vertical;
-            background: #FAFAFA;
-        }
-
-        .paste-area:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: white;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-size: 14px;
-        }
-
-        .data-table thead {
-            background: linear-gradient(to bottom, #F8F8F8, #F0F0F0);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .data-table th {
-            padding: 12px 16px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-            border-bottom: 1px solid var(--border-light);
-            background: #F5F5F5;
-        }
-
-        .data-table th:hover {
-            background: #EFEFEF;
-            color: var(--primary);
-        }
-
-        .data-table th.sortable::after {
-            content: ' ⇅';
-            opacity: 0.3;
-            font-size: 11px;
-        }
-
-        .data-table th.copy-action::after {
-            content: ' 📋';
-            opacity: 0.5;
-        }
-
-        .data-table th.copy-action:hover::after {
-            opacity: 1;
-        }
-
-        .data-table tbody tr {
-            border-bottom: 1px solid var(--border-light);
-            transition: background 0.15s;
-        }
-
-        .data-table tbody tr:hover {
-            background: #FAFBFC;
-        }
-
-        .data-table tbody tr.completed {
-            background: #F0F9F0;
-        }
-
-        .data-table tbody tr.completed:hover {
-            background: #E8F5E8;
-        }
-
-        .data-table tbody tr.selected-row {
-            background: #FFF3E0 !important;
-            border-left: 3px solid var(--warning);
-        }
-
-        .data-table td {
-            padding: 10px 16px;
-            white-space: nowrap;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .data-table td.col-vigneto {
-            max-width: 300px;
-            white-space: normal;
-            word-wrap: break-word;
-        }
-
-        .data-table input[type="text"],
-        .data-table input[type="number"],
-        .data-table input[type="date"] {
-            width: 100%;
-            min-width: 60px;
-            padding: 6px 10px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-            font-size: 16px;
-            background: transparent;
-            transition: all 0.2s;
-        }
-
-        .data-table input[type="date"] {
-            min-width: 130px;
-        }
-
-        .data-table input[type="text"]:hover,
-        .data-table input[type="number"]:hover,
-        .data-table input[type="date"]:hover {
-            background: white;
-            border-color: var(--border-light);
-        }
-
-        .data-table input:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: white;
-            box-shadow: 0 0 0 3px rgba(196, 69, 54, 0.1);
-        }
-
-        .date-group-header {
-            background: linear-gradient(to right, var(--primary), var(--primary-light));
-            color: white;
-            font-weight: 600;
-            font-size: 14px;
-            padding: 10px 16px;
-            cursor: pointer;
-            user-select: none;
-            transition: opacity 0.2s;
-        }
-
-        .date-group-header:hover {
-            opacity: 0.9;
-        }
-
-        .date-group-header::before {
-            content: '▼ ';
-            display: inline-block;
-            transition: transform 0.2s;
-            font-size: 11px;
-        }
-
-        .date-group-header.collapsed::before {
-            transform: rotate(-90deg);
-        }
-
-        .priority-star {
-            font-size: 18px;
-            cursor: pointer;
-            transition: transform 0.15s;
-        }
-
-        .priority-star.active {
-            color: var(--star);
-        }
-
-        .priority-star.inactive {
-            color: var(--border-medium);
-        }
-
-        .priority-star:hover {
-            transform: scale(1.2);
-        }
-
-        .delete-icon {
-            background: transparent;
-            color: var(--danger);
-            border: none;
-            padding: 6px;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-            transition: all 0.2s;
-            border-radius: 4px;
-            width: 30px;
-            height: 30px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .delete-icon:hover {
-            background: rgba(217, 83, 79, 0.1);
-            transform: scale(1.2);
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: var(--success);
-            color: white;
-            padding: 14px 20px;
-            border-radius: 6px;
-            box-shadow: var(--shadow-lg);
-            font-weight: 500;
-            font-size: 14px;
-            z-index: 9999;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            animation: fadeIn 0.2s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal-content {
-            background: white;
-            padding: 28px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-lg);
-            max-width: 500px;
-            width: 90%;
-            animation: slideUp 0.3s;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-header {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 20px;
-        }
-
-        .modal-body {
-            margin-bottom: 24px;
-        }
-
-        .modal-body label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
-        }
-
-        .modal-body input,
-        .modal-body select {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid var(--border-light);
-            border-radius: 6px;
-            font-size: 16px;
-            margin-bottom: 16px;
-        }
-
-        .modal-body input:focus,
-        .modal-body select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(196, 69, 54, 0.1);
-        }
-
-        .modal-info {
-            background: #FFF9E6;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 16px;
-        }
-
-        .modal-footer {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-        }
-
-        .modal-footer button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .modal-btn-cancel {
-            background: #E0E0E0;
-            color: var(--text-primary);
-        }
-
-        .modal-btn-cancel:hover {
-            background: #D0D0D0;
-        }
-
-        .modal-btn-confirm {
-            background: var(--primary);
-            color: white;
-        }
-
-        .modal-btn-confirm:hover {
-            background: var(--primary-light);
-        }
-
-        #landscapeWarning {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--primary);
-            color: white;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 99999;
-            text-align: center;
-            padding: 40px;
-        }
-
-        #landscapeWarning .rotate-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-            animation: rotateDevice 2s ease-in-out infinite;
-        }
-
-        @keyframes rotateDevice {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(90deg); }
-        }
-
-        #landscapeWarning h2 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-
-        #landscapeWarning p {
-            font-size: 16px;
-            opacity: 0.9;
-        }
-
-        #tabletView {
+            overflow: hidden;
             width: 100vw;
-            height: 100vh;
-            height: 100dvh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
         }
 
-        .tablet-header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-            padding: 10px 16px;
-            text-align: center;
-            box-shadow: var(--shadow-md);
-            flex-shrink: 0;
-            position: relative;
-            z-index: 100;
+        /* UTILS */
+        .hidden { display: none !important; }
+
+        /* SYNC STATUS */
+        .sync-status {
+            position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; color: white; transition: all 0.3s;
         }
+        .sync-status.synced { background: var(--success); }
+        .sync-status.offline { background: var(--danger); }
+        .sync-status.syncing { background: var(--warning); }
 
-        .tablet-header h1 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
+        /* DESKTOP LAYOUT */
+        #desktopView { padding: 20px; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .desktop-header { background: var(--bg-card); padding: 20px; border-radius: 8px; box-shadow: var(--shadow-sm); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .desktop-header h1 { color: var(--primary); font-size: 24px; }
 
-        .tablet-header .current-date {
-            font-size: 13px;
-            opacity: 0.95;
-            font-weight: 400;
-        }
+        .desktop-toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        button { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 14px; transition: 0.2s; box-shadow: var(--shadow-sm); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--secondary); color: white; }
+        .btn-outline { background: white; border: 1px solid var(--border-medium); color: var(--text-primary); }
+        button:active { transform: scale(0.98); }
 
-        .tablet-table-container {
-            flex: 1;
-            overflow-x: hidden;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: calc(var(--keypad-height) + var(--safe-bottom) + 40px);
-        }
+        /* TABLE */
+        .table-container { background: var(--bg-card); border-radius: 8px; box-shadow: var(--shadow-sm); flex: 1; overflow: auto; position: relative; }
+        .data-table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        .data-table th { position: sticky; top: 0; background: #f5f5f5; z-index: 10; padding: 12px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border-light); }
+        .data-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-light); }
+        .data-table tr:hover { background: #f9f9f9; }
+        .data-table input { width: 100%; padding: 6px; border: 1px solid transparent; border-radius: 4px; background: transparent; }
+        .data-table input:hover { background: white; border-color: var(--border-light); }
+        .data-table input:focus { background: white; border-color: var(--primary); outline: none; }
 
-        .tablet-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            background: white;
-        }
+        .date-group-header { background: #EFEFEF; font-weight: bold; padding: 10px 20px; cursor: pointer; color: var(--primary); }
+        .copy-action { cursor: pointer; }
+        .copy-action:hover { color: var(--primary); }
+        .copy-action::after { content: ' 📋'; font-size: 12px; }
 
-        .tablet-table thead {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: #F5F5F5;
-        }
+        /* MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+        .modal-header { font-size: 20px; font-weight: bold; margin-bottom: 20px; color: var(--primary); }
+        .modal-body label { display: block; margin-top: 12px; margin-bottom: 4px; font-weight: 500; font-size: 14px; }
+        .modal-body input { width: 100%; padding: 10px; border: 1px solid var(--border-medium); border-radius: 6px; font-size: 16px; }
+        .modal-footer { margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px; }
 
-        .tablet-table th {
-            padding: 12px 10px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 12px;
-            color: var(--text-secondary);
-            white-space: nowrap;
-            border-bottom: 2px solid var(--border-medium);
-        }
+        /* TABLET VIEW */
+        #tabletView { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--bg-main); }
+        .tablet-header { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; padding: 15px; text-align: center; box-shadow: var(--shadow-md); position: relative; z-index: 100; }
+        .tablet-header h1 { font-size: 18px; margin: 0; }
+        .tablet-header .date { font-size: 13px; opacity: 0.9; margin-top: 4px; }
 
-        .tablet-table tbody tr {
-            border-bottom: 1px solid var(--border-light);
-            transition: all 0.3s;
-        }
+        .tablet-list { flex: 1; overflow-y: auto; padding-bottom: 300px; -webkit-overflow-scrolling: touch; }
+        .tablet-row { background: white; padding: 12px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 10px; }
+        .tablet-row.priority { background: #FFF9E6; }
+        .tablet-row.completed { background: #F0F9F0; }
+        .tablet-row.focused { background: #E3F2FD; border-left: 4px solid var(--primary); }
 
-        .tablet-table tbody tr.priority {
-            background: #FFF9E6;
-        }
+        .t-info { flex: 1; }
+        .t-vasca { font-size: 22px; font-weight: bold; color: var(--primary); }
+        .t-desc { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
 
-        .tablet-table tbody tr.completed {
-            background: #F0F9F0;
-        }
+        .t-inputs { display: flex; gap: 8px; }
+        .t-input { width: 80px; height: 50px; border: 2px solid var(--border-light); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; background: #FAFAFA; color: #333; cursor: pointer; }
+        .t-input.active { border-color: var(--primary); background: white; color: var(--primary); box-shadow: 0 0 0 3px rgba(196,69,54,0.1); }
+        .t-input.filled { background: #E8F5E9; border-color: var(--success); color: var(--success); }
 
-        body.keyboard-open .tablet-table tbody tr:not(.focused-row) {
-            opacity: 0.25;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
+        /* KEYPAD */
+        #keypadOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); z-index: 999; display: none; }
+        .keypad-container { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--keypad-bg); z-index: 1000; transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.1, 0.9, 0.2, 1); padding: 10px; padding-bottom: calc(10px + var(--safe-bottom)); border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.3); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .keypad-container.visible { transform: translateY(0); }
 
-        .tablet-table tbody tr.focused-row {
-            background: #FFF !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            position: relative;
-            z-index: 10;
-            opacity: 1 !important;
-            transition: all 0.3s ease;
-        }
+        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 500px; margin: 0 auto; }
+        .key-btn { background: var(--keypad-btn); color: white; border-radius: 12px; height: 55px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 400; cursor: pointer; transition: 0.1s; border: 1px solid rgba(255,255,255,0.1); }
+        .key-btn:active { background: var(--keypad-btn-active); transform: scale(0.96); }
+        .key-btn[data-key="backspace"] { background: rgba(255, 59, 48, 0.3); }
 
-        .tablet-table td {
-            padding: 14px 10px;
-            font-size: 14px;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .tablet-table .tank-number {
-            font-weight: 700;
-            font-size: 22px;
-            color: var(--primary);
-        }
-
-        .tablet-table .priority-indicator {
-            color: var(--star);
-            font-size: 18px;
-        }
-
-        .tablet-table .input-cell {
-            width: 100%;
-            min-width: 70px;
-            padding: 10px;
-            border: 2px solid var(--border-light);
-            border-radius: 8px;
-            font-size: 17px;
-            font-weight: 600;
-            text-align: center;
-            background: #F8F8F8;
-            cursor: pointer;
-            user-select: none;
-            transition: all 0.2s;
-        }
-
-        .tablet-table .input-cell:focus {
-            outline: none;
-        }
-
-        .tablet-table .input-cell.active {
-            border-color: var(--primary);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(196, 69, 54, 0.1);
-        }
-
-        .tablet-table .input-cell.filled {
-            border-color: var(--success);
-            background: #F0F9F0;
-            color: var(--success);
-        }
-
-        .section-divider {
-            background: linear-gradient(to right, #F5F5F5, #E5E5E5);
-            padding: 8px 10px;
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--text-secondary);
-            border-top: 2px solid var(--border-medium);
-            border-bottom: 2px solid var(--border-medium);
-        }
-
-        .section-divider.completed {
-            background: linear-gradient(to right, #E8F5E9, #C8E6C9);
-            color: var(--success);
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-            font-size: 16px;
-        }
-
-        #keypadOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 500;
-            display: none;
-            background: rgba(0, 0, 0, 0.35);
-        }
-
-        #keypadOverlay.visible {
-            display: block;
-        }
-
-        .ios-keypad {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            transform: translateY(100%);
-
-            width: 100%;
-            height: var(--keypad-height);
-            padding: 8px 12px;
-            padding-bottom: calc(8px + var(--safe-bottom));
-
-            background: var(--keypad-bg);
-            backdrop-filter: blur(30px) saturate(150%);
-            -webkit-backdrop-filter: blur(30px) saturate(150%);
-
-            z-index: 10000;
-            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .ios-keypad.visible {
-            transform: translateY(0);
-        }
-
-        .keypad-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(4, 1fr);
-            gap: 8px;
-            width: 100%;
-            height: 100%;
-            max-width: 420px;
-            margin: 0 auto;
-        }
-
-        .key-btn {
-            width: 100%;
-            height: 100%;
-            max-height: 55px;
-
-            background: var(--keypad-btn);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-
-            font-size: 28px;
-            font-weight: 300;
-            color: white;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            cursor: pointer;
-            user-select: none;
-
-            box-shadow: 
-                0 1px 0 rgba(255, 255, 255, 0.1) inset,
-                0 2px 6px rgba(0, 0, 0, 0.3);
-
-            transition: all 0.15s ease;
-        }
-
-        .key-btn:active,
-        .key-btn.pressed {
-            background: var(--keypad-btn-active);
-            transform: scale(0.95);
-            box-shadow: 
-                0 0 20px rgba(255, 255, 255, 0.3),
-                0 1px 2px rgba(0, 0, 0, 0.4) inset;
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .key-btn.backspace {
-            background: rgba(50, 50, 50, 0.7);
-            font-size: 20px;
-        }
-
-        .key-btn[data-key=","] {
-            font-size: 32px;
-        }
-
-        @media (max-width: 480px) {
-            :root {
-                --keypad-height: 240px;
-            }
-
-            .keypad-grid {
-                gap: 6px;
-                max-width: 100%;
-            }
-
-            .key-btn {
-                font-size: 24px;
-                max-height: 52px;
-            }
-
-            .tablet-header h1 {
-                font-size: 16px;
-            }
-
-            .tablet-header .current-date {
-                font-size: 12px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .desktop-toolbar {
-                flex-direction: column;
-            }
-
-            .filters-row {
-                flex-direction: column;
-            }
-
-            .filter-select {
-                width: 100%;
-            }
-        }
-
-        @media (orientation: landscape) and (max-width: 1024px) {
-            #tabletView {
-                display: none;
-            }
-
-            #landscapeWarning {
-                display: flex;
-            }
-        }
+        /* LANDSCAPE WARNING */
+        #landscapeWarning { position: fixed; inset: 0; background: var(--primary); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; text-align: center; }
+        @media (orientation: landscape) and (max-width: 1024px) { #tabletView { display: none; } #landscapeWarning { display: flex; } }
     </style>
 </head>
 <body>
 
-    <div id="landscapeWarning">
-        <div class="rotate-icon">📱</div>
-        <h2>Posiziona il dispositivo in modalità verticale</h2>
-        <p>Questa applicazione funziona solo in modalità portrait</p>
-    </div>
+<!-- VIEW CONTAINER -->
+<div id="app"></div>
 
-    <div id="keypadOverlay"></div>
-
-    <div id="desktopView" class="hidden desktop-view">
+<!-- TEMPLATES -->
+<template id="desktop-template">
+    <div id="desktopView">
         <div class="desktop-header">
-            <h1>🍷 Gestione Controllo Vasche</h1>
-            <div class="desktop-tabs">
-                <button class="tab-btn active" data-tab="data-management">Gestione Dati</button>
-                <button class="tab-btn" data-tab="tablet-preview">Vista Tablet</button>
-            </div>
+            <h1>🍷 Controllo Vasche - Desktop</h1>
+            <div id="syncStatusDesktop" class="sync-status synced">☁️</div>
         </div>
-
-        <div id="data-management" class="tab-content active">
-            <div class="desktop-toolbar">
-                <button class="btn-primary" onclick="showAddRowModal()">➕ Aggiungi Riga</button>
-                <button class="btn-primary" onclick="showPasteArea()">📋 Incolla da Excel</button>
-                <button class="btn-secondary" onclick="exportToCSV()">💾 Esporta CSV</button>
-                <button class="btn-warning" onclick="showBulkEditModal()">✏️ Modifica Selezionate</button>
-                <button class="btn-outline" onclick="deleteSelected()">🗑️ Elimina Selezionate</button>
-                <button class="btn-outline" onclick="refreshData()">🔄 Aggiorna</button>
-            </div>
-
-            <div id="pasteSection" class="hidden">
-                <textarea class="paste-area" id="pasteArea" placeholder="Incolla qui i dati da Excel (includi intestazioni)..."></textarea>
-                <button class="btn-primary" onclick="processPastedData()">✓ Importa Dati</button>
-                <button class="btn-outline" onclick="closePasteArea()">✕ Annulla</button>
-            </div>
-
-            <div class="filters-section">
-                <input type="text" class="search-bar" id="searchBar" placeholder="🔍 Cerca per vasca, vigneto, tipo vino...">
-                <div class="filters-row">
-                    <select class="filter-select" id="filterTipoVino" onchange="applyFilters()">
-                        <option value="">Tutti i Tipi Vino</option>
-                    </select>
-                    <select class="filter-select" id="filterUva" onchange="applyFilters()">
-                        <option value="">Tutte le Uve</option>
-                    </select>
-                    <select class="filter-select" id="filterPriority" onchange="applyFilters()">
-                        <option value="">Tutte le Priorità</option>
-                        <option value="priority">Solo Prioritarie</option>
-                        <option value="normal">Solo Normali</option>
-                    </select>
-                    <select class="filter-select" id="filterComplete" onchange="applyFilters()">
-                        <option value="">Tutte</option>
-                        <option value="complete">Solo Completate</option>
-                        <option value="incomplete">Solo da Fare</option>
-                    </select>
-                    <select class="filter-select" id="filterDate" onchange="applyFilters()">
-                        <option value="">Tutte le Date</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="table-container">
-                <table class="data-table" id="dataTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
-                            <th class="sortable" onclick="sortTable('progressivo')">N°</th>
-                            <th class="sortable" onclick="sortTable('vasca')">Vasca</th>
-                            <th class="sortable" onclick="sortTable('tipoVino')">Tipo Vino</th>
-                            <th class="sortable" onclick="sortTable('vigneto')">Vigneto</th>
-                            <th class="sortable" onclick="sortTable('uva')">Uva</th>
-                            <th class="copy-action" onclick="copyFirstDateValues('temperatura')" title="Clicca per copiare">Temp</th>
-                            <th class="copy-action" onclick="copyFirstDateValues('mVol')" title="Clicca per copiare">M.Vol</th>
-                            <th class="sortable" onclick="sortTable('data')">Data</th>
-                            <th style="width: 50px;">★</th>
-                            <th style="width: 60px;">Da Fare</th>
-                            <th style="width: 50px;">Azioni</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                    </tbody>
-                </table>
-            </div>
+        <div class="desktop-toolbar">
+            <button class="btn-primary" onclick="app.showAddModal()">➕ Nuova Vasca</button>
+            <button class="btn-secondary" onclick="app.showBulkEdit()">✏️ Modifica Selezionate</button>
+            <button class="btn-outline" onclick="app.deleteSelected()">🗑️ Elimina</button>
+            <button class="btn-outline" onclick="app.exportCSV()">💾 Esporta CSV</button>
+            <input type="text" id="searchBar" placeholder="🔍 Cerca..." style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;" onkeyup="app.renderDesktop()">
         </div>
-
-        <div id="tablet-preview" class="tab-content">
-            <div id="tabletPreviewContainer"></div>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th width="40"><input type="checkbox" onchange="app.toggleSelectAll(this)"></th>
+                        <th>Vasca</th>
+                        <th>Vino</th>
+                        <th>Uva</th>
+                        <th class="copy-action" onclick="app.copyValues('temperatura')">Temp</th>
+                        <th class="copy-action" onclick="app.copyValues('mVol')">M.Vol</th>
+                        <th>Data</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody id="desktopTableBody"></tbody>
+            </table>
         </div>
     </div>
+</template>
 
-    <div id="tabletView" class="hidden">
+<template id="tablet-template">
+    <div id="tabletView">
         <div class="tablet-header">
             <h1>Controllo Vasche</h1>
-            <div class="current-date" id="tabletCurrentDate"></div>
-
-            <div id="syncStatus" class="sync-status offline">
-                <span id="syncIcon">⚠️</span>
-            </div>
+            <div class="date" id="tabletDateDisplay">--/--/----</div>
+            <div id="syncStatusTablet" class="sync-status synced">☁️</div>
         </div>
-        <div class="tablet-table-container" id="tabletTableContainer">
-        </div>
-
-        <div class="ios-keypad" id="numericKeypad">
-            <div class="keypad-grid">
-                <div class="key-btn" data-key="1">1</div>
-                <div class="key-btn" data-key="2">2</div>
-                <div class="key-btn" data-key="3">3</div>
-                <div class="key-btn" data-key="4">4</div>
-                <div class="key-btn" data-key="5">5</div>
-                <div class="key-btn" data-key="6">6</div>
-                <div class="key-btn" data-key="7">7</div>
-                <div class="key-btn" data-key="8">8</div>
-                <div class="key-btn" data-key="9">9</div>
-                <div class="key-btn" data-key=",">,</div>
-                <div class="key-btn" data-key="0">0</div>
-                <div class="key-btn backspace" data-key="backspace">⌫</div>
-            </div>
+        <div class="tablet-list" id="tabletList"></div>
+    </div>
+    <div id="keypadOverlay"></div>
+    <div class="keypad-container" id="keypad">
+        <div class="keypad-grid">
+            <div class="key-btn" data-key="1">1</div>
+            <div class="key-btn" data-key="2">2</div>
+            <div class="key-btn" data-key="3">3</div>
+            <div class="key-btn" data-key="4">4</div>
+            <div class="key-btn" data-key="5">5</div>
+            <div class="key-btn" data-key="6">6</div>
+            <div class="key-btn" data-key="7">7</div>
+            <div class="key-btn" data-key="8">8</div>
+            <div class="key-btn" data-key="9">9</div>
+            <div class="key-btn" data-key=",">,</div>
+            <div class="key-btn" data-key="0">0</div>
+            <div class="key-btn" data-key="backspace">⌫</div>
         </div>
     </div>
+</template>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<div id="landscapeWarning">
+    <div style="font-size: 60px; margin-bottom: 20px;">📱</div>
+    <h2>Ruota il dispositivo</h2>
+    <p>Usa la modalità verticale</p>
+</div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBvjIO8b0hBI0DD_m-VF-Vr6LCwcAFpGkw",
-            authDomain: "tempmvol.firebaseapp.com",
-            projectId: "tempmvol",
-            storageBucket: "tempmvol.firebasestorage.app",
-            messagingSenderId: "555620995865",
-            appId: "1:555620995865:web:52bc7fef7188bc27112b88"
-        };
+<!-- FIREBASE SDK -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, onSnapshot, writeBatch, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    const firebaseConfig = {
+        apiKey: "AIzaSyBvjIO8b0hBI0DD_m-VF-Vr6LCwcAFpGkw",
+        authDomain: "tempmvol.firebaseapp.com",
+        projectId: "tempmvol",
+        storageBucket: "tempmvol.firebasestorage.app",
+        messagingSenderId: "555620995865",
+        appId: "1:555620995865:web:52bc7fef7188bc27112b88"
+    };
 
-        window.firebaseDB = db;
-        window.firestoreFunctions = { collection, doc, setDoc, onSnapshot, deleteDoc, getDocs, writeBatch };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        console.log("🔥 Firebase initialized");
-    </script>
-
-    <script>
-        const STORAGE_KEY = 'cantina_vasche_data';
-        const FIRESTORE_COLLECTION = 'vasche';
-
-        let tanksData = [];
-        let currentSort = { column: null, direction: 'asc' };
-        let collapsedGroups = new Set();
-        let firestoreListener = null;
-        let isSyncing = false;
-
-        let activeCell = null;
-        let activeTankId = null;
-        let activeField = null;
-        let currentValue = '';
-
-        // GESTIONE FIREBASE SYNC SEMPLIFICATA
-        async function initFirebase() {
-            console.log('🔥 Init Firebase sync...');
-
-            if (!window.firebaseDB) {
-                console.warn('⚠️ Firebase non disponibile');
-                return false;
-            }
-
-            try {
-                const { collection, getDocs, onSnapshot } = window.firestoreFunctions;
-                const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
-
-                // Download iniziale
-                const snapshot = await getDocs(tanksRef);
-                const remoteTanks = [];
-                snapshot.forEach(doc => remoteTanks.push(doc.data()));
-
-                console.log(`✅ Scaricati ${remoteTanks.length} record da Firebase`);
-
-                if (remoteTanks.length > 0) {
-                    tanksData = remoteTanks;
-                    saveLocalStorage();
-                }
-
-                // Setup listener real-time
-                firestoreListener = onSnapshot(tanksRef, (snapshot) => {
-                    if (isSyncing) {
-                        console.log('⏸️ Sync in corso, skip listener');
-                        return;
-                    }
-
-                    const updated = [];
-                    snapshot.forEach(doc => updated.push(doc.data()));
-
-                    console.log(`🔄 Listener: ricevuti ${updated.length} record`);
-
-                    if (JSON.stringify(updated.sort((a,b) => a.id - b.id)) !== 
-                        JSON.stringify(tanksData.sort((a,b) => a.id - b.id))) {
-                        console.log('📥 Applicando update remoto');
-                        tanksData = updated;
-                        saveLocalStorage();
-                        renderCurrentView();
-                    }
-                }, (error) => {
-                    console.error('❌ Listener error:', error);
-                    updateSyncStatus('offline');
-                });
-
-                updateSyncStatus('synced');
-                return true;
-
-            } catch (error) {
-                console.error('❌ Firebase init error:', error);
-                updateSyncStatus('offline');
-                return false;
-            }
+    // Persistence per offline support nativo
+    enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn('Persistence failed: Multiple tabs open');
+        } else if (err.code == 'unimplemented') {
+            console.warn('Persistence not supported');
         }
+    });
 
-        async function syncToFirestore() {
-            if (!window.firebaseDB || isSyncing) {
-                console.log('⏸️ Sync skip (già in corso o Firebase offline)');
-                return;
-            }
+    window.db = db;
+    window.fs = { collection, doc, setDoc, onSnapshot, writeBatch };
+    console.log("🔥 Firebase init done");
 
-            isSyncing = true;
-            updateSyncStatus('syncing');
-            console.log('📤 Inizio sync a Firebase...');
+    // Avvia app dopo init firebase
+    window.app.init();
+</script>
 
-            try {
-                const { collection, doc, setDoc, getDocs, deleteDoc, writeBatch } = window.firestoreFunctions;
-                const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
+<script>
+window.app = {
+    data: [],
+    view: 'desktop',
+    activeCell: null,
+    currentValue: '',
 
-                // Get current Firebase data
-                const snapshot = await getDocs(tanksRef);
-                const firestoreIds = new Set();
-                snapshot.forEach(doc => firestoreIds.add(doc.id));
+    init: function() {
+        this.detectView();
+        this.loadLocal();
+        this.render();
+        this.initFirebaseListener();
+        this.setupEvents();
+    },
 
-                // Batch write for efficiency
-                const batch = writeBatch(window.firebaseDB);
-                let writeCount = 0;
-
-                // Update/Insert all local tanks
-                for (const tank of tanksData) {
-                    const tankId = String(tank.id);
-                    const tankRef = doc(window.firebaseDB, FIRESTORE_COLLECTION, tankId);
-                    batch.set(tankRef, tank);
-                    firestoreIds.delete(tankId);
-                    writeCount++;
-                }
-
-                // Delete removed tanks
-                for (const id of firestoreIds) {
-                    const tankRef = doc(window.firebaseDB, FIRESTORE_COLLECTION, id);
-                    batch.delete(tankRef);
-                    writeCount++;
-                }
-
-                await batch.commit();
-
-                updateSyncStatus('synced');
-                console.log(`✅ Sync completato: ${writeCount} operazioni`);
-
-            } catch (error) {
-                console.error('❌ Sync error:', error);
-                updateSyncStatus('offline');
-            } finally {
-                isSyncing = false;
-            }
+    detectView: function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('view') === 'tablet' || (window.innerWidth < 1024 && 'ontouchstart' in window)) {
+            this.view = 'tablet';
         }
+    },
 
-        function updateSyncStatus(status) {
-            const statusEl = document.getElementById('syncStatus');
-            const iconEl = document.getElementById('syncIcon');
+    loadLocal: function() {
+        const stored = localStorage.getItem('cantina_data');
+        if (stored) this.data = JSON.parse(stored);
+    },
 
-            if (!statusEl || !iconEl) return;
+    save: function() {
+        localStorage.setItem('cantina_data', JSON.stringify(this.data));
+        this.syncToFirebase();
+        this.render();
+    },
 
-            statusEl.className = 'sync-status ' + status;
+    // FIREBASE LOGIC (RIPRISTINATA OLD STYLE)
+    initFirebaseListener: function() {
+        if (!window.db) return;
 
-            if (status === 'synced') {
-                iconEl.textContent = '☁️';
-            } else if (status === 'syncing') {
-                iconEl.innerHTML = '<div class="spinner"></div>';
-            } else if (status === 'offline') {
-                iconEl.textContent = '⚠️';
+        const { collection, onSnapshot } = window.fs;
+        // Listener sempre attivo
+        onSnapshot(collection(window.db, 'vasche'), (snapshot) => {
+            const remoteData = [];
+            snapshot.forEach(doc => remoteData.push(doc.data()));
+
+            // Semplice check: se lunghezza o contenuto diverso, aggiorna tutto
+            // "Server Wins" strategy per semplicità in questo contesto
+            if (JSON.stringify(remoteData) !== JSON.stringify(this.data)) {
+                console.log('📥 Firebase update received');
+                this.data = remoteData;
+                localStorage.setItem('cantina_data', JSON.stringify(this.data)); // Salva senza triggerare sync loop
+                this.render();
+                this.updateStatus('synced');
             }
-        }
+        }, (error) => {
+            console.error("Firebase Error:", error);
+            this.updateStatus('offline');
+        });
+    },
 
-        window.addEventListener('online', () => {
-            console.log('🌐 Online detected');
-            if (!firestoreListener) {
-                initFirebase();
-            } else {
-                syncToFirestore();
-            }
+    syncToFirebase: function() {
+        if (!window.db) return;
+
+        this.updateStatus('syncing');
+        const { doc, writeBatch } = window.fs;
+        const batch = writeBatch(window.db);
+
+        // Sovrascrivi intera collezione (semplificato e robusto per piccole moli di dati)
+        this.data.forEach(item => {
+            const ref = doc(window.db, 'vasche', String(item.id));
+            batch.set(ref, item);
         });
 
-        window.addEventListener('offline', () => {
-            console.log('📵 Offline detected');
-            updateSyncStatus('offline');
+        batch.commit()
+            .then(() => {
+                console.log('📤 Sync success');
+                this.updateStatus('synced');
+            })
+            .catch(err => {
+                console.error('Sync fail', err);
+                this.updateStatus('offline');
+            });
+    },
+
+    updateStatus: function(status) {
+        const els = document.querySelectorAll('.sync-status');
+        els.forEach(el => {
+            el.className = 'sync-status ' + status;
+            el.innerHTML = status === 'synced' ? '☁️' : (status === 'syncing' ? '🔄' : '⚠️');
+        });
+    },
+
+    // RENDER LOGIC
+    render: function() {
+        const container = document.getElementById('app');
+        if (this.view === 'desktop') {
+            if (!document.getElementById('desktopView')) {
+                container.innerHTML = document.getElementById('desktop-template').innerHTML;
+            }
+            this.renderDesktop();
+        } else {
+            if (!document.getElementById('tabletView')) {
+                container.innerHTML = document.getElementById('tablet-template').innerHTML;
+                this.setupKeypad(); // Setup eventi keypad solo se in tablet view
+            }
+            this.renderTablet();
+        }
+    },
+
+    renderDesktop: function() {
+        const tbody = document.getElementById('desktopTableBody');
+        if (!tbody) return;
+
+        const search = document.getElementById('searchBar').value.toLowerCase();
+
+        // Group by date
+        const grouped = {};
+        this.data.forEach(item => {
+            if (search && !JSON.stringify(item).toLowerCase().includes(search)) return;
+            const d = item.data || 'Senza Data';
+            if (!grouped[d]) grouped[d] = [];
+            grouped[d].push(item);
         });
 
-        function saveData() {
-            saveLocalStorage();
-            syncToFirestore();
+        // Sort dates desc
+        const dates = Object.keys(grouped).sort((a,b) => {
+            if (a === 'Senza Data') return 1;
+            if (b === 'Senza Data') return -1;
+            return this.parseDate(b) - this.parseDate(a);
+        });
+
+        let html = '';
+        dates.forEach(date => {
+            html += `<tr class="date-header"><td colspan="8" class="date-group-header">${date}</td></tr>`;
+            grouped[date].forEach(item => {
+                html += `
+                <tr>
+                    <td><input type="checkbox" class="row-sel" data-id="${item.id}"></td>
+                    <td><input type="text" value="${item.vasca}" onchange="app.updateItem(${item.id}, 'vasca', this.value)"></td>
+                    <td><input type="text" value="${item.tipoVino || ''}" onchange="app.updateItem(${item.id}, 'tipoVino', this.value)"></td>
+                    <td><input type="text" value="${item.uva || ''}" onchange="app.updateItem(${item.id}, 'uva', this.value)"></td>
+                    <td><input type="text" value="${item.temperatura || ''}" onchange="app.updateItem(${item.id}, 'temperatura', this.value)"></td>
+                    <td><input type="text" value="${item.mVol || ''}" onchange="app.updateItem(${item.id}, 'mVol', this.value)"></td>
+                    <td><input type="date" value="${this.formatDateInput(item.data)}" onchange="app.updateItem(${item.id}, 'data', app.formatDateOutput(this.value))"></td>
+                    <td><input type="text" value="${item.note || ''}" onchange="app.updateItem(${item.id}, 'note', this.value)"></td>
+                </tr>`;
+            });
+        });
+        tbody.innerHTML = html;
+    },
+
+    renderTablet: function() {
+        const list = document.getElementById('tabletList');
+        if (!list) return;
+
+        const today = this.getToday();
+        document.getElementById('tabletDateDisplay').innerText = today;
+
+        const items = this.data.filter(i => i.data === today);
+        items.sort((a,b) => parseInt(a.vasca) - parseInt(b.vasca));
+
+        if (items.length === 0) {
+            list.innerHTML = '<div style="padding:40px; text-align:center; color:#999">Nessuna vasca per oggi</div>';
+            return;
         }
 
-        function saveLocalStorage() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(tanksData));
-        }
+        let html = '';
+        items.forEach(item => {
+            const isCompleted = item.temperatura && item.mVol;
+            const cls = isCompleted ? 'completed' : (item.priority ? 'priority' : '');
 
-        function loadData() {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                tanksData = JSON.parse(stored);
-            }
-            return tanksData;
-        }
-
-        function renderCurrentView() {
-            const device = detectDevice();
-            if (device === 'tablet') {
-                renderTabletView();
-            } else {
-                renderDesktopTable();
-            }
-        }
-
-        function isTouchDevice() {
-            return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
-        }
-
-        function detectDevice() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const forceView = urlParams.get('view');
-
-            if (forceView === 'tablet') return 'tablet';
-            if (forceView === 'desktop') return 'desktop';
-
-            if (isTouchDevice() && window.innerWidth <= 1024) return 'tablet';
-            return 'desktop';
-        }
-
-        function parseDate(dateStr) {
-            if (!dateStr) return null;
-            const [day, month, year] = dateStr.split('/');
-            return new Date(year, month - 1, day);
-        }
-
-        function formatDateForInput(dateStr) {
-            if (!dateStr) return '';
-            const [day, month, year] = dateStr.split('/');
-            return `${year}-${month}-${day}`;
-        }
-
-        function formatDateFromInput(isoStr) {
-            if (!isoStr) return '';
-            const [year, month, day] = isoStr.split('-');
-            return `${day}/${month}/${year}`;
-        }
-
-        function getTodayString() {
-            const today = new Date();
-            return `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-        }
-
-        function formatDateLong(dateStr) {
-            if (!dateStr) return '';
-            const months = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
-                          'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
-            const [day, month, year] = dateStr.split('/');
-            return `${day} ${months[parseInt(month) - 1]} ${year}`;
-        }
-
-        function validateTemperature(value) {
-            if (value === '' || value === null) return { valid: true, value: '' };
-            const num = parseFloat(value.toString().replace(',', '.'));
-            if (isNaN(num)) return { valid: false, message: 'Valore non valido' };
-            if (num < 4) return { valid: false, message: 'Min 4°C' };
-            if (num > 30) return { valid: false, message: 'Max 30°C' };
-            return { valid: true, value: num.toFixed(2).replace('.', ',') };
-        }
-
-        function validateMVol(value) {
-            if (value === '' || value === null) return { valid: true, value: '' };
-            const num = parseFloat(value.toString().replace(',', '.'));
-            if (isNaN(num)) return { valid: false, message: 'Valore non valido' };
-            if (num < 900) return { valid: false, message: 'Min 900' };
-            if (num > 1200) return { valid: false, message: 'Max 1200' };
-
-            if (num >= 1000) {
-                return { valid: true, value: Math.round(num).toString() };
-            } else {
-                return { valid: true, value: num.toFixed(1).replace('.', ',') };
-            }
-        }
-
-        // TASTIERINO - APPROCCIO ULTRA SEMPLICE
-        window.openKeypad = function(tankId, field, cellEl) {
-            console.log('🔵 openKeypad:', tankId, field);
-
-            closeKeypad(); // Chiudi eventuale tastierino aperto
-
-            activeTankId = tankId;
-            activeField = field;
-            const tank = tanksData.find(t => t.id === tankId);
-            currentValue = tank[field] ? String(tank[field]) : "";
-
-            activeCell = cellEl;
-            cellEl.classList.add('active');
-
-            document.querySelectorAll('tr').forEach(tr => tr.classList.remove('focused-row'));
-            const row = cellEl.closest('tr');
-            row.classList.add('focused-row');
-
-            document.body.classList.add('keyboard-open');
-            document.getElementById('numericKeypad').classList.add('visible');
-            document.getElementById('keypadOverlay').classList.add('visible');
-
-            console.log('✅ Tastierino aperto, valore iniziale:', currentValue);
-        };
-
-        function closeKeypad() {
-            console.log('🔴 closeKeypad');
-            if (!activeCell) return;
-
-            saveCurrentValue();
-
-            activeCell.classList.remove('active');
-            document.querySelectorAll('tr').forEach(tr => tr.classList.remove('focused-row'));
-
-            document.body.classList.remove('keyboard-open');
-            document.getElementById('numericKeypad').classList.remove('visible');
-            document.getElementById('keypadOverlay').classList.remove('visible');
-
-            activeCell = null;
-            activeTankId = null;
-            activeField = null;
-            currentValue = '';
-        }
-
-        function saveCurrentValue() {
-            if (!activeTankId || !activeField) return;
-
-            const tank = tanksData.find(t => t.id === activeTankId);
-            if (!tank) return;
-
-            const validation = activeField === 'temperatura' ? 
-                validateTemperature(currentValue) : 
-                validateMVol(currentValue);
-
-            if (validation.valid) {
-                tank[activeField] = validation.value;
-                saveData();
-                if (activeCell) {
-                    activeCell.textContent = validation.value || '--';
-                    if (validation.value) {
-                        activeCell.classList.add('filled');
-                    } else {
-                        activeCell.classList.remove('filled');
-                    }
-                }
-                console.log('💾 Salvato:', validation.value);
-            } else if (currentValue !== '') {
-                alert(validation.message);
-            }
-        }
-
-        function handleKeyPress(key) {
-            console.log('⌨️ Key:', key, '| Current:', currentValue);
-
-            if (!activeCell) {
-                console.warn('⚠️ No active cell');
-                return;
-            }
-
-            if (key === 'backspace') {
-                currentValue = currentValue.slice(0, -1);
-            } else if (key === ',') {
-                if (!currentValue.includes(',')) {
-                    currentValue += ',';
-                }
-            } else {
-                if (currentValue.length < 6) {
-                    currentValue += key;
-                }
-            }
-
-            console.log('✏️ New value:', currentValue);
-
-            if (activeCell) {
-                activeCell.textContent = currentValue || '--';
-            }
-        }
-
-        function showToast(message) {
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-
-        // FUNZIONI DESKTOP
-
-        window.showAddRowModal = function() {
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <div class="modal-header">➕ Aggiungi Nuova Vasca</div>
-                    <div class="modal-body">
-                        <label>Progressivo</label>
-                        <input type="number" id="newProgressivo" placeholder="Es: 1">
-
-                        <label>Vasca *</label>
-                        <input type="text" id="newVasca" placeholder="Es: 42" required>
-
-                        <label>Tipo Vino</label>
-                        <input type="text" id="newTipoVino" placeholder="Es: Amarone">
-
-                        <label>Vigneto</label>
-                        <input type="text" id="newVigneto" placeholder="Es: Vigneto Monte">
-
-                        <label>Uva</label>
-                        <input type="text" id="newUva" placeholder="Es: Corvina">
-
-                        <label>Data</label>
-                        <input type="date" id="newData" value="${formatDateForInput(getTodayString())}">
-
-                        <label>Temperatura (°C)</label>
-                        <input type="text" inputmode="numeric" id="newTemperatura" placeholder="Es: 18,5">
-
-                        <label>M.Vol</label>
-                        <input type="text" inputmode="numeric" id="newMVol" placeholder="Es: 1025">
-
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="newPriority" style="width: auto; margin: 0;">
-                            Priorità
-                        </label>
-
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="newDaFare" style="width: auto; margin: 0;">
-                            Da Fare
-                        </label>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="modal-btn-cancel" onclick="this.closest('.modal-overlay').remove()">Annulla</button>
-                        <button class="modal-btn-confirm" onclick="addNewRow()">Aggiungi</button>
-                    </div>
+            html += `
+            <div class="tablet-row ${cls}" id="row-${item.id}">
+                <div class="t-info">
+                    <div class="t-vasca">${item.vasca}</div>
+                    <div class="t-desc">${item.tipoVino || ''} ${item.uva || ''}</div>
                 </div>
-            `;
-            document.body.appendChild(modal);
-            document.getElementById('newVasca').focus();
+                <div class="t-inputs">
+                    <div class="t-input ${item.temperatura ? 'filled' : ''}" onclick="app.openKeypad(${item.id}, 'temperatura', this)">${item.temperatura || '--'}</div>
+                    <div class="t-input ${item.mVol ? 'filled' : ''}" onclick="app.openKeypad(${item.id}, 'mVol', this)">${item.mVol || '--'}</div>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    },
+
+    // UTILS
+    getToday: function() {
+        const d = new Date();
+        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    },
+    parseDate: function(str) {
+        if (!str) return 0;
+        const [d, m, y] = str.split('/');
+        return new Date(y, m-1, d).getTime();
+    },
+    formatDateInput: function(str) {
+        if (!str) return '';
+        const [d, m, y] = str.split('/');
+        return `${y}-${m}-${d}`;
+    },
+    formatDateOutput: function(iso) {
+        if (!iso) return '';
+        const [y, m, d] = iso.split('-');
+        return `${d}/${m}/${y}`;
+    },
+
+    // ACTIONS
+    updateItem: function(id, field, val) {
+        const item = this.data.find(i => i.id === id);
+        if (item) {
+            item[field] = val;
+            this.save();
+        }
+    },
+
+    showAddModal: function() {
+        // Simple prompt replacement for stability
+        const vasca = prompt("Numero Vasca:");
+        if (!vasca) return;
+
+        const newItem = {
+            id: Date.now(),
+            vasca: vasca,
+            data: this.getToday(),
+            tipoVino: '', uva: '', temperatura: '', mVol: '', priority: false
+        };
+        this.data.push(newItem);
+        this.save();
+    },
+
+    deleteSelected: function() {
+        const checked = document.querySelectorAll('.row-sel:checked');
+        if (checked.length === 0) return alert("Seleziona righe da eliminare");
+        if (!confirm("Eliminare selezionate?")) return;
+
+        const ids = Array.from(checked).map(c => parseInt(c.dataset.id));
+        this.data = this.data.filter(i => !ids.includes(i.id));
+        this.save();
+    },
+
+    // FIX: COPY VALUES (FROM PREV DATE TO LATEST DATE)
+    copyValues: function(field) {
+        const dates = [...new Set(this.data.map(i => i.data || ''))].filter(d => d);
+        dates.sort((a,b) => this.parseDate(b) - this.parseDate(a));
+
+        if (dates.length < 2) return alert("Servono almeno 2 date per copiare");
+
+        const targetDate = dates[0]; // Newest (Today)
+        const sourceDate = dates[1]; // Previous (Yesterday)
+
+        const targetItems = this.data.filter(i => i.data === targetDate);
+        const sourceItems = this.data.filter(i => i.data === sourceDate);
+
+        let count = 0;
+        targetItems.forEach(tItem => {
+            const sItem = sourceItems.find(s => s.vasca === tItem.vasca);
+            if (sItem && sItem[field]) {
+                tItem[field] = sItem[field];
+                count++;
+            }
+        });
+
+        if (count > 0) {
+            this.save();
+            alert(`Copiati ${count} valori da ${sourceDate} a ${targetDate}`);
+        } else {
+            alert("Nessuna corrispondenza trovata tra le date");
+        }
+    },
+
+    // FIX: BULK EDIT
+    showBulkEdit: function() {
+        const checked = document.querySelectorAll('.row-sel:checked');
+        if (checked.length === 0) return alert("Seleziona righe");
+
+        const field = prompt("Quale campo modificare? (vino, uva, data, note)");
+        if (!field) return;
+
+        // Map user friendly names to keys
+        const keyMap = { 'vino': 'tipoVino', 'uva': 'uva', 'data': 'data', 'note': 'note' };
+        const key = keyMap[field.toLowerCase()] || field;
+
+        const val = prompt(`Nuovo valore per ${field}:`);
+        if (val === null) return;
+
+        const ids = Array.from(checked).map(c => parseInt(c.dataset.id));
+        this.data.forEach(item => {
+            if (ids.includes(item.id)) {
+                item[key] = val;
+            }
+        });
+        this.save();
+    },
+
+    toggleSelectAll: function(cb) {
+        document.querySelectorAll('.row-sel').forEach(c => c.checked = cb.checked);
+    },
+
+    // TABLET KEYPAD & EVENTS
+    setupEvents: function() {
+        // General setup if needed
+    },
+
+    setupKeypad: function() {
+        const overlay = document.getElementById('keypadOverlay');
+        const keypad = document.getElementById('keypad');
+
+        // Overlay click closes
+        overlay.onclick = (e) => {
+            e.stopPropagation();
+            this.closeKeypad();
         };
 
-        window.addNewRow = function() {
-            const vasca = document.getElementById('newVasca').value.trim();
-            if (!vasca) {
-                alert('Il numero vasca è obbligatorio');
-                return;
-            }
+        // Keypad buttons
+        document.querySelectorAll('.key-btn').forEach(btn => {
+            const key = btn.dataset.key;
 
-            const newId = tanksData.length > 0 ? Math.max(...tanksData.map(t => t.id)) + 1 : 1;
+            // Handle both touch and mouse
+            const handlePress = (e) => {
+                e.preventDefault(); // Prevent ghost clicks
+                e.stopPropagation();
 
-            const newTank = {
-                id: newId,
-                progressivo: document.getElementById('newProgressivo').value || '',
-                vasca: vasca,
-                tipoVino: document.getElementById('newTipoVino').value || '',
-                vigneto: document.getElementById('newVigneto').value || '',
-                uva: document.getElementById('newUva').value || '',
-                temperatura: document.getElementById('newTemperatura').value || '',
-                mVol: document.getElementById('newMVol').value || '',
-                data: formatDateFromInput(document.getElementById('newData').value) || getTodayString(),
-                priority: document.getElementById('newPriority').checked,
-                daFare: document.getElementById('newDaFare').checked
+                // Visual feedback
+                btn.style.transform = "scale(0.95)";
+                setTimeout(() => btn.style.transform = "scale(1)", 100);
+
+                this.handleKey(key);
             };
 
-            tanksData.push(newTank);
-            saveData();
-            renderDesktopTable();
-            document.querySelector('.modal-overlay').remove();
-            showToast('✓ Vasca aggiunta');
-        };
-
-        // COPIA VALORI (RIPRISTINATA)
-        window.copyFirstDateValues = function(field) {
-            console.log('📋 Copia valori campo:', field);
-
-            const grouped = {};
-            tanksData.forEach(tank => {
-                const date = tank.data || 'Senza Data';
-                if (!grouped[date]) grouped[date] = [];
-                grouped[date].push(tank);
-            });
-
-            const sortedDates = Object.keys(grouped).sort((a, b) => {
-                if (a === 'Senza Data') return 1;
-                if (b === 'Senza Data') return -1;
-                return parseDate(b) - parseDate(a);
-            });
-
-            if (sortedDates.length < 2) {
-                alert('Servono almeno 2 date diverse per copiare i valori');
-                return;
-            }
-
-            const firstDate = sortedDates[0];
-            const secondDate = sortedDates[1];
-
-            const sourceTanks = grouped[firstDate];
-            const targetTanks = grouped[secondDate];
-
-            let copiedCount = 0;
-
-            targetTanks.forEach(targetTank => {
-                const sourceTank = sourceTanks.find(s => s.vasca === targetTank.vasca);
-                if (sourceTank && sourceTank[field]) {
-                    targetTank[field] = sourceTank[field];
-                    copiedCount++;
-                }
-            });
-
-            if (copiedCount > 0) {
-                saveData();
-                renderDesktopTable();
-                showToast(`✓ Copiati ${copiedCount} valori di ${field} da ${firstDate} a ${secondDate}`);
-            } else {
-                alert('Nessun valore da copiare (vasche non corrispondenti)');
-            }
-        };
-
-        // MODIFICA MULTIPLA (RIPRISTINATA)
-        window.showBulkEditModal = function() {
-            const selected = getSelectedTankIds();
-            if (selected.length === 0) {
-                alert('Seleziona almeno una riga');
-                return;
-            }
-
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <div class="modal-header">✏️ Modifica ${selected.length} Vasche Selezionate</div>
-                    <div class="modal-body">
-                        <div class="modal-info">
-                            I campi lasciati vuoti non verranno modificati
-                        </div>
-
-                        <label>Tipo Vino</label>
-                        <input type="text" id="bulkTipoVino" placeholder="Lascia vuoto per non modificare">
-
-                        <label>Uva</label>
-                        <input type="text" id="bulkUva" placeholder="Lascia vuoto per non modificare">
-
-                        <label>Data</label>
-                        <input type="date" id="bulkData">
-
-                        <label>Temperatura (°C)</label>
-                        <input type="text" id="bulkTemperatura" placeholder="Es: 18,5">
-
-                        <label>M.Vol</label>
-                        <input type="text" id="bulkMVol" placeholder="Es: 1025">
-
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="bulkPriority" style="width: auto; margin: 0;">
-                            Imposta tutte come prioritarie
-                        </label>
-
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="bulkDaFare" style="width: auto; margin: 0;">
-                            Imposta tutte come "Da Fare"
-                        </label>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="modal-btn-cancel" onclick="closeBulkEditModal()">Annulla</button>
-                        <button class="modal-btn-confirm" onclick="applyBulkEdit()">Applica Modifiche</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        };
-
-        function closeBulkEditModal() {
-            const modal = document.querySelector('.modal-overlay');
-            if (modal) modal.remove();
-        }
-
-        function applyBulkEdit() {
-            const selected = getSelectedTankIds();
-
-            const updates = {
-                tipoVino: document.getElementById('bulkTipoVino').value.trim(),
-                uva: document.getElementById('bulkUva').value.trim(),
-                data: document.getElementById('bulkData').value ? formatDateFromInput(document.getElementById('bulkData').value) : null,
-                temperatura: document.getElementById('bulkTemperatura').value.trim(),
-                mVol: document.getElementById('bulkMVol').value.trim(),
-                priority: document.getElementById('bulkPriority').checked,
-                daFare: document.getElementById('bulkDaFare').checked
-            };
-
-            let modifiedCount = 0;
-
-            selected.forEach(id => {
-                const tank = tanksData.find(t => t.id === id);
-                if (!tank) return;
-
-                if (updates.tipoVino) tank.tipoVino = updates.tipoVino;
-                if (updates.uva) tank.uva = updates.uva;
-                if (updates.data) tank.data = updates.data;
-                if (updates.temperatura) tank.temperatura = updates.temperatura;
-                if (updates.mVol) tank.mVol = updates.mVol;
-                if (updates.priority) tank.priority = true;
-                if (updates.daFare) tank.daFare = true;
-
-                modifiedCount++;
-            });
-
-            saveData();
-            renderDesktopTable();
-            closeBulkEditModal();
-            showToast(`✓ Modificate ${modifiedCount} vasche`);
-        }
-
-        function showPasteArea() {
-            document.getElementById('pasteSection').classList.remove('hidden');
-            document.getElementById('pasteArea').focus();
-        }
-
-        function closePasteArea() {
-            document.getElementById('pasteSection').classList.add('hidden');
-            document.getElementById('pasteArea').value = '';
-        }
-
-        function processPastedData() {
-            alert('Funzione import Excel');
-        }
-
-        function exportToCSV() {
-            if (tanksData.length === 0) {
-                alert('Nessun dato da esportare');
-                return;
-            }
-
-            const headers = ['PROGRESSIVO', 'VASCA', 'TIPO VINO', 'VIGNETO', 'UVA', 'Temperatura', 'M.Vol', 'Data', 'Priorità', 'Da Fare'];
-            let csv = headers.join(',') + '\n';
-
-            tanksData.forEach(tank => {
-                const row = [
-                    tank.progressivo || '', tank.vasca || '', tank.tipoVino || '', 
-                    tank.vigneto || '', tank.uva || '', tank.temperatura || '', 
-                    tank.mVol || '', tank.data || '',
-                    tank.priority ? 'Sì' : 'No', tank.daFare ? 'X' : ''
-                ];
-                csv += row.map(cell => `"${cell}"`).join(',') + '\n';
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `controllo_vasche_${getTodayString().replace(/\//g, '-')}.csv`;
-            link.click();
-        }
-
-        function deleteSelected() {
-            const selected = getSelectedTankIds();
-            if (selected.length === 0) {
-                alert('Nessuna riga selezionata');
-                return;
-            }
-
-            if (confirm(`Eliminare ${selected.length} vasche?`)) {
-                tanksData = tanksData.filter(t => !selected.includes(t.id));
-                saveData();
-                renderDesktopTable();
-                showToast(`✓ ${selected.length} vasche eliminate`);
-            }
-        }
-
-        function refreshData() {
-            if (window.firebaseDB) {
-                showToast('🔄 Ricaricamento da Firebase...');
-                initFirebase().then(() => {
-                    renderDesktopTable();
-                    showToast('✓ Dati aggiornati');
-                });
-            } else {
-                loadData();
-                renderDesktopTable();
-                showToast('✓ Dati ricaricati');
-            }
-        }
-
-        function applyFilters() {
-            renderDesktopTable();
-        }
-
-        function sortTable(column) {
-            if (currentSort.column === column) {
-                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort.column = column;
-                currentSort.direction = 'asc';
-            }
-
-            tanksData.sort((a, b) => {
-                let aVal = a[column] || '';
-                let bVal = b[column] || '';
-
-                if (column === 'vasca' || column === 'progressivo') {
-                    aVal = parseInt(aVal) || 0;
-                    bVal = parseInt(bVal) || 0;
-                } else if (column === 'data') {
-                    aVal = parseDate(aVal) || new Date(0);
-                    bVal = parseDate(bVal) || new Date(0);
-                }
-
-                if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
-                if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            saveData();
-            renderDesktopTable();
-        }
-
-        function toggleSelectAll() {
-            const checked = document.getElementById('selectAll').checked;
-            document.querySelectorAll('.row-select').forEach(cb => cb.checked = checked);
-        }
-
-        function getSelectedTankIds() {
-            return Array.from(document.querySelectorAll('.row-select:checked'))
-                       .map(cb => parseInt(cb.getAttribute('data-id')));
-        }
-
-        function getFilteredData() {
-            return tanksData;
-        }
-
-        function renderDesktopTable() {
-            const tbody = document.getElementById('tableBody');
-            const filtered = getFilteredData();
-
-            const grouped = {};
-            filtered.forEach(tank => {
-                const date = tank.data || 'Senza Data';
-                if (!grouped[date]) grouped[date] = [];
-                grouped[date].push(tank);
-            });
-
-            const sortedDates = Object.keys(grouped).sort((a, b) => {
-                if (a === 'Senza Data') return 1;
-                if (b === 'Senza Data') return -1;
-                return parseDate(b) - parseDate(a);
-            });
-
-            tbody.innerHTML = '';
-
-            sortedDates.forEach(date => {
-                const headerRow = document.createElement('tr');
-                headerRow.innerHTML = `
-                    <td colspan="12" class="date-group-header ${collapsedGroups.has(date) ? 'collapsed' : ''}" 
-                        onclick="toggleDateGroup('${date}')">
-                        ${date} (${grouped[date].length} vasche)
-                    </td>
-                `;
-                tbody.appendChild(headerRow);
-
-                if (!collapsedGroups.has(date)) {
-                    grouped[date].forEach(tank => tbody.appendChild(createTableRow(tank)));
-                }
-            });
-        }
-
-        function createTableRow(tank) {
-            const tr = document.createElement('tr');
-            if (tank.temperatura && tank.mVol) tr.classList.add('completed');
-
-            const dateValue = tank.data ? formatDateForInput(tank.data) : '';
-
-            tr.innerHTML = `
-                <td><input type="checkbox" class="row-select" data-id="${tank.id}"></td>
-                <td>${tank.progressivo || ''}</td>
-                <td><strong>${tank.vasca}</strong></td>
-                <td>${tank.tipoVino || ''}</td>
-                <td class="col-vigneto">${tank.vigneto || ''}</td>
-                <td>${tank.uva || ''}</td>
-                <td><input type="text" 
-                           inputmode="numeric" 
-                           value="${tank.temperatura || ''}" 
-                           onchange="updateTank(${tank.id}, 'temperatura', this.value)" 
-                           style="min-width:70px;"></td>
-                <td><input type="text" 
-                           inputmode="numeric" 
-                           value="${tank.mVol || ''}" 
-                           onchange="updateTank(${tank.id}, 'mVol', this.value)" 
-                           style="min-width:70px;"></td>
-                <td><input type="date" value="${dateValue}" onchange="updateTank(${tank.id}, 'data', formatDateFromInput(this.value)); renderDesktopTable();"></td>
-                <td style="text-align:center;">
-                    <span class="priority-star ${tank.priority ? 'active' : 'inactive'}" onclick="togglePriority(${tank.id})">★</span>
-                </td>
-                <td style="text-align:center;">
-                    <input type="checkbox" ${tank.daFare ? 'checked' : ''} onchange="updateTank(${tank.id}, 'daFare', this.checked)">
-                </td>
-                <td style="text-align:center;">
-                    <button class="delete-icon" onclick="deleteTank(${tank.id})" title="Elimina">✕</button>
-                </td>
-            `;
-
-            return tr;
-        }
-
-        function toggleDateGroup(date) {
-            collapsedGroups.has(date) ? collapsedGroups.delete(date) : collapsedGroups.add(date);
-            renderDesktopTable();
-        }
-
-        function updateTank(id, field, value) {
-            const tank = tanksData.find(t => t.id === id);
-            if (!tank) return;
-
-            if (field === 'temperatura') {
-                const validation = validateTemperature(value);
-                if (!validation.valid && value !== '') {
-                    alert(validation.message);
-                    renderDesktopTable();
-                    return;
-                }
-                tank[field] = validation.value;
-            } else if (field === 'mVol') {
-                const validation = validateMVol(value);
-                if (!validation.valid && value !== '') {
-                    alert(validation.message);
-                    renderDesktopTable();
-                    return;
-                }
-                tank[field] = validation.value;
-            } else {
-                tank[field] = value;
-            }
-
-            saveData();
-        }
-
-        function togglePriority(id) {
-            const tank = tanksData.find(t => t.id === id);
-            if (tank) {
-                tank.priority = !tank.priority;
-                saveData();
-                renderDesktopTable();
-            }
-        }
-
-        function deleteTank(id) {
-            if (confirm('Eliminare questa vasca?')) {
-                tanksData = tanksData.filter(t => t.id !== id);
-                saveData();
-                renderDesktopTable();
-                showToast('✓ Vasca eliminata');
-            }
-        }
-
-        function renderTabletView() {
-            const today = getTodayString();
-            document.getElementById('tabletCurrentDate').textContent = formatDateLong(today);
-
-            const todayTanks = tanksData.filter(t => t.data === today && !t.daFare);
-            const toDo = todayTanks.filter(t => !t.temperatura || !t.mVol);
-            const completed = todayTanks.filter(t => t.temperatura && t.mVol);
-
-            const sortTanks = (tanks) => tanks.sort((a, b) => {
-                if (a.priority !== b.priority) return b.priority - a.priority;
-                return (parseInt(a.vasca) || 0) - (parseInt(b.vasca) || 0);
-            });
-
-            const container = document.getElementById('tabletTableContainer');
-
-            if (todayTanks.length === 0) {
-                container.innerHTML = '<div class="no-data">✓ Nessuna vasca da controllare oggi</div>';
-                return;
-            }
-
-            let html = '<table class="tablet-table"><thead><tr>';
-            html += '<th>Vasca</th><th>Tipo</th><th>Uva</th><th>Temp (°C)</th><th>M.Vol</th>';
-            html += '</tr></thead><tbody>';
-
-            if (toDo.length > 0) {
-                html += `<tr><td colspan="5" class="section-divider">Da Controllare (${toDo.length})</td></tr>`;
-                sortTanks(toDo).forEach(tank => {
-                    html += createTabletRow(tank);
-                });
-            }
-
-            if (completed.length > 0) {
-                html += `<tr><td colspan="5" class="section-divider completed">Completate (${completed.length})</td></tr>`;
-                sortTanks(completed).forEach(tank => {
-                    html += createTabletRow(tank);
-                });
-            }
-
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
-
-        function createTabletRow(tank) {
-            const rowClass = tank.priority ? ' priority' : (tank.temperatura && tank.mVol ? ' completed' : '');
-            const priority = tank.priority ? '<span class="priority-indicator">★</span> ' : '';
-            const tempClass = tank.temperatura ? 'filled' : '';
-            const mvolClass = tank.mVol ? 'filled' : '';
-
-            return `
-                <tr class="${rowClass}" data-tank-id="${tank.id}">
-                    <td><span class="tank-number">${priority}${tank.vasca}</span></td>
-                    <td>${tank.tipoVino || ''}</td>
-                    <td>${tank.uva || ''}</td>
-                    <td>
-                        <div class="input-cell ${tempClass}" 
-                             onclick="openKeypad(${tank.id}, 'temperatura', this)">
-                            ${tank.temperatura || '--'}
-                        </div>
-                    </td>
-                    <td>
-                        <div class="input-cell ${mvolClass}" 
-                             onclick="openKeypad(${tank.id}, 'mVol', this)">
-                            ${tank.mVol || '--'}
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }
-
-        // SETUP EVENTI
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🟢 DOMContentLoaded');
-
-            // TASTIERINO: setup semplice
-            const overlay = document.getElementById('keypadOverlay');
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    closeKeypad();
-                }
-            });
-
-            // Attach eventi ai tasti
-            document.querySelectorAll('.key-btn').forEach(btn => {
-                const key = btn.getAttribute('data-key');
-
-                btn.addEventListener('mousedown', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('🖱️ mousedown:', key);
-                    this.classList.add('pressed');
-                    handleKeyPress(key);
-                });
-
-                btn.addEventListener('mouseup', function() {
-                    this.classList.remove('pressed');
-                });
-
-                btn.addEventListener('touchstart', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('👆 touchstart:', key);
-                    this.classList.add('pressed');
-                    handleKeyPress(key);
-                }, { passive: false });
-
-                btn.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    this.classList.remove('pressed');
-                }, { passive: false });
-            });
-
-            // Tab switching
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-                    btn.classList.add('active');
-                    const tabId = btn.getAttribute('data-tab');
-                    document.getElementById(tabId).classList.add('active');
-                });
-            });
-
-            console.log('✅ Eventi tastierino attachati');
+            btn.addEventListener('touchstart', handlePress, {passive: false});
+            btn.addEventListener('mousedown', handlePress);
         });
+    },
 
-        // INIT
-        async function init() {
-            const device = detectDevice();
+    openKeypad: function(id, field, el) {
+        // Highlight row
+        document.querySelectorAll('.tablet-row').forEach(r => r.classList.remove('focused'));
+        document.getElementById('row-'+id).classList.add('focused');
 
-            loadData();
+        // Highlight cell
+        if (this.activeCell) this.activeCell.classList.remove('active');
+        this.activeCell = el;
+        el.classList.add('active');
 
-            if (device === 'tablet') {
-                document.getElementById('tabletView').classList.remove('hidden');
-                renderTabletView();
-                console.log('📱 Tablet mode');
-            } else {
-                document.getElementById('desktopView').classList.remove('hidden');
-                renderDesktopTable();
-                console.log('🖥️ Desktop mode');
+        // State
+        this.activeId = id;
+        this.activeField = field;
+        const item = this.data.find(i => i.id === id);
+        this.currentValue = item[field] || '';
+
+        // Show
+        document.getElementById('keypadOverlay').style.display = 'block';
+        document.getElementById('keypad').classList.add('visible');
+    },
+
+    closeKeypad: function() {
+        document.getElementById('keypadOverlay').style.display = 'none';
+        document.getElementById('keypad').classList.remove('visible');
+        if (this.activeCell) this.activeCell.classList.remove('active');
+        document.querySelectorAll('.tablet-row').forEach(r => r.classList.remove('focused'));
+
+        // Save on close
+        if (this.activeId) {
+            const item = this.data.find(i => i.id === this.activeId);
+            if (item) {
+                item[this.activeField] = this.currentValue;
+                this.save();
             }
+        }
+        this.activeId = null;
+    },
 
-            // Init Firebase
-            await initFirebase();
+    handleKey: function(key) {
+        if (!this.activeId) return;
+
+        if (key === 'backspace') {
+            this.currentValue = this.currentValue.slice(0, -1);
+        } else {
+            this.currentValue += key;
         }
 
-        init();
-    </script>
+        // Live update UI
+        if (this.activeCell) this.activeCell.innerText = this.currentValue;
+
+        // Live update data (optional, but good for safety)
+        // const item = this.data.find(i => i.id === this.activeId);
+        // if(item) item[this.activeField] = this.currentValue;
+    }
+};
+</script>
 </body>
 </html>
