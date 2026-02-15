@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Controllo Vasche">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#C44536">
+    <link rel="manifest" href="manifest.json">
     <title>Gestione Controllo Vasche - Cantina</title>
     <style>
         :root {
@@ -27,22 +30,39 @@
             --shadow-md: 0 2px 8px rgba(0,0,0,0.1);
             --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
 
-            /* Tastierino semi-trasparente */
+            /* Tastierino - ALTEZZA RIDOTTA per visibilità completa */
             --keypad-bg: rgba(28, 63, 92, 0.5);
             --keypad-btn: rgba(45, 86, 116, 0.6);
             --keypad-btn-active: rgba(26, 54, 73, 0.8);
-            --keypad-height: 240px;
+            --keypad-height: 280px;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            /* BLOCCO OPERATIVO: touch-action manipulation */
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            /* BLOCCO OPERATIVO: no selezione testo */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            /* BLOCCO OPERATIVO: no context menu */
+            -webkit-touch-callout: none;
         }
 
-        html, body {
+        /* Permetti selezione solo negli input desktop */
+        .desktop-view input,
+        .desktop-view textarea {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            user-select: text;
+        }
+
+        html {
+            /* FULLSCREEN: blocca scroll */
             width: 100%;
             height: 100%;
             position: fixed;
@@ -55,13 +75,17 @@
             background: var(--bg-main);
             color: var(--text-primary);
             line-height: 1.5;
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            overflow: hidden;
         }
 
         .hidden {
             display: none !important;
         }
 
-        /* Sync status - SOLO ICONA in header */
+        /* Sync status */
         .sync-status {
             display: flex;
             align-items: center;
@@ -376,6 +400,7 @@
             word-wrap: break-word;
         }
 
+        /* INPUT OTTIMIZZATI - VERSIONE 1 */
         .data-table input[type="text"],
         .data-table input[type="number"] {
             width: 100%;
@@ -383,7 +408,7 @@
             padding: 6px 10px;
             border: 1px solid transparent;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 16px; /* NO ZOOM iOS: >= 16px */
             background: transparent;
             transition: all 0.2s;
         }
@@ -552,7 +577,7 @@
             padding: 10px 14px;
             border: 1px solid var(--border-light);
             border-radius: 6px;
-            font-size: 15px;
+            font-size: 16px; /* NO ZOOM iOS */
             margin-bottom: 16px;
         }
 
@@ -606,10 +631,11 @@
             background: var(--primary-light);
         }
 
-        /* ====== TABLET VIEW - FULLSCREEN ====== */
+        /* ====== TABLET VIEW FULLSCREEN ====== */
         #tabletView {
             width: 100vw;
             height: 100vh;
+            height: 100dvh; /* Dynamic viewport height */
             position: fixed;
             top: 0;
             left: 0;
@@ -618,11 +644,10 @@
             overflow: hidden;
         }
 
-        /* Header COMPATTO */
         .tablet-header {
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
             color: white;
-            padding: 10px 16px; /* RIDOTTO da 20px a 10px */
+            padding: 10px 16px;
             text-align: center;
             box-shadow: var(--shadow-md);
             flex-shrink: 0;
@@ -631,23 +656,25 @@
         }
 
         .tablet-header h1 {
-            font-size: 18px; /* RIDOTTO da 20px */
+            font-size: 18px;
             font-weight: 600;
-            margin-bottom: 2px; /* RIDOTTO da 4px */
+            margin-bottom: 2px;
         }
 
         .tablet-header .current-date {
-            font-size: 13px; /* RIDOTTO da 15px */
+            font-size: 13px;
             opacity: 0.95;
             font-weight: 400;
         }
 
+        /* CONTAINER SCROLLABILE - FIX TASTIERINO VISIBILE */
         .tablet-table-container {
             flex: 1;
             overflow-x: hidden;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            padding-bottom: calc(var(--keypad-height) + 20px);
+            /* PADDING BOTTOM AUMENTATO per garantire visibilità completa tastierino */
+            padding-bottom: calc(var(--keypad-height) + var(--safe-bottom) + 20px);
         }
 
         .tablet-table {
@@ -665,10 +692,10 @@
         }
 
         .tablet-table th {
-            padding: 12px 10px; /* RIDOTTO padding laterale */
+            padding: 12px 10px;
             text-align: left;
             font-weight: 600;
-            font-size: 12px; /* RIDOTTO da 13px */
+            font-size: 12px;
             color: var(--text-secondary);
             white-space: nowrap;
             border-bottom: 2px solid var(--border-medium);
@@ -703,35 +730,39 @@
         }
 
         .tablet-table td {
-            padding: 14px 10px; /* RIDOTTO padding laterale */
-            font-size: 14px; /* RIDOTTO da 15px */
+            padding: 14px 10px;
+            font-size: 14px;
             border-bottom: 1px solid var(--border-light);
         }
 
         .tablet-table .tank-number {
             font-weight: 700;
-            font-size: 17px; /* RIDOTTO da 18px */
+            font-size: 17px;
             color: var(--primary);
         }
 
         .tablet-table .priority-indicator {
             color: var(--star);
-            font-size: 15px; /* RIDOTTO da 16px */
+            font-size: 15px;
         }
 
+        /* VERSIONE 1: Input cell con inputmode numeric */
         .tablet-table .input-cell {
             width: 100%;
-            min-width: 70px; /* RIDOTTO da 80px */
-            padding: 10px; /* RIDOTTO da 12px */
+            min-width: 70px;
+            padding: 10px;
             border: 2px solid var(--border-light);
             border-radius: 8px;
-            font-size: 17px; /* RIDOTTO da 18px */
+            font-size: 17px;
             font-weight: 600;
             text-align: center;
             background: #F8F8F8;
             cursor: pointer;
             user-select: none;
             transition: all 0.2s;
+
+            /* INPUT OTTIMIZZATO - VERSIONE 1 */
+            inputmode: numeric;
         }
 
         .tablet-table .input-cell:focus {
@@ -752,9 +783,9 @@
 
         .section-divider {
             background: linear-gradient(to right, #F5F5F5, #E5E5E5);
-            padding: 8px 10px; /* RIDOTTO */
+            padding: 8px 10px;
             font-weight: 600;
-            font-size: 13px; /* RIDOTTO da 14px */
+            font-size: 13px;
             color: var(--text-secondary);
             border-top: 2px solid var(--border-medium);
             border-bottom: 2px solid var(--border-medium);
@@ -772,7 +803,7 @@
             font-size: 16px;
         }
 
-        /* ====== TASTIERINO COMPATTO E TRASPARENTE ====== */
+        /* ====== TASTIERINO CUSTOM - 100% VISIBILE ====== */
         .ios-keypad {
             position: fixed;
             bottom: 0;
@@ -782,9 +813,10 @@
 
             width: 100%;
             height: var(--keypad-height);
-            padding: 10px 16px 16px; /* RIDOTTO padding top */
+            /* PADDING OTTIMIZZATO per visibilità completa */
+            padding: 12px 16px;
+            padding-bottom: calc(12px + var(--safe-bottom));
 
-            /* SEMI-TRASPARENTE AUMENTATO */
             background: var(--keypad-bg);
             backdrop-filter: blur(30px) saturate(150%);
             -webkit-backdrop-filter: blur(30px) saturate(150%);
@@ -803,19 +835,18 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(4, 1fr);
-            gap: 8px; /* RIDOTTO da 12px */
+            gap: 10px;
             width: 100%;
             height: 100%;
-            max-width: 360px;
+            max-width: 400px;
             margin: 0 auto;
         }
 
-        /* Tasti SEMI-TRASPARENTI con effetto illuminazione */
         .key-btn {
             width: 100%;
             aspect-ratio: 1;
+            max-height: 65px; /* LIMITE ALTEZZA per garantire visibilità */
 
-            /* SEMI-TRASPARENTE */
             background: var(--keypad-btn);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
@@ -823,7 +854,7 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 50%;
 
-            font-size: 32px; /* RIDOTTO da 36px */
+            font-size: 30px;
             font-weight: 200;
             color: white;
 
@@ -846,12 +877,12 @@
 
         .key-btn::after {
             content: attr(data-letters);
-            font-size: 7px; /* RIDOTTO da 8px */
+            font-size: 7px;
             font-weight: 500;
             letter-spacing: 0.5px;
             color: rgba(255, 255, 255, 0.5);
             position: absolute;
-            bottom: 10px; /* RIDOTTO da 14px */
+            bottom: 8px;
         }
 
         .key-btn[data-key="1"]::after,
@@ -860,7 +891,6 @@
             content: '';
         }
 
-        /* EFFETTO ILLUMINAZIONE AUMENTATO */
         .key-btn:active,
         .key-btn.pressed {
             background: rgba(90, 143, 192, 0.8);
@@ -892,7 +922,7 @@
 
         .key-btn.backspace {
             background: rgba(42, 74, 94, 0.6);
-            font-size: 22px; /* RIDOTTO da 24px */
+            font-size: 22px;
         }
 
         .key-btn.backspace::after {
@@ -900,7 +930,7 @@
         }
 
         .key-btn[data-key=","] {
-            font-size: 36px; /* RIDOTTO da 40px */
+            font-size: 36px;
             font-weight: 300;
         }
 
@@ -921,18 +951,23 @@
 
         /* Responsive per schermi più piccoli */
         @media (max-width: 480px) {
+            :root {
+                --keypad-height: 260px; /* RIDOTTO per piccoli schermi */
+            }
+
             .keypad-grid {
-                gap: 6px;
+                gap: 8px;
                 max-width: 100%;
             }
 
             .key-btn {
-                font-size: 28px;
+                font-size: 26px;
+                max-height: 60px;
             }
 
             .key-btn::after {
                 font-size: 6px;
-                bottom: 8px;
+                bottom: 6px;
             }
 
             .tablet-header h1 {
@@ -958,15 +993,38 @@
             }
         }
 
-        /* Safe area per dispositivi con notch */
-        @supports (padding-bottom: env(safe-area-inset-bottom)) {
-            .ios-keypad {
-                padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        /* Orientamento landscape */
+        @media (orientation: landscape) and (max-height: 500px) {
+            :root {
+                --keypad-height: 200px;
+            }
+
+            .key-btn {
+                max-height: 45px;
+                font-size: 22px;
+            }
+
+            .tablet-header {
+                padding: 6px 16px;
+            }
+
+            .tablet-header h1 {
+                font-size: 14px;
             }
         }
 
-        /* FULLSCREEN MODE ENFORCEMENT */
-        @media (display-mode: standalone) {
+        /* BLOCCO OPERATIVO: impedisci zoom con CSS */
+        input[type="text"],
+        input[type="number"],
+        input[type="tel"],
+        textarea,
+        select {
+            font-size: 16px !important; /* Previeni zoom iOS */
+        }
+
+        /* FULLSCREEN MODE */
+        @media (display-mode: fullscreen),
+               (display-mode: standalone) {
             body {
                 -webkit-user-select: none;
                 user-select: none;
@@ -978,7 +1036,7 @@
 
     <div id="keypadOverlay"></div>
 
-    <div id="desktopView" class="hidden">
+    <div id="desktopView" class="hidden desktop-view">
         <div class="desktop-header">
             <h1>🍷 Gestione Controllo Vasche</h1>
             <div class="desktop-tabs">
@@ -1061,7 +1119,6 @@
             <h1>Controllo Vasche</h1>
             <div class="current-date" id="tabletCurrentDate"></div>
 
-            <!-- Sync status - SOLO ICONA -->
             <div id="syncStatus" class="sync-status synced">
                 <span id="syncIcon">☁️</span>
             </div>
@@ -1123,7 +1180,9 @@
         let activeField = null;
         let currentValue = '';
 
-        // FORZA FULLSCREEN su mobile
+        // ====== BLOCCO OPERATIVO - LIVELLO 3 ======
+
+        // FORZA FULLSCREEN PWA
         function enterFullscreen() {
             const elem = document.documentElement;
             if (elem.requestFullscreen) {
@@ -1135,15 +1194,63 @@
             }
         }
 
-        // Previeni zoom con gesture
+        // BLOCCO GESTURE ZOOM
         document.addEventListener('gesturestart', (e) => e.preventDefault());
         document.addEventListener('gesturechange', (e) => e.preventDefault());
         document.addEventListener('gestureend', (e) => e.preventDefault());
 
-        // Previeni zoom con wheel
+        // BLOCCO ZOOM WHEEL
         document.addEventListener('wheel', (e) => {
             if (e.ctrlKey) e.preventDefault();
         }, { passive: false });
+
+        // BLOCCO CONTEXT MENU (long press)
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.closest('.ios-keypad') || e.target.closest('.tablet-table')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // PREVIENI DOUBLE-TAP ZOOM
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // SERVICE WORKER REGISTRATION (PWA)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('✅ Service Worker registered'))
+                    .catch(err => console.log('❌ SW registration failed:', err));
+            });
+        }
+
+        // IMPEDISCI INPUT NON NUMERICI (VERSIONE 1)
+        function sanitizeNumericInput(input) {
+            input.addEventListener('keypress', (e) => {
+                const char = String.fromCharCode(e.which);
+                if (!/[0-9,.]/.test(char)) {
+                    e.preventDefault();
+                }
+            });
+
+            input.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^0-9,.]/g, '');
+            });
+
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text');
+                const sanitized = text.replace(/[^0-9,.]/g, '');
+                document.execCommand('insertText', false, sanitized);
+            });
+        }
 
         function updateSyncStatus(status) {
             const statusEl = document.getElementById('syncStatus');
@@ -1304,7 +1411,7 @@
         }
 
         function scrollRowAboveKeypad(row) {
-            const keypadHeight = 240;
+            const keypadHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--keypad-height'));
             const container = document.getElementById('tabletTableContainer');
             const rowRect = row.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
@@ -1564,8 +1671,20 @@
                 <td>${tank.tipoVino || ''}</td>
                 <td class="col-vigneto">${tank.vigneto || ''}</td>
                 <td>${tank.uva || ''}</td>
-                <td><input type="text" value="${tank.temperatura || ''}" onchange="updateTank(${tank.id}, 'temperatura', this.value)" style="min-width:70px;"></td>
-                <td><input type="text" value="${tank.mVol || ''}" onchange="updateTank(${tank.id}, 'mVol', this.value)" style="min-width:70px;"></td>
+                <td><input type="text" 
+                           inputmode="numeric" 
+                           pattern="[0-9]*" 
+                           autocomplete="off"
+                           value="${tank.temperatura || ''}" 
+                           onchange="updateTank(${tank.id}, 'temperatura', this.value)" 
+                           style="min-width:70px;"></td>
+                <td><input type="text" 
+                           inputmode="numeric" 
+                           pattern="[0-9]*" 
+                           autocomplete="off"
+                           value="${tank.mVol || ''}" 
+                           onchange="updateTank(${tank.id}, 'mVol', this.value)" 
+                           style="min-width:70px;"></td>
                 <td><input type="text" value="${tank.data || ''}" onchange="updateTank(${tank.id}, 'data', this.value); renderDesktopTable();" style="min-width:90px;"></td>
                 <td style="text-align:center;">
                     <span class="priority-star ${tank.priority ? 'active' : 'inactive'}" onclick="togglePriority(${tank.id})">★</span>
@@ -1577,6 +1696,10 @@
                     <button class="delete-btn" onclick="deleteTank(${tank.id})">Elimina</button>
                 </td>
             `;
+
+            // Applica sanitizzazione input numerici
+            const numInputs = tr.querySelectorAll('input[inputmode="numeric"]');
+            numInputs.forEach(input => sanitizeNumericInput(input));
 
             return tr;
         }
@@ -1786,9 +1909,9 @@
                 document.getElementById('tabletView').classList.remove('hidden');
                 renderTabletView();
 
-                // Prova fullscreen dopo 1 sec
+                // PWA: Prova fullscreen dopo 1 sec
                 setTimeout(() => {
-                    if (isTouchDevice()) {
+                    if (isTouchDevice() && window.matchMedia('(display-mode: standalone)').matches) {
                         enterFullscreen();
                     }
                 }, 1000);
@@ -1803,6 +1926,8 @@
             }, 1000);
 
             console.log(`🍷 App inizializzata - ${device}`);
+            console.log(`🔒 Blocco operativo: ${isTouchDevice() ? 'ATTIVO' : 'DESKTOP'}`);
+            console.log(`📱 PWA installabile: ${window.matchMedia('(display-mode: standalone)').matches ? 'SÌ' : 'NO'}`);
         }
 
         init();
