@@ -796,18 +796,53 @@
         }
 
         body.keyboard-open .tablet-table tbody tr:not(.focused-row) {
-            opacity: 0.25;
+            opacity: 0.15;
             pointer-events: none;
             transition: opacity 0.3s ease;
+            filter: grayscale(60%);
         }
 
         .tablet-table tbody tr.focused-row {
-            background: #FFF !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: #FFFDE7 !important;
+            box-shadow: 0 0 0 3px var(--primary), 0 6px 20px rgba(0,0,0,0.25);
             position: relative;
             z-index: 10;
             opacity: 1 !important;
             transition: all 0.3s ease;
+            border-left: 5px solid var(--star);
+        }
+
+        .data-table th.sortable.sort-asc::after {
+            content: ' ▲';
+            opacity: 0.8;
+            font-size: 10px;
+            color: var(--primary);
+        }
+
+        .data-table th.sortable.sort-desc::after {
+            content: ' ▼';
+            opacity: 0.8;
+            font-size: 10px;
+            color: var(--primary);
+        }
+
+        .offline-banner {
+            background: linear-gradient(135deg, #FF6B35, #D9534F);
+            color: white;
+            text-align: center;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+            display: none;
+        }
+
+        .offline-banner.visible {
+            display: block;
+        }
+
+        .sync-conflict-toast {
+            background: var(--warning) !important;
         }
 
         .tablet-table td {
@@ -1100,7 +1135,7 @@
                             <th class="sortable" onclick="sortTable('uva')">Uva</th>
                             <th class="copy-action" onclick="copyFirstDateValues('temperatura')" title="Clicca per copiare">Temp</th>
                             <th class="copy-action" onclick="copyFirstDateValues('mVol')" title="Clicca per copiare">M.Vol</th>
-                            <th class="sortable" onclick="sortTable('data')">Data</th>
+                            <th>Data</th>
                             <th style="width: 50px;">★</th>
                             <th style="width: 60px;">Da Fare</th>
                             <th style="width: 50px;">Azioni</th>
@@ -1126,6 +1161,7 @@
                 <span id="syncIcon">⚠️</span>
             </div>
         </div>
+        <div class="offline-banner" id="offlineBanner">📡 Modalità offline — le modifiche verranno sincronizzate alla riconnessione</div>
         <div class="tablet-table-container" id="tabletTableContainer">
         </div>
 
@@ -1176,6 +1212,7 @@
         // ========== CONFIGURAZIONE GLOBALE ==========
         const STORAGE_KEY = 'cantina-vasche-data';
         const FIRESTORE_COLLECTION = 'vasche';
+        const OFFLINE_QUEUE_KEY = 'cantina-offline-queue';
 
         let tanksData = [];
         let currentSort = { column: null, direction: 'asc' };
@@ -1186,6 +1223,9 @@
         let activeTankId = null;
         let activeField = null;
         let currentValue = '';
+        let offlineQueue = [];
+        let isOnline = navigator.onLine;
+        let pendingRemoteUpdate = null; // deferred update when keypad is active
 
         // ========== GESTIONE FIREBASE SYNC ==========
         async function initFirebase() {
@@ -1219,9 +1259,27 @@
                     snapshot.forEach(doc => updated.push(doc.data()));
 
                     if (JSON.stringify(updated.sort((a,b) => a.id - b.id)) !== JSON.stringify(tanksData.sort((a,b) => a.id - b.id))) {
-                        tanksData = updated;
-                        saveLocalStorage();
-                        renderCurrentView();
+                        // CONCURRENT EDIT PROTECTION: if keypad is active, smart merge
+                        if (activeCell && activeTankId !== null) {
+                            // Merge all tanks except the one being actively edited
+                            const mergedData = updated.map(remoteTank => {
+                                if (remoteTank.id === activeTankId) {
+                                    // Keep local version of actively edited tank
+                                    const localTank = tanksData.find(t => t.id === activeTankId);
+                                    return localTank || remoteTank;
+                                }
+                                return remoteTank;
+                            });
+                            tanksData = mergedData;
+                            saveLocalStorage();
+                            // Update non-active rows in tablet DOM without full re-render
+                            smartUpdateTabletRows();
+                            console.log('🔄 Smart merge: aggiornamento senza interrompere input attivo');
+                        } else {
+                            tanksData = updated;
+                            saveLocalStorage();
+                            renderCurrentView();
+                        }
                     }
                 }, (error) => {
                     console.error('❌ Listener error:', error);
@@ -1238,12 +1296,28 @@
         }
 
         async function syncToFirestore() {
-            if (!window.firebaseDB || isSyncing) return;
+            if (!window.firebaseDB || isSyncing) {
+                // Queue for offline if no Firebase
+                if (!window.firebaseDB && offlineQueue.length === 0) {
+                    queueCurrentState();
+                }
+                return;
+            }
+
+            if (!navigator.onLine) {
+                queueCurrentState();
+                updateSyncStatus('offline');
+                updateOfflineBanner(true);
+                return;
+            }
 
             isSyncing = true;
             updateSyncStatus('syncing');
 
             try {
+                // Flush any pending offline queue first
+                await flushOfflineQueue();
+
                 const { collection, doc, setDoc, getDocs, writeBatch } = window.firestoreFunctions;
                 const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
 
@@ -1270,12 +1344,155 @@
 
                 await batch.commit();
                 updateSyncStatus('synced');
+                updateOfflineBanner(false);
                 console.log(`✅ Sync completato: ${writeCount} operazioni`);
             } catch (error) {
                 console.error('❌ Sync error:', error);
+                queueCurrentState();
                 updateSyncStatus('offline');
+                updateOfflineBanner(true);
             } finally {
                 isSyncing = false;
+            }
+        }
+
+        // ========== SMART TABLET DOM UPDATE (non-destructive) ==========
+        function smartUpdateTabletRows() {
+            if (detectDevice() !== 'tablet') return;
+            const container = document.getElementById('tabletTableContainer');
+            if (!container) return;
+
+            // Update only non-active rows in the DOM
+            const rows = container.querySelectorAll('tr[data-tank-id]');
+            rows.forEach(row => {
+                const tankId = Number(row.getAttribute('data-tank-id'));
+                if (tankId === activeTankId) return; // skip active row
+
+                const tank = tanksData.find(t => t.id === tankId);
+                if (!tank) return;
+
+                // Update text cells
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 3) {
+                    cells[1].textContent = tank.tipoVino || '';
+                    cells[2].textContent = tank.uva || '';
+                }
+
+                // Update input cells only if not being edited
+                const tempCell = row.querySelector('.input-cell:first-of-type') || cells[3]?.querySelector('.input-cell');
+                const mvolCell = row.querySelector('.input-cell:last-of-type') || cells[4]?.querySelector('.input-cell');
+
+                if (tempCell && !tempCell.classList.contains('active')) {
+                    tempCell.textContent = tank.temperatura || '--';
+                    tempCell.classList.toggle('filled', !!tank.temperatura);
+                }
+                if (mvolCell && !mvolCell.classList.contains('active')) {
+                    mvolCell.textContent = tank.mVol || '--';
+                    mvolCell.classList.toggle('filled', !!tank.mVol);
+                }
+            });
+        }
+
+        // ========== OFFLINE QUEUE MANAGEMENT ==========
+        function loadOfflineQueue() {
+            try {
+                const stored = localStorage.getItem(OFFLINE_QUEUE_KEY);
+                if (stored) offlineQueue = JSON.parse(stored);
+            } catch (e) {
+                offlineQueue = [];
+            }
+        }
+
+        function saveOfflineQueue() {
+            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(offlineQueue));
+        }
+
+        function queueCurrentState() {
+            // Store field-level operations for later merge
+            const op = {
+                timestamp: Date.now(),
+                snapshot: JSON.parse(JSON.stringify(tanksData))
+            };
+            offlineQueue = [op]; // Keep only latest snapshot (last-write-wins)
+            saveOfflineQueue();
+            console.log('📦 Stato salvato in coda offline');
+        }
+
+        async function flushOfflineQueue() {
+            if (offlineQueue.length === 0) return;
+            if (!window.firebaseDB || !navigator.onLine) return;
+
+            console.log(`📤 Flushing ${offlineQueue.length} operazioni offline...`);
+
+            try {
+                const { collection, getDocs } = window.firestoreFunctions;
+                const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
+                const remoteSnapshot = await getDocs(tanksRef);
+                const remoteTanks = [];
+                remoteSnapshot.forEach(doc => remoteTanks.push(doc.data()));
+
+                // Field-level merge: local wins for fields modified offline
+                const queuedSnapshot = offlineQueue[offlineQueue.length - 1].snapshot;
+
+                const mergedData = fieldLevelMerge(remoteTanks, queuedSnapshot);
+                tanksData = mergedData;
+                saveLocalStorage();
+
+                offlineQueue = [];
+                saveOfflineQueue();
+                console.log('✅ Coda offline svuotata con merge campo-per-campo');
+            } catch (error) {
+                console.error('❌ Errore flush coda offline:', error);
+            }
+        }
+
+        function fieldLevelMerge(remoteTanks, localTanks) {
+            const remoteMap = new Map(remoteTanks.map(t => [t.id, t]));
+            const localMap = new Map(localTanks.map(t => [t.id, t]));
+            const merged = [];
+
+            // Process all local tanks (these have user's edits)
+            for (const [id, localTank] of localMap) {
+                const remoteTank = remoteMap.get(id);
+                if (!remoteTank) {
+                    // Tank exists only locally (new or deleted remotely but edited locally)
+                    merged.push(localTank);
+                } else {
+                    // Both exist: field-level merge, local wins for temperatura/mVol (user input fields)
+                    const mergedTank = { ...remoteTank };
+                    // Local wins for value fields the tablet edits
+                    if (localTank.temperatura !== remoteTank.temperatura && localTank.temperatura) {
+                        mergedTank.temperatura = localTank.temperatura;
+                    }
+                    if (localTank.mVol !== remoteTank.mVol && localTank.mVol) {
+                        mergedTank.mVol = localTank.mVol;
+                    }
+                    // Remote wins for structural fields (desktop edits)
+                    mergedTank.data = remoteTank.data;
+                    mergedTank.tipoVino = remoteTank.tipoVino;
+                    mergedTank.vigneto = remoteTank.vigneto;
+                    mergedTank.uva = remoteTank.uva;
+                    mergedTank.progressivo = remoteTank.progressivo;
+                    mergedTank.daFare = remoteTank.daFare;
+                    mergedTank.priority = remoteTank.priority;
+
+                    merged.push(mergedTank);
+                }
+                remoteMap.delete(id);
+            }
+
+            // Tanks that exist only remotely (added by desktop while tablet was offline)
+            for (const [id, remoteTank] of remoteMap) {
+                merged.push(remoteTank);
+            }
+
+            return merged;
+        }
+
+        function updateOfflineBanner(show) {
+            const banner = document.getElementById('offlineBanner');
+            if (banner) {
+                banner.classList.toggle('visible', show);
             }
         }
 
@@ -1297,15 +1514,22 @@
         }
 
         window.addEventListener('online', () => {
+            isOnline = true;
+            updateOfflineBanner(false);
+            console.log('🟢 Connessione ripristinata');
             if (!firestoreListener) {
                 initFirebase();
             } else {
-                syncToFirestore();
+                // Flush offline queue then sync
+                flushOfflineQueue().then(() => syncToFirestore());
             }
         });
 
         window.addEventListener('offline', () => {
+            isOnline = false;
             updateSyncStatus('offline');
+            updateOfflineBanner(true);
+            console.log('🔴 Connessione persa — modalità offline attiva');
         });
 
         // ========== SALVATAGGIO E CARICAMENTO DATI ==========
@@ -1313,6 +1537,11 @@
             saveLocalStorage();
             syncToFirestore();
             // AUTO-AGGIORNA dopo ogni salvataggio
+            // Ma NON ri-rendere tablet se il tastierino è aperto (proteggi input attivo)
+            if (activeCell && detectDevice() === 'tablet') {
+                // Solo aggiorna filtri desktop se necessario
+                return;
+            }
             renderCurrentView();
             updateFilterOptions();
         }
@@ -1385,6 +1614,24 @@
 
         // ========== TASTIERINO NUMERICO ==========
         window.openKeypad = function(tankId, field, cellEl) {
+            // SAME ROW: just switch field without closing keypad
+            if (activeCell && activeTankId === tankId) {
+                // Save current field value first
+                saveCurrentValue();
+                // Remove active state from old cell
+                activeCell.classList.remove('active');
+                // Switch to new field
+                activeField = field;
+                const tank = tanksData.find(t => t.id === tankId);
+                currentValue = tank[field] ? String(tank[field]) : '';
+                activeCell = cellEl;
+                cellEl.classList.add('active');
+                // Update display
+                cellEl.textContent = currentValue || '--';
+                return; // keypad stays open, focused-row stays
+            }
+
+            // DIFFERENT ROW or first open: full close then open
             closeKeypad();
 
             activeTankId = tankId;
@@ -1419,6 +1666,9 @@
             activeTankId = null;
             activeField = null;
             currentValue = '';
+
+            // Full reconciliation render after keypad closes
+            renderCurrentView();
         }
 
         function saveCurrentValue() {
@@ -1928,7 +2178,7 @@
                 todayEl.textContent = formatDateLong(today);
             }
 
-            // FIX: Mostra solo vasche NON flaggate "da fare"
+            // Mostra solo vasche NON flaggate "da fare" (persistente)
             const todayTanks = tanksData.filter(t => t.data === today && !t.daFare);
             const toDo = todayTanks.filter(t => !t.temperatura || !t.mVol);
             const completed = todayTanks.filter(t => t.temperatura && t.mVol);
@@ -2005,6 +2255,28 @@
                 if (b === 'Senza Data') return -1;
                 return parseDate(b) - parseDate(a);
             });
+
+            // Apply intra-group sorting if a sort column is active
+            if (currentSort.column) {
+                const col = currentSort.column;
+                const dir = currentSort.direction === 'asc' ? 1 : -1;
+
+                for (const date of sortedDates) {
+                    grouped[date].sort((a, b) => {
+                        const valA = (a[col] || '').toString().toLowerCase();
+                        const valB = (b[col] || '').toString().toLowerCase();
+
+                        // Try numeric comparison first
+                        const numA = parseFloat(valA);
+                        const numB = parseFloat(valB);
+                        if (!isNaN(numA) && !isNaN(numB)) {
+                            return (numA - numB) * dir;
+                        }
+
+                        return valA.localeCompare(valB, 'it') * dir;
+                    });
+                }
+            }
 
             tbody.innerHTML = '';
 
@@ -2359,6 +2631,27 @@
         }
 
         function sortTable(column) {
+            // Only allow sorting for these columns
+            const sortableColumns = ['progressivo', 'vasca', 'tipoVino', 'vigneto', 'uva'];
+            if (!sortableColumns.includes(column)) return;
+
+            // Toggle direction
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+
+            // Update header CSS indicators
+            document.querySelectorAll('.data-table th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            const activeHeader = document.querySelector(`.data-table th.sortable[onclick*="'${column}'"]`);
+            if (activeHeader) {
+                activeHeader.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+
             renderDesktopTable();
         }
 
@@ -2510,10 +2803,13 @@
             async function init() {
                 const device = detectDevice();
                 loadData();
+                loadOfflineQueue();
+                isOnline = navigator.onLine;
 
                 if (device === 'tablet') {
                     document.getElementById('tabletView').classList.remove('hidden');
                     renderTabletView();
+                    if (!isOnline) updateOfflineBanner(true);
                 } else {
                     document.getElementById('desktopView').classList.remove('hidden');
                     renderDesktopTable();
