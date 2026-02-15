@@ -2,7 +2,7 @@
   "name": "Controllo Vasche Cantina",
   "short_name": "Vasche",
   "description": "Sistema di controllo temperatura e massa volumica vasche vinicole",
-  "start_url": "./gestione_vasche_cantina.html?view=tablet",
+  "start_url": "./index.html?view=tablet",
   "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#000000",
