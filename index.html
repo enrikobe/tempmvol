@@ -30,10 +30,10 @@
             --shadow-md: 0 2px 8px rgba(0,0,0,0.1);
             --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
 
-            /* Tastierino RIDOTTO per visibilità completa */
-            --keypad-bg: rgba(28, 63, 92, 0.5);
-            --keypad-btn: rgba(45, 86, 116, 0.6);
-            --keypad-btn-active: rgba(26, 54, 73, 0.8);
+            /* GRIGIO SCURO semitrasparente */
+            --keypad-bg: rgba(40, 40, 40, 0.85);
+            --keypad-btn: rgba(60, 60, 60, 0.7);
+            --keypad-btn-active: rgba(80, 80, 80, 0.9);
             --keypad-height: 260px;
             --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
@@ -624,7 +624,47 @@
             background: var(--primary-light);
         }
 
-        /* ====== TABLET VIEW FULLSCREEN ====== */
+        /* ====== LANDSCAPE WARNING ====== */
+        #landscapeWarning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            color: white;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            text-align: center;
+            padding: 40px;
+        }
+
+        #landscapeWarning .rotate-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: rotateDevice 2s ease-in-out infinite;
+        }
+
+        @keyframes rotateDevice {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+
+        #landscapeWarning h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        #landscapeWarning p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        /* ====== TABLET VIEW PORTRAIT ONLY ====== */
         #tabletView {
             width: 100vw;
             height: 100vh;
@@ -660,13 +700,11 @@
             font-weight: 400;
         }
 
-        /* CONTAINER SCROLLABILE - PADDING MASSIMO per visibilità tastierino */
         .tablet-table-container {
             flex: 1;
             overflow-x: hidden;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            /* PADDING AUMENTATO per garantire visibilità completa */
             padding-bottom: calc(var(--keypad-height) + var(--safe-bottom) + 40px);
         }
 
@@ -752,7 +790,6 @@
             cursor: pointer;
             user-select: none;
             transition: all 0.2s;
-            /* IMPORTANTE: permetti pointer events */
             pointer-events: auto;
         }
 
@@ -794,7 +831,7 @@
             font-size: 16px;
         }
 
-        /* ====== TASTIERINO RETTANGOLARE ====== */
+        /* ====== TASTIERINO GRIGIO SCURO RETTANGOLARE ====== */
         .ios-keypad {
             position: fixed;
             bottom: 0;
@@ -804,7 +841,6 @@
 
             width: 100%;
             height: var(--keypad-height);
-            /* PADDING RIDOTTO per massimizzare spazio */
             padding: 8px 12px;
             padding-bottom: calc(8px + var(--safe-bottom));
 
@@ -814,7 +850,7 @@
 
             z-index: 1000;
             transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -833,102 +869,63 @@
             margin: 0 auto;
         }
 
-        /* TASTI RETTANGOLARI con angoli stondati */
         .key-btn {
             width: 100%;
             height: 100%;
-            max-height: 55px; /* RIDOTTO per visibilità */
+            max-height: 55px;
 
             background: var(--keypad-btn);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
 
             border: 1px solid rgba(255, 255, 255, 0.15);
-            /* RETTANGOLARE con angoli stondati */
             border-radius: 12px;
 
             font-size: 28px;
-            font-weight: 200;
+            font-weight: 300;
             color: white;
 
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 0;
 
             cursor: pointer;
             user-select: none;
 
             box-shadow: 
-                0 1px 0 rgba(255, 255, 255, 0.2) inset,
+                0 1px 0 rgba(255, 255, 255, 0.1) inset,
                 0 2px 6px rgba(0, 0, 0, 0.3);
 
             transition: all 0.15s ease;
             position: relative;
 
-            /* IMPORTANTE: permetti touch events */
             pointer-events: auto;
             touch-action: manipulation;
         }
 
+        /* NO LETTERE - rimuovo ::after */
         .key-btn::after {
-            content: attr(data-letters);
-            font-size: 7px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            color: rgba(255, 255, 255, 0.5);
-            position: absolute;
-            bottom: 6px;
-        }
-
-        .key-btn[data-key="1"]::after,
-        .key-btn[data-key="0"]::after,
-        .key-btn[data-key=","]::after {
             content: '';
+            display: none;
         }
 
         .key-btn:active,
         .key-btn.pressed {
-            background: rgba(90, 143, 192, 0.8);
+            background: var(--keypad-btn-active);
             transform: scale(0.95);
             box-shadow: 
-                0 0 25px rgba(255, 255, 255, 0.6),
-                0 0 50px rgba(135, 206, 250, 0.5),
+                0 0 20px rgba(255, 255, 255, 0.3),
                 0 1px 2px rgba(0, 0, 0, 0.4) inset;
-            color: #FFF;
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-
-        @keyframes glow {
-            0%, 100% {
-                box-shadow: 
-                    0 0 15px rgba(255, 255, 255, 0.4),
-                    0 0 30px rgba(135, 206, 250, 0.3);
-            }
-            50% {
-                box-shadow: 
-                    0 0 25px rgba(255, 255, 255, 0.7),
-                    0 0 50px rgba(135, 206, 250, 0.6);
-            }
-        }
-
-        .key-btn.pressed {
-            animation: glow 0.3s ease-in-out;
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         .key-btn.backspace {
-            background: rgba(42, 74, 94, 0.6);
+            background: rgba(50, 50, 50, 0.7);
             font-size: 20px;
-        }
-
-        .key-btn.backspace::after {
-            content: '';
         }
 
         .key-btn[data-key=","] {
             font-size: 32px;
-            font-weight: 300;
         }
 
         #keypadOverlay {
@@ -940,7 +937,6 @@
             z-index: 999;
             display: none;
             background: rgba(0, 0, 0, 0.35);
-            /* IMPORTANTE: permetti pointer events */
             pointer-events: auto;
         }
 
@@ -948,7 +944,69 @@
             display: block;
         }
 
-        /* Responsive per schermi piccoli */
+        /* ====== TABLET PREVIEW DESKTOP ====== */
+        .tablet-preview-frame {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .preview-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            padding: 10px 16px;
+            text-align: center;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .preview-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .preview-header .current-date {
+            font-size: 13px;
+            opacity: 0.95;
+        }
+
+        .preview-header .sync-status {
+            width: 28px;
+            height: 28px;
+            font-size: 14px;
+        }
+
+        .preview-table-container {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .preview-keypad {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 260px;
+            background: rgba(40, 40, 40, 0.85);
+            backdrop-filter: blur(30px);
+            padding: 8px 12px;
+            display: none;
+        }
+
+        .preview-keypad.visible {
+            display: block;
+        }
+
         @media (max-width: 480px) {
             :root {
                 --keypad-height: 240px;
@@ -962,11 +1020,6 @@
             .key-btn {
                 font-size: 24px;
                 max-height: 52px;
-            }
-
-            .key-btn::after {
-                font-size: 6px;
-                bottom: 5px;
             }
 
             .tablet-header h1 {
@@ -992,22 +1045,14 @@
             }
         }
 
-        @media (orientation: landscape) and (max-height: 500px) {
-            :root {
-                --keypad-height: 180px;
+        /* BLOCCO LANDSCAPE su tablet */
+        @media (orientation: landscape) and (max-width: 1024px) {
+            #tabletView {
+                display: none;
             }
 
-            .key-btn {
-                max-height: 40px;
-                font-size: 20px;
-            }
-
-            .tablet-header {
-                padding: 6px 16px;
-            }
-
-            .tablet-header h1 {
-                font-size: 14px;
+            #landscapeWarning {
+                display: flex;
             }
         }
 
@@ -1029,6 +1074,13 @@
     </style>
 </head>
 <body>
+
+    <!-- LANDSCAPE WARNING -->
+    <div id="landscapeWarning">
+        <div class="rotate-icon">📱</div>
+        <h2>Posiziona il dispositivo in modalità verticale</h2>
+        <p>Questa applicazione funziona solo in modalità portrait</p>
+    </div>
 
     <div id="keypadOverlay"></div>
 
@@ -1124,18 +1176,18 @@
 
         <div class="ios-keypad" id="numericKeypad">
             <div class="keypad-grid">
-                <button class="key-btn" data-key="1" data-letters="">1</button>
-                <button class="key-btn" data-key="2" data-letters="ABC">2</button>
-                <button class="key-btn" data-key="3" data-letters="DEF">3</button>
-                <button class="key-btn" data-key="4" data-letters="GHI">4</button>
-                <button class="key-btn" data-key="5" data-letters="JKL">5</button>
-                <button class="key-btn" data-key="6" data-letters="MNO">6</button>
-                <button class="key-btn" data-key="7" data-letters="PQRS">7</button>
-                <button class="key-btn" data-key="8" data-letters="TUV">8</button>
-                <button class="key-btn" data-key="9" data-letters="WXYZ">9</button>
-                <button class="key-btn" data-key="," data-letters="">,</button>
-                <button class="key-btn" data-key="0" data-letters="">0</button>
-                <button class="key-btn backspace" data-key="backspace" data-letters="">⌫</button>
+                <button class="key-btn" data-key="1">1</button>
+                <button class="key-btn" data-key="2">2</button>
+                <button class="key-btn" data-key="3">3</button>
+                <button class="key-btn" data-key="4">4</button>
+                <button class="key-btn" data-key="5">5</button>
+                <button class="key-btn" data-key="6">6</button>
+                <button class="key-btn" data-key="7">7</button>
+                <button class="key-btn" data-key="8">8</button>
+                <button class="key-btn" data-key="9">9</button>
+                <button class="key-btn" data-key=",">,</button>
+                <button class="key-btn" data-key="0">0</button>
+                <button class="key-btn backspace" data-key="backspace">⌫</button>
             </div>
         </div>
     </div>
@@ -1176,7 +1228,6 @@
         let activeField = null;
         let currentValue = '';
 
-        // BLOCCO GESTURE ZOOM
         document.addEventListener('gesturestart', (e) => e.preventDefault());
         document.addEventListener('gesturechange', (e) => e.preventDefault());
         document.addEventListener('gestureend', (e) => e.preventDefault());
@@ -1232,6 +1283,8 @@
         function updateSyncStatus(status) {
             const statusEl = document.getElementById('syncStatus');
             const iconEl = document.getElementById('syncIcon');
+
+            if (!statusEl || !iconEl) return;
 
             statusEl.className = 'sync-status ' + status;
 
@@ -1734,21 +1787,120 @@
 
         function renderTabletPreview() {
             const container = document.getElementById('tabletPreviewContainer');
-            container.innerHTML = `
-                <div style="max-width: 600px; margin: 0 auto; box-shadow: var(--shadow-lg); border-radius: 8px; overflow: hidden;">
-                    <div class="tablet-header">
+            const today = getTodayString();
+
+            const todayTanks = tanksData.filter(t => t.data === today && !t.daFare);
+            const toDo = todayTanks.filter(t => !t.temperatura || !t.mVol);
+            const completed = todayTanks.filter(t => t.temperatura && t.mVol);
+
+            const sortTanks = (tanks) => tanks.sort((a, b) => {
+                if (a.priority !== b.priority) return b.priority - a.priority;
+                return (parseInt(a.vasca) || 0) - (parseInt(b.vasca) || 0);
+            });
+
+            let html = `
+                <div class="tablet-preview-frame">
+                    <div class="preview-header">
                         <h1>Controllo Vasche</h1>
-                        <div class="current-date">${formatDateLong(getTodayString())}</div>
-                        <div class="sync-status synced">☁️</div>
+                        <div class="current-date">${formatDateLong(today)}</div>
+                        <div class="sync-status synced">
+                            <span>☁️</span>
+                        </div>
                     </div>
-                    <div style="padding: 40px 20px; text-align: center; background: white;">
-                        <p style="color: var(--text-muted); font-size: 16px;">
-                            📱 Anteprima Vista Tablet<br><br>
-                            Il tastierino iOS è disponibile solo su dispositivi touch.<br>
-                            Usa <code>?view=tablet</code> nell'URL per forzare la vista tablet.
-                        </p>
+                    <div class="preview-table-container">
+            `;
+
+            if (todayTanks.length === 0) {
+                html += '<div class="no-data">✓ Nessuna vasca da controllare oggi</div>';
+            } else {
+                html += '<table class="tablet-table"><thead><tr>';
+                html += '<th>Vasca</th><th>Tipo</th><th>Uva</th><th>Temp (°C)</th><th>M.Vol</th>';
+                html += '</tr></thead><tbody>';
+
+                if (toDo.length > 0) {
+                    html += `<tr><td colspan="5" class="section-divider">Da Controllare (${toDo.length})</td></tr>`;
+                    sortTanks(toDo).forEach(tank => {
+                        html += createPreviewRow(tank);
+                    });
+                }
+
+                if (completed.length > 0) {
+                    html += `<tr><td colspan="5" class="section-divider completed">Completate (${completed.length})</td></tr>`;
+                    sortTanks(completed).forEach(tank => {
+                        html += createPreviewRow(tank);
+                    });
+                }
+
+                html += '</tbody></table>';
+            }
+
+            html += `
+                    </div>
+                    <div class="preview-keypad" id="previewKeypad">
+                        <div class="keypad-grid">
+                            <button class="key-btn">1</button>
+                            <button class="key-btn">2</button>
+                            <button class="key-btn">3</button>
+                            <button class="key-btn">4</button>
+                            <button class="key-btn">5</button>
+                            <button class="key-btn">6</button>
+                            <button class="key-btn">7</button>
+                            <button class="key-btn">8</button>
+                            <button class="key-btn">9</button>
+                            <button class="key-btn">,</button>
+                            <button class="key-btn">0</button>
+                            <button class="key-btn backspace">⌫</button>
+                        </div>
                     </div>
                 </div>
+            `;
+
+            container.innerHTML = html;
+
+            // Aggiungi interattività simulata
+            setTimeout(() => {
+                const previewCells = container.querySelectorAll('.input-cell');
+                previewCells.forEach(cell => {
+                    cell.addEventListener('click', () => {
+                        document.querySelectorAll('.input-cell').forEach(c => c.classList.remove('active'));
+                        cell.classList.add('active');
+                        document.getElementById('previewKeypad').classList.add('visible');
+                    });
+                });
+
+                const previewKeys = container.querySelectorAll('.preview-keypad .key-btn');
+                previewKeys.forEach(key => {
+                    key.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        key.classList.add('pressed');
+                        setTimeout(() => key.classList.remove('pressed'), 150);
+                    });
+                });
+            }, 100);
+        }
+
+        function createPreviewRow(tank) {
+            const rowClass = tank.priority ? ' priority' : (tank.temperatura && tank.mVol ? ' completed' : '');
+            const priority = tank.priority ? '<span class="priority-indicator">★</span> ' : '';
+            const tempClass = tank.temperatura ? 'filled' : '';
+            const mvolClass = tank.mVol ? 'filled' : '';
+
+            return `
+                <tr class="${rowClass}">
+                    <td><span class="tank-number">${priority}${tank.vasca}</span></td>
+                    <td>${tank.tipoVino || ''}</td>
+                    <td>${tank.uva || ''}</td>
+                    <td>
+                        <div class="input-cell ${tempClass}">
+                            ${tank.temperatura || '--'}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-cell ${mvolClass}">
+                            ${tank.mVol || '--'}
+                        </div>
+                    </td>
+                </tr>
             `;
         }
 
@@ -1807,17 +1959,13 @@
                     <td>${tank.uva || ''}</td>
                     <td>
                         <div class="input-cell ${tempClass}" 
-                             onclick="openKeypad(${tank.id}, 'temperatura', this)"
-                             ontouchstart="this.style.opacity='0.7'"
-                             ontouchend="this.style.opacity='1'">
+                             onclick="openKeypad(${tank.id}, 'temperatura', this)">
                             ${tank.temperatura || '--'}
                         </div>
                     </td>
                     <td>
                         <div class="input-cell ${mvolClass}" 
-                             onclick="openKeypad(${tank.id}, 'mVol', this)"
-                             ontouchstart="this.style.opacity='0.7'"
-                             ontouchend="this.style.opacity='1'">
+                             onclick="openKeypad(${tank.id}, 'mVol', this)">
                             ${tank.mVol || '--'}
                         </div>
                     </td>
@@ -1826,22 +1974,29 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // FIX TOUCH: usa addEventListener con capture
+            // FIX CRITICO: stopPropagation ROBUSTO sui tasti
             document.querySelectorAll('.key-btn').forEach(btn => {
-                // Click handler per desktop
+                // PREVIENI propagazione a overlay
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    e.stopImmediatePropagation();
                     e.preventDefault();
                     handleKeyPress(btn);
-                });
+                }, true); // CAPTURE PHASE
 
-                // Touch handler per mobile
                 btn.addEventListener('touchend', (e) => {
                     e.stopPropagation();
+                    e.stopImmediatePropagation();
                     e.preventDefault();
                     handleKeyPress(btn);
                     console.log('🟢 Touch on key:', btn.getAttribute('data-key'));
-                }, { passive: false });
+                }, { passive: false, capture: true });
+
+                // BLOCCA mousedown che può causare blur
+                btn.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                }, true);
             });
 
             function handleKeyPress(btn) {
@@ -1873,10 +2028,19 @@
                 }
             }
 
-            document.getElementById('keypadOverlay').addEventListener('click', closeKeypad);
-            document.getElementById('keypadOverlay').addEventListener('touchend', (e) => {
-                e.preventDefault();
-                closeKeypad();
+            // Overlay: chiudi SOLO se click diretto su overlay
+            const overlay = document.getElementById('keypadOverlay');
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeKeypad();
+                }
+            });
+
+            overlay.addEventListener('touchend', (e) => {
+                if (e.target === overlay) {
+                    e.preventDefault();
+                    closeKeypad();
+                }
             });
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1906,7 +2070,7 @@
             if (device === 'tablet') {
                 document.getElementById('tabletView').classList.remove('hidden');
                 renderTabletView();
-                console.log('📱 Tablet mode active');
+                console.log('📱 Tablet mode active - Portrait only');
             } else {
                 document.getElementById('desktopView').classList.remove('hidden');
                 renderDesktopTable();
