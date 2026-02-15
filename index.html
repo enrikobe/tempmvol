@@ -30,7 +30,6 @@
             --shadow-md: 0 2px 8px rgba(0,0,0,0.1);
             --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
 
-            /* GRIGIO SCURO semitrasparente */
             --keypad-bg: rgba(40, 40, 40, 0.85);
             --keypad-btn: rgba(60, 60, 60, 0.7);
             --keypad-btn-active: rgba(80, 80, 80, 0.9);
@@ -80,6 +79,48 @@
             display: none !important;
         }
 
+        /* LOADING OVERLAY */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            color: white;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .loading-subtext {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .sync-status {
             display: flex;
             align-items: center;
@@ -117,10 +158,6 @@
             border-top-color: white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
         }
 
         #desktopView {
@@ -395,7 +432,8 @@
         }
 
         .data-table input[type="text"],
-        .data-table input[type="number"] {
+        .data-table input[type="number"],
+        .data-table input[type="date"] {
             width: 100%;
             min-width: 60px;
             padding: 6px 10px;
@@ -406,8 +444,13 @@
             transition: all 0.2s;
         }
 
+        .data-table input[type="date"] {
+            min-width: 130px;
+        }
+
         .data-table input[type="text"]:hover,
-        .data-table input[type="number"]:hover {
+        .data-table input[type="number"]:hover,
+        .data-table input[type="date"]:hover {
             background: white;
             border-color: var(--border-light);
         }
@@ -463,21 +506,27 @@
             transform: scale(1.2);
         }
 
-        .delete-btn {
-            background: var(--danger);
-            color: white;
+        /* ICONA DELETE */
+        .delete-icon {
+            background: transparent;
+            color: var(--danger);
             border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
+            padding: 6px;
             cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
+            font-size: 18px;
+            font-weight: bold;
             transition: all 0.2s;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .delete-btn:hover {
-            background: #C9302C;
-            box-shadow: var(--shadow-sm);
+        .delete-icon:hover {
+            background: rgba(217, 83, 79, 0.1);
+            transform: scale(1.2);
         }
 
         .toast {
@@ -533,6 +582,8 @@
             max-width: 500px;
             width: 90%;
             animation: slideUp 0.3s;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         @keyframes slideUp {
@@ -624,7 +675,6 @@
             background: var(--primary-light);
         }
 
-        /* ====== LANDSCAPE WARNING ====== */
         #landscapeWarning {
             position: fixed;
             top: 0;
@@ -664,7 +714,6 @@
             opacity: 0.9;
         }
 
-        /* ====== TABLET VIEW PORTRAIT ONLY ====== */
         #tabletView {
             width: 100vw;
             height: 100vh;
@@ -766,15 +815,16 @@
             border-bottom: 1px solid var(--border-light);
         }
 
+        /* TESTO VASCA INGRANDITO */
         .tablet-table .tank-number {
             font-weight: 700;
-            font-size: 17px;
+            font-size: 22px; /* Era 17px - INGRANDITO */
             color: var(--primary);
         }
 
         .tablet-table .priority-indicator {
             color: var(--star);
-            font-size: 15px;
+            font-size: 18px; /* Era 15px */
         }
 
         .tablet-table .input-cell {
@@ -790,7 +840,6 @@
             cursor: pointer;
             user-select: none;
             transition: all 0.2s;
-            pointer-events: auto;
         }
 
         .tablet-table .input-cell:focus {
@@ -831,7 +880,23 @@
             font-size: 16px;
         }
 
-        /* ====== TASTIERINO GRIGIO SCURO RETTANGOLARE ====== */
+        /* OVERLAY DIETRO TASTIERINO - z-index BASSO */
+        #keypadOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 999; /* SOTTO il tastierino */
+            display: none;
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        #keypadOverlay.visible {
+            display: block;
+        }
+
+        /* TASTIERINO - z-index ALTO sopra overlay */
         .ios-keypad {
             position: fixed;
             bottom: 0;
@@ -848,10 +913,13 @@
             backdrop-filter: blur(30px) saturate(150%);
             -webkit-backdrop-filter: blur(30px) saturate(150%);
 
-            z-index: 1000;
+            z-index: 1001; /* SOPRA overlay */
             transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+            /* IMPORTANTE: permetti pointer events */
+            pointer-events: auto;
         }
 
         .ios-keypad.visible {
@@ -867,6 +935,7 @@
             height: 100%;
             max-width: 420px;
             margin: 0 auto;
+            pointer-events: auto; /* FORZA eventi */
         }
 
         .key-btn {
@@ -899,14 +968,9 @@
             transition: all 0.15s ease;
             position: relative;
 
-            pointer-events: auto;
+            /* FORZA pointer events */
+            pointer-events: auto !important;
             touch-action: manipulation;
-        }
-
-        /* NO LETTERE - rimuovo ::after */
-        .key-btn::after {
-            content: '';
-            display: none;
         }
 
         .key-btn:active,
@@ -928,23 +992,6 @@
             font-size: 32px;
         }
 
-        #keypadOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 999;
-            display: none;
-            background: rgba(0, 0, 0, 0.35);
-            pointer-events: auto;
-        }
-
-        #keypadOverlay.visible {
-            display: block;
-        }
-
-        /* ====== TABLET PREVIEW DESKTOP ====== */
         .tablet-preview-frame {
             width: 100%;
             max-width: 420px;
@@ -1001,6 +1048,7 @@
             backdrop-filter: blur(30px);
             padding: 8px 12px;
             display: none;
+            z-index: 100;
         }
 
         .preview-keypad.visible {
@@ -1045,7 +1093,6 @@
             }
         }
 
-        /* BLOCCO LANDSCAPE su tablet */
         @media (orientation: landscape) and (max-width: 1024px) {
             #tabletView {
                 display: none;
@@ -1059,6 +1106,7 @@
         input[type="text"],
         input[type="number"],
         input[type="tel"],
+        input[type="date"],
         textarea,
         select {
             font-size: 16px !important;
@@ -1075,13 +1123,13 @@
 </head>
 <body>
 
-    <!-- LANDSCAPE WARNING -->
     <div id="landscapeWarning">
         <div class="rotate-icon">📱</div>
         <h2>Posiziona il dispositivo in modalità verticale</h2>
         <p>Questa applicazione funziona solo in modalità portrait</p>
     </div>
 
+    <!-- OVERLAY DIETRO (z-index: 999) -->
     <div id="keypadOverlay"></div>
 
     <div id="desktopView" class="hidden desktop-view">
@@ -1095,6 +1143,7 @@
 
         <div id="data-management" class="tab-content active">
             <div class="desktop-toolbar">
+                <button class="btn-primary" onclick="showAddRowModal()">➕ Aggiungi Riga</button>
                 <button class="btn-primary" onclick="showPasteArea()">📋 Incolla da Excel</button>
                 <button class="btn-secondary" onclick="exportToCSV()">💾 Esporta CSV</button>
                 <button class="btn-warning" onclick="showBulkEditModal()">✏️ Modifica Selezionate</button>
@@ -1148,7 +1197,7 @@
                             <th class="sortable" onclick="sortTable('data')">Data</th>
                             <th style="width: 50px;">★</th>
                             <th style="width: 60px;">Da Fare</th>
-                            <th style="width: 80px;">Azioni</th>
+                            <th style="width: 50px;">Azioni</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
@@ -1174,6 +1223,7 @@
         <div class="tablet-table-container" id="tabletTableContainer">
         </div>
 
+        <!-- TASTIERINO SOPRA (z-index: 1001) -->
         <div class="ios-keypad" id="numericKeypad">
             <div class="keypad-grid">
                 <button class="key-btn" data-key="1">1</button>
@@ -1217,11 +1267,15 @@
     <script>
         const STORAGE_KEY = 'cantina_vasche_data';
         const FIRESTORE_COLLECTION = 'vasche';
+        const SYNC_STATE_KEY = 'cantina_sync_state';
+
         let tanksData = [];
         let currentSort = { column: null, direction: 'asc' };
         let collapsedGroups = new Set();
         let firestoreListener = null;
         let isSyncing = false;
+        let isInitializing = true;
+        let dataLoadedFromFirebase = false;
 
         let activeCell = null;
         let activeTankId = null;
@@ -1258,6 +1312,93 @@
                     .then(reg => console.log('✅ Service Worker registered'))
                     .catch(err => console.log('❌ SW registration failed:', err));
             });
+        }
+
+        // LOADING OVERLAY
+        function showLoading(message, submessage = '') {
+            let overlay = document.getElementById('loadingOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'loadingOverlay';
+                overlay.className = 'loading-overlay';
+                overlay.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text"></div>
+                    <div class="loading-subtext"></div>
+                `;
+                document.body.appendChild(overlay);
+            }
+            overlay.querySelector('.loading-text').textContent = message;
+            overlay.querySelector('.loading-subtext').textContent = submessage;
+            overlay.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // INIZIALIZZAZIONE TABLET CON DOWNLOAD FIREBASE
+        async function initializeTabletMode() {
+            console.log('🔵 Inizializzazione modalità tablet...');
+
+            showLoading('Connessione a Firebase...', 'Attendere prego');
+
+            try {
+                // 1. Verifica connessione
+                if (!window.firebaseDB) {
+                    throw new Error('Firebase non inizializzato');
+                }
+
+                showLoading('Download dati...', 'Sincronizzazione in corso');
+
+                // 2. Download dati da Firebase
+                const { collection, getDocs } = window.firestoreFunctions;
+                const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
+                const snapshot = await getDocs(tanksRef);
+
+                const remoteTanks = [];
+                snapshot.forEach(doc => remoteTanks.push(doc.data()));
+
+                console.log(`✅ Scaricati ${remoteTanks.length} record da Firebase`);
+
+                // 3. Salva in locale
+                tanksData = remoteTanks;
+                saveLocalStorage();
+                dataLoadedFromFirebase = true;
+
+                // 4. Setup listener per sync in tempo reale
+                setupFirestoreListener();
+
+                showLoading('Caricamento interfaccia...', 'Quasi pronto');
+
+                // 5. Render interfaccia
+                await new Promise(resolve => setTimeout(resolve, 500));
+                renderTabletView();
+
+                hideLoading();
+                updateSyncStatus('synced');
+                console.log('✅ Inizializzazione completata');
+
+            } catch (error) {
+                console.error('❌ Errore inizializzazione:', error);
+
+                // Fallback: carica da localStorage
+                console.log('⚠️ Caricamento da localStorage (modalità offline)');
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    tanksData = JSON.parse(stored);
+                    renderTabletView();
+                }
+
+                hideLoading();
+                updateSyncStatus('offline');
+                showToast('⚠️ Modalità offline - i dati verranno sincronizzati alla riconnessione');
+            }
+
+            isInitializing = false;
         }
 
         function sanitizeNumericInput(input) {
@@ -1298,6 +1439,12 @@
         }
 
         async function syncToFirestore() {
+            // NON sincronizzare durante inizializzazione
+            if (isInitializing || !dataLoadedFromFirebase) {
+                console.log('⏸️ Sync bloccato: dati non ancora scaricati');
+                return;
+            }
+
             if (!window.firebaseDB || isSyncing) return;
 
             isSyncing = true;
@@ -1322,8 +1469,9 @@
                 }
 
                 updateSyncStatus('synced');
+                console.log('✅ Sync completato');
             } catch (error) {
-                console.error('Sync error:', error);
+                console.error('❌ Sync error:', error);
                 updateSyncStatus('offline');
             } finally {
                 isSyncing = false;
@@ -1337,7 +1485,7 @@
             const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
 
             firestoreListener = onSnapshot(tanksRef, (snapshot) => {
-                if (isSyncing) return;
+                if (isSyncing || isInitializing) return;
 
                 const remoteTanks = [];
                 snapshot.forEach(doc => remoteTanks.push(doc.data()));
@@ -1346,19 +1494,34 @@
                 const localJson = JSON.stringify(tanksData.sort((a, b) => a.id - b.id));
 
                 if (remoteJson !== localJson) {
+                    console.log('🔄 Aggiornamento remoto ricevuto');
                     tanksData = remoteTanks;
                     saveLocalStorage();
                     renderCurrentView();
                 }
             }, (error) => {
-                console.error('Firestore listener error:', error);
+                console.error('❌ Firestore listener error:', error);
                 updateSyncStatus('offline');
             });
         }
 
+        // Riconnessione automatica
+        window.addEventListener('online', () => {
+            console.log('🌐 Connessione ripristinata');
+            syncToFirestore();
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('📵 Connessione persa');
+            updateSyncStatus('offline');
+            showToast('📵 Offline - salvataggio locale attivo');
+        });
+
         function saveData() {
             saveLocalStorage();
-            syncToFirestore();
+            if (dataLoadedFromFirebase) {
+                syncToFirestore();
+            }
         }
 
         function saveLocalStorage() {
@@ -1369,7 +1532,6 @@
             const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
                 tanksData = JSON.parse(stored);
-                syncToFirestore();
             }
             return tanksData;
         }
@@ -1402,6 +1564,18 @@
             if (!dateStr) return null;
             const [day, month, year] = dateStr.split('/');
             return new Date(year, month - 1, day);
+        }
+
+        function formatDateForInput(dateStr) {
+            if (!dateStr) return '';
+            const [day, month, year] = dateStr.split('/');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatDateFromInput(isoStr) {
+            if (!isoStr) return '';
+            const [year, month, day] = isoStr.split('-');
+            return `${day}/${month}/${year}`;
         }
 
         function getTodayString() {
@@ -1544,6 +1718,88 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
+        // AGGIUNGI RIGA DESKTOP
+        window.showAddRowModal = function() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">➕ Aggiungi Nuova Vasca</div>
+                    <div class="modal-body">
+                        <label>Progressivo</label>
+                        <input type="number" id="newProgressivo" placeholder="Es: 1">
+
+                        <label>Vasca *</label>
+                        <input type="text" id="newVasca" placeholder="Es: 42" required>
+
+                        <label>Tipo Vino</label>
+                        <input type="text" id="newTipoVino" placeholder="Es: Amarone">
+
+                        <label>Vigneto</label>
+                        <input type="text" id="newVigneto" placeholder="Es: Vigneto Monte">
+
+                        <label>Uva</label>
+                        <input type="text" id="newUva" placeholder="Es: Corvina">
+
+                        <label>Data</label>
+                        <input type="date" id="newData" value="${formatDateForInput(getTodayString())}">
+
+                        <label>Temperatura (°C)</label>
+                        <input type="text" inputmode="numeric" id="newTemperatura" placeholder="Es: 18,5">
+
+                        <label>M.Vol</label>
+                        <input type="text" inputmode="numeric" id="newMVol" placeholder="Es: 1025">
+
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="newPriority" style="width: auto; margin: 0;">
+                            Priorità
+                        </label>
+
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="newDaFare" style="width: auto; margin: 0;">
+                            Da Fare
+                        </label>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="modal-btn-cancel" onclick="this.closest('.modal-overlay').remove()">Annulla</button>
+                        <button class="modal-btn-confirm" onclick="addNewRow()">Aggiungi</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('newVasca').focus();
+        };
+
+        window.addNewRow = function() {
+            const vasca = document.getElementById('newVasca').value.trim();
+            if (!vasca) {
+                alert('Il numero vasca è obbligatorio');
+                return;
+            }
+
+            const newId = tanksData.length > 0 ? Math.max(...tanksData.map(t => t.id)) + 1 : 1;
+
+            const newTank = {
+                id: newId,
+                progressivo: document.getElementById('newProgressivo').value || '',
+                vasca: vasca,
+                tipoVino: document.getElementById('newTipoVino').value || '',
+                vigneto: document.getElementById('newVigneto').value || '',
+                uva: document.getElementById('newUva').value || '',
+                temperatura: document.getElementById('newTemperatura').value || '',
+                mVol: document.getElementById('newMVol').value || '',
+                data: formatDateFromInput(document.getElementById('newData').value) || getTodayString(),
+                priority: document.getElementById('newPriority').checked,
+                daFare: document.getElementById('newDaFare').checked
+            };
+
+            tanksData.push(newTank);
+            saveData();
+            renderDesktopTable();
+            document.querySelector('.modal-overlay').remove();
+            showToast('✓ Vasca aggiunta con successo');
+        };
+
         function showPasteArea() {
             document.getElementById('pasteSection').classList.remove('hidden');
             document.getElementById('pasteArea').focus();
@@ -1600,7 +1856,18 @@
         }
 
         function deleteSelected() {
-            alert('Funzione elimina selezionate');
+            const selected = getSelectedTankIds();
+            if (selected.length === 0) {
+                alert('Nessuna riga selezionata');
+                return;
+            }
+
+            if (confirm(`Eliminare ${selected.length} vasche selezionate?`)) {
+                tanksData = tanksData.filter(t => !selected.includes(t.id));
+                saveData();
+                renderDesktopTable();
+                showToast(`✓ ${selected.length} vasche eliminate`);
+            }
         }
 
         function refreshData() {
@@ -1697,6 +1964,8 @@
             const tr = document.createElement('tr');
             if (tank.temperatura && tank.mVol) tr.classList.add('completed');
 
+            const dateValue = tank.data ? formatDateForInput(tank.data) : '';
+
             tr.innerHTML = `
                 <td><input type="checkbox" class="row-select" data-id="${tank.id}"></td>
                 <td>${tank.progressivo || ''}</td>
@@ -1718,15 +1987,15 @@
                            value="${tank.mVol || ''}" 
                            onchange="updateTank(${tank.id}, 'mVol', this.value)" 
                            style="min-width:70px;"></td>
-                <td><input type="text" value="${tank.data || ''}" onchange="updateTank(${tank.id}, 'data', this.value); renderDesktopTable();" style="min-width:90px;"></td>
+                <td><input type="date" value="${dateValue}" onchange="updateTank(${tank.id}, 'data', formatDateFromInput(this.value)); renderDesktopTable();"></td>
                 <td style="text-align:center;">
                     <span class="priority-star ${tank.priority ? 'active' : 'inactive'}" onclick="togglePriority(${tank.id})">★</span>
                 </td>
                 <td style="text-align:center;">
                     <input type="checkbox" ${tank.daFare ? 'checked' : ''} onchange="updateTank(${tank.id}, 'daFare', this.checked)">
                 </td>
-                <td>
-                    <button class="delete-btn" onclick="deleteTank(${tank.id})">Elimina</button>
+                <td style="text-align:center;">
+                    <button class="delete-icon" onclick="deleteTank(${tank.id})" title="Elimina">✕</button>
                 </td>
             `;
 
@@ -1782,6 +2051,7 @@
                 tanksData = tanksData.filter(t => t.id !== id);
                 saveData();
                 renderDesktopTable();
+                showToast('✓ Vasca eliminata');
             }
         }
 
@@ -1857,7 +2127,6 @@
 
             container.innerHTML = html;
 
-            // Aggiungi interattività simulata
             setTimeout(() => {
                 const previewCells = container.querySelectorAll('.input-cell');
                 previewCells.forEach(cell => {
@@ -1974,62 +2243,70 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // FIX CRITICO: stopPropagation ROBUSTO sui tasti
+            console.log('🟢 DOM Loaded - Setup tastierino...');
+
+            // FIX DEFINITIVO: gestione eventi SOLO sui tasti, NO propagazione
+            const keypad = document.getElementById('numericKeypad');
+            const overlay = document.getElementById('keypadOverlay');
+
+            // BLOCCA propagazione su TUTTO il tastierino
+            keypad.addEventListener('click', (e) => {
+                e.stopPropagation();
+            }, true);
+
+            keypad.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+            }, { passive: true, capture: true });
+
+            keypad.addEventListener('touchend', (e) => {
+                e.stopPropagation();
+            }, { passive: false, capture: true });
+
+            // Handler tasti
             document.querySelectorAll('.key-btn').forEach(btn => {
-                // PREVIENI propagazione a overlay
+                const handlePress = () => {
+                    const key = btn.getAttribute('data-key');
+                    console.log('⌨️ Key pressed:', key);
+
+                    if (!activeCell) {
+                        console.log('⚠️ No active cell');
+                        return;
+                    }
+
+                    btn.classList.add('pressed');
+                    setTimeout(() => btn.classList.remove('pressed'), 200);
+
+                    if (key === 'backspace') {
+                        currentValue = currentValue.slice(0, -1);
+                    } else if (key === ',') {
+                        if (!currentValue.includes(',')) {
+                            currentValue += ',';
+                        }
+                    } else {
+                        if (currentValue.length < 6) {
+                            currentValue += key;
+                        }
+                    }
+
+                    if (activeCell) {
+                        activeCell.textContent = currentValue || '--';
+                    }
+                };
+
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    e.preventDefault();
-                    handleKeyPress(btn);
-                }, true); // CAPTURE PHASE
+                    handlePress();
+                });
 
                 btn.addEventListener('touchend', (e) => {
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
                     e.preventDefault();
-                    handleKeyPress(btn);
-                    console.log('🟢 Touch on key:', btn.getAttribute('data-key'));
-                }, { passive: false, capture: true });
-
-                // BLOCCA mousedown che può causare blur
-                btn.addEventListener('mousedown', (e) => {
                     e.stopPropagation();
-                    e.preventDefault();
-                }, true);
+                    handlePress();
+                    console.log('🟢 Touch handled');
+                }, { passive: false });
             });
 
-            function handleKeyPress(btn) {
-                const key = btn.getAttribute('data-key');
-                console.log('⌨️ Key pressed:', key);
-
-                if (!activeCell) {
-                    console.log('⚠️ No active cell');
-                    return;
-                }
-
-                btn.classList.add('pressed');
-                setTimeout(() => btn.classList.remove('pressed'), 200);
-
-                if (key === 'backspace') {
-                    currentValue = currentValue.slice(0, -1);
-                } else if (key === ',') {
-                    if (!currentValue.includes(',')) {
-                        currentValue += ',';
-                    }
-                } else {
-                    if (currentValue.length < 6) {
-                        currentValue += key;
-                    }
-                }
-
-                if (activeCell) {
-                    activeCell.textContent = currentValue || '--';
-                }
-            }
-
-            // Overlay: chiudi SOLO se click diretto su overlay
-            const overlay = document.getElementById('keypadOverlay');
+            // Overlay: chiudi SOLO se click DIRETTO
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
                     closeKeypad();
@@ -2041,7 +2318,7 @@
                     e.preventDefault();
                     closeKeypad();
                 }
-            });
+            }, { passive: false });
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -2061,26 +2338,31 @@
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(applyFilters, 300);
             });
+
+            console.log('✅ Tastierino setup completato');
         });
 
         function init() {
-            loadData();
             const device = detectDevice();
 
             if (device === 'tablet') {
                 document.getElementById('tabletView').classList.remove('hidden');
-                renderTabletView();
-                console.log('📱 Tablet mode active - Portrait only');
+                // INIZIALIZZAZIONE TABLET CON DOWNLOAD FIREBASE
+                initializeTabletMode();
+                console.log('📱 Tablet mode - inizializzazione Firebase...');
             } else {
+                loadData();
                 document.getElementById('desktopView').classList.remove('hidden');
                 renderDesktopTable();
                 updateFilterOptions();
                 console.log('🖥️ Desktop mode active');
-            }
 
-            setTimeout(() => {
-                setupFirestoreListener();
-            }, 1000);
+                // Desktop: setup listener dopo breve delay
+                setTimeout(() => {
+                    dataLoadedFromFirebase = true;
+                    setupFirestoreListener();
+                }, 2000);
+            }
         }
 
         init();
