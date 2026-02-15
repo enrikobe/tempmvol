@@ -49,10 +49,14 @@
         }
 
         .desktop-view input,
-        .desktop-view textarea {
+        .desktop-view textarea,
+        .modal-overlay input,
+        .modal-overlay textarea,
+        .modal-overlay select {
             -webkit-user-select: text;
             -moz-user-select: text;
             user-select: text;
+            -webkit-touch-callout: default;
         }
 
         html {
@@ -1034,8 +1038,6 @@
         <p>Questa applicazione funziona solo in modalità portrait</p>
     </div>
 
-    <div id="keypadOverlay"></div>
-
     <div id="desktopView" class="hidden desktop-view">
         <div class="desktop-header">
             <h1>🍷 Gestione Controllo Vasche</h1>
@@ -1126,6 +1128,8 @@
         </div>
         <div class="tablet-table-container" id="tabletTableContainer">
         </div>
+
+        <div id="keypadOverlay"></div>
 
         <div class="ios-keypad" id="numericKeypad">
             <div class="keypad-grid">
@@ -1924,8 +1928,8 @@
                 todayEl.textContent = formatDateLong(today);
             }
 
-            // FIX 1: Mostra solo vasche NON flaggate "da fare" (!t.daFare === false)
-            const todayTanks = tanksData.filter(t => t.data === today && t.daFare === false);
+            // FIX: Mostra solo vasche NON flaggate "da fare"
+            const todayTanks = tanksData.filter(t => t.data === today && !t.daFare);
             const toDo = todayTanks.filter(t => !t.temperatura || !t.mVol);
             const completed = todayTanks.filter(t => t.temperatura && t.mVol);
 
@@ -2053,7 +2057,7 @@
 
                 if (field === 'temperatura' || field === 'mVol') {
                     input.addEventListener('blur', function() {
-                        const id = parseInt(this.dataset.id);
+                        const id = Number(this.dataset.id);
                         const value = this.value.trim();
                         updateTank(id, field, value, this);
                     });
@@ -2061,7 +2065,7 @@
                     input.addEventListener('keydown', function(e) {
                         if (e.key === 'Enter') {
                             e.preventDefault();
-                            const id = parseInt(this.dataset.id);
+                            const id = Number(this.dataset.id);
                             const value = this.value.trim();
 
                             const validation = field === 'temperatura' ? validateTemperature(value) : validateMVol(value);
@@ -2083,7 +2087,7 @@
                             }
                         } else if (e.key === 'Tab') {
                             e.preventDefault();
-                            const id = parseInt(this.dataset.id);
+                            const id = Number(this.dataset.id);
                             const value = this.value.trim();
                             updateTank(id, field, value, this);
 
@@ -2107,7 +2111,7 @@
                 } else if (field === 'data') {
                     // FIX 2: Modifica data sposta vasca nel gruppo corretto
                     input.addEventListener('blur', function() {
-                        const id = parseInt(this.dataset.id);
+                        const id = Number(this.dataset.id);
                         let value = this.value.trim();
 
                         // Converti da ISO se necessario
@@ -2133,7 +2137,7 @@
                 } else {
                     // Altri campi
                     input.addEventListener('blur', function() {
-                        const id = parseInt(this.dataset.id);
+                        const id = Number(this.dataset.id);
                         const value = this.value.trim();
                         updateTank(id, field, value, this);
                     });
@@ -2151,7 +2155,7 @@
             const daFareCheckbox = tr.querySelector('input[type="checkbox"]');
             if (daFareCheckbox && daFareCheckbox.dataset.field === 'daFare') {
                 daFareCheckbox.addEventListener('change', function() {
-                    updateTank(parseInt(this.dataset.id), 'daFare', this.checked);
+                    updateTank(Number(this.dataset.id), 'daFare', this.checked);
                 });
             }
 
@@ -2283,7 +2287,7 @@
             const checkboxes = document.querySelectorAll('.row-select:checked');
             const ids = [];
             checkboxes.forEach(cb => {
-                const id = parseInt(cb.getAttribute('data-id'));
+                const id = Number(cb.getAttribute('data-id'));
                 if (!isNaN(id)) {
                     ids.push(id);
                 }
@@ -2447,7 +2451,7 @@
                             const previewTable = document.getElementById('previewTable');
                             if (previewTable) {
                                 const today = getTodayString();
-                                const todayTanks = tanksData.filter(t => t.data === today && t.daFare === false);
+                                const todayTanks = tanksData.filter(t => t.data === today && !t.daFare);
                                 const toDo = todayTanks.filter(t => !t.temperatura || !t.mVol);
                                 const completed = todayTanks.filter(t => t.temperatura && t.mVol);
 
