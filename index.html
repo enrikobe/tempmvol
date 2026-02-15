@@ -1024,135 +1024,7 @@
                 display: flex;
             }
         }
-    
-        /* ========== VISTA TABLET ========== */
-        #tabletView {
-            overflow-y: auto;
-            overflow-x: hidden;
-            height: calc(100vh - 120px);
-            padding: 16px;
-            padding-bottom: calc(16px + var(--safe-bottom));
-        }
-
-        .tablet-section {
-            margin-bottom: 32px;
-        }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid var(--primary);
-        }
-
-        .tablet-card {
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: var(--shadow-md);
-            transition: opacity 0.2s ease-out;
-        }
-
-        .vasca-number {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 12px;
-        }
-
-        .priority-star {
-            font-size: 20px;
-            margin-left: auto;
-        }
-
-        .vasca-info {
-            margin-bottom: 16px;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .info-item {
-            margin-bottom: 4px;
-        }
-
-        .tablet-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .input-group label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-
-        .input-group input {
-            padding: 12px;
-            border: 2px solid var(--border-light);
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-muted);
-            font-size: 16px;
-        }
-
-        /* ========== VISTA DESKTOP ========== */
-        .highlighted-column {
-            background-color: rgba(196, 69, 54, 0.1) !important;
-        }
-
-        .desktop-view input[type="text"]:focus,
-        .desktop-view [contenteditable="true"]:focus {
-            outline: 2px solid var(--primary);
-        }
-
-        .context-menu {
-            position: fixed;
-            background: white;
-            border: 1px solid var(--border-medium);
-            border-radius: 8px;
-            box-shadow: var(--shadow-lg);
-            z-index: 10000;
-            min-width: 150px;
-        }
-
-        .menu-item {
-            padding: 12px 16px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .menu-item:hover {
-            background: var(--bg-main);
-        }
-
-        .desktop-view tr.selected {
-            background-color: rgba(196, 69, 54, 0.15);
-        }
-</style>
+    </style>
 </head>
 <body>
 
@@ -1180,7 +1052,7 @@
                 <button class="btn-secondary" onclick="exportToCSV()">💾 Esporta CSV</button>
                 <button class="btn-warning" onclick="showBulkEditModal()">✏️ Modifica Selezionate</button>
                 <button class="btn-outline" onclick="deleteSelected()">🗑️ Elimina Selezionate</button>
-                <button class="btn-outline" onclick="refreshData()">🔄 Aggiorna</button>
+                
             </div>
 
             <div id="pasteSection" class="hidden">
@@ -1273,12 +1145,14 @@
         </div>
     </div>
 
+    
     <script type="module">
+        // ========== FIREBASE SETUP ==========
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBvjIO8b0hBI0DD_m-VF-Vr6LCwcAFpGkw",
+            apiKey: "AIzaSyBvjIO8b0hBI0DDm-VF-Vr6LCwcAFpGkw",
             authDomain: "tempmvol.firebaseapp.com",
             projectId: "tempmvol",
             storageBucket: "tempmvol.firebasestorage.app",
@@ -1292,659 +1166,11 @@
         window.firebaseDB = db;
         window.firestoreFunctions = { collection, doc, setDoc, onSnapshot, deleteDoc, getDocs, writeBatch };
 
-        console.log("🔥 Firebase initialized");
+        console.log("✅ Firebase initialized");
     </script>
-
     <script>
-        // ========== CONFIGURAZIONE E STATO GLOBALE ==========
-        let data = [];
-        let currentView = 'desktop';
-        let selectedRows = new Set();
-        let editingCell = null;
-        let highlightedColumn = null;
-        let copiedColumnData = null;
-
-        // Configurazione validazione
-        const VALIDATION_RULES = {
-            temp: { min: 4, max: 33, decimals: 2 },
-            mvol: { min: 970, max: 1200, decimalsAbove1000: 0, decimalsBelow1000: 1 }
-        };
-
-        // ========== FUNZIONI DI FORMATTAZIONE ==========
-        function formatTemperature(value) {
-            if (value === null || value === undefined || value === '') return '';
-            let num = parseFloat(String(value).replace(',', '.'));
-            if (isNaN(num)) return '';
-            return num.toFixed(2).replace('.', ',');
-        }
-
-        function formatMVol(value) {
-            if (value === null || value === undefined || value === '') return '';
-            let num = parseFloat(String(value).replace(',', '.'));
-            if (isNaN(num)) return '';
-            if (num >= 1000) {
-                return Math.round(num).toString();
-            } else {
-                return num.toFixed(1).replace('.', ',');
-            }
-        }
-
-        function validateAndFormat(value, type) {
-            if (!value || value === '') return { valid: true, value: '' };
-
-            // Converti virgola in punto per parsing
-            let numValue = parseFloat(String(value).replace(',', '.'));
-
-            if (isNaN(numValue)) {
-                return { valid: false, error: 'Valore non valido' };
-            }
-
-            if (type === 'temp') {
-                if (numValue < VALIDATION_RULES.temp.min || numValue > VALIDATION_RULES.temp.max) {
-                    return { 
-                        valid: false, 
-                        error: `Temperatura deve essere tra ${VALIDATION_RULES.temp.min}°C e ${VALIDATION_RULES.temp.max}°C` 
-                    };
-                }
-                return { valid: true, value: formatTemperature(numValue) };
-            } else if (type === 'mvol') {
-                if (numValue < VALIDATION_RULES.mvol.min || numValue > VALIDATION_RULES.mvol.max) {
-                    return { 
-                        valid: false, 
-                        error: `M.Vol deve essere tra ${VALIDATION_RULES.mvol.min} e ${VALIDATION_RULES.mvol.max}` 
-                    };
-                }
-                return { valid: true, value: formatMVol(numValue) };
-            }
-
-            return { valid: true, value: value };
-        }
-
-        // ========== FUNZIONI DI GESTIONE VASCHE ==========
-        function isVascaCompleted(row) {
-            return row.temp && row.temp !== '' && row.mvol && row.mvol !== '';
-        }
-
-        function sortVascheForTablet(rows) {
-            const daFare = [];
-            const fatte = [];
-
-            rows.forEach(row => {
-                if (isVascaCompleted(row)) {
-                    fatte.push(row);
-                } else {
-                    daFare.push(row);
-                }
-            });
-
-            // Ordina per priorità (stelle prima)
-            const sortByPriority = (a, b) => {
-                if (a.priority && !b.priority) return -1;
-                if (!a.priority && b.priority) return 1;
-                return a.vasca - b.vasca;
-            };
-
-            daFare.sort(sortByPriority);
-            fatte.sort(sortByPriority);
-
-            return { daFare, fatte };
-        }
-
-        function moveVascaToCompleted(vascaId) {
-            const vascaElement = document.querySelector(`[data-vasca-id="${vascaId}"]`);
-            if (!vascaElement) return;
-
-            // Aggiungi classe per animazione fade out
-            vascaElement.style.transition = 'opacity 0.2s ease-out';
-            vascaElement.style.opacity = '0';
-
-            setTimeout(() => {
-                renderTabletView();
-            }, 200);
-        }
-
-        // ========== RENDER VISTA TABLET ==========
-        function renderTabletView() {
-            const container = document.getElementById('tabletContainer');
-            const { daFare, fatte } = sortVascheForTablet(data);
-
-            container.innerHTML = '';
-
-            // Sezione "Da Fare"
-            if (daFare.length > 0) {
-                const daFareSection = document.createElement('div');
-                daFareSection.className = 'tablet-section';
-                daFareSection.innerHTML = '<h2 class="section-title">Da Fare</h2>';
-
-                daFare.forEach(row => {
-                    daFareSection.appendChild(createTabletVascaCard(row));
-                });
-
-                container.appendChild(daFareSection);
-            }
-
-            // Sezione "Fatte"
-            if (fatte.length > 0) {
-                const fatteSection = document.createElement('div');
-                fatteSection.className = 'tablet-section';
-                fatteSection.innerHTML = '<h2 class="section-title">Fatte</h2>';
-
-                fatte.forEach(row => {
-                    fatteSection.appendChild(createTabletVascaCard(row));
-                });
-
-                container.appendChild(fatteSection);
-            }
-
-            if (daFare.length === 0 && fatte.length === 0) {
-                container.innerHTML = '<div class="empty-state">Nessuna vasca disponibile</div>';
-            }
-        }
-
-        function createTabletVascaCard(row) {
-            const card = document.createElement('div');
-            card.className = 'tablet-card';
-            card.dataset.vascaId = row.id;
-
-            const vascaNumber = document.createElement('div');
-            vascaNumber.className = 'vasca-number';
-            vascaNumber.innerHTML = `
-                <span>${row.vasca}</span>
-                ${row.priority ? '<span class="priority-star">⭐</span>' : ''}
-            `;
-
-            const vascaInfo = document.createElement('div');
-            vascaInfo.className = 'vasca-info';
-            vascaInfo.innerHTML = `
-                <div class="info-item"><strong>Tipo:</strong> ${row.tipoVino || '-'}</div>
-                <div class="info-item"><strong>Vigneto:</strong> ${row.vigneto || '-'}</div>
-                <div class="info-item"><strong>Uva:</strong> ${row.uva || '-'}</div>
-            `;
-
-            const inputsContainer = document.createElement('div');
-            inputsContainer.className = 'tablet-inputs';
-
-            // Input Temperatura
-            const tempDiv = document.createElement('div');
-            tempDiv.className = 'input-group';
-            tempDiv.innerHTML = `
-                <label>Temp (°C)</label>
-                <input type="text" 
-                       inputmode="decimal" 
-                       data-field="temp" 
-                       data-vasca-id="${row.id}"
-                       value="${row.temp || ''}"
-                       placeholder="4-33">
-            `;
-
-            // Input M.Vol
-            const mvolDiv = document.createElement('div');
-            mvolDiv.className = 'input-group';
-            mvolDiv.innerHTML = `
-                <label>M.Vol</label>
-                <input type="text" 
-                       inputmode="decimal" 
-                       data-field="mvol" 
-                       data-vasca-id="${row.id}"
-                       value="${row.mvol || ''}"
-                       placeholder="970-1200">
-            `;
-
-            inputsContainer.appendChild(tempDiv);
-            inputsContainer.appendChild(mvolDiv);
-
-            card.appendChild(vascaNumber);
-            card.appendChild(vascaInfo);
-            card.appendChild(inputsContainer);
-
-            // Event listeners per gli input
-            const inputs = card.querySelectorAll('input');
-            inputs.forEach(input => {
-                // Click su cella con valore: seleziona tutto
-                input.addEventListener('focus', function() {
-                    if (this.value) {
-                        this.select();
-                    }
-                });
-
-                // Blur: valida e formatta
-                input.addEventListener('blur', function() {
-                    const field = this.dataset.field;
-                    const vascaId = this.dataset.vascaId;
-                    const value = this.value.trim();
-
-                    if (value === '') {
-                        updateVascaField(vascaId, field, '');
-                        return;
-                    }
-
-                    const result = validateAndFormat(value, field);
-
-                    if (!result.valid) {
-                        alert(result.error);
-                        this.value = '';
-                        updateVascaField(vascaId, field, '');
-                    } else {
-                        this.value = result.value;
-                        updateVascaField(vascaId, field, result.value);
-
-                        // Controlla se la vasca è completa
-                        const vasca = data.find(v => v.id == vascaId);
-                        if (vasca && isVascaCompleted(vasca)) {
-                            setTimeout(() => {
-                                moveVascaToCompleted(vascaId);
-                            }, 200);
-                        }
-                    }
-                });
-            });
-
-            return card;
-        }
-
-        function updateVascaField(vascaId, field, value) {
-            const vasca = data.find(v => v.id == vascaId);
-            if (vasca) {
-                vasca[field] = value;
-                saveData();
-            }
-        }
-
-        // ========== RENDER VISTA DESKTOP ==========
-        function renderDesktopView() {
-            const tbody = document.querySelector('.desktop-view tbody');
-            tbody.innerHTML = '';
-
-            data.forEach((row, index) => {
-                const tr = document.createElement('tr');
-                if (selectedRows.has(row.id)) {
-                    tr.classList.add('selected');
-                }
-
-                tr.innerHTML = `
-                    <td>
-                        <input type="checkbox" 
-                               ${selectedRows.has(row.id) ? 'checked' : ''}
-                               onchange="toggleRowSelection(${row.id})">
-                    </td>
-                    <td>${row.vasca} ${row.priority ? '⭐' : ''}</td>
-                    <td contenteditable="true" data-field="tipoVino" data-id="${row.id}">${row.tipoVino || ''}</td>
-                    <td contenteditable="true" data-field="vigneto" data-id="${row.id}">${row.vigneto || ''}</td>
-                    <td contenteditable="true" data-field="uva" data-id="${row.id}">${row.uva || ''}</td>
-                    <td>
-                        <input type="text" 
-                               inputmode="decimal" 
-                               data-field="temp" 
-                               data-id="${row.id}"
-                               value="${row.temp || ''}"
-                               class="${highlightedColumn === 'temp' ? 'highlighted-column' : ''}">
-                    </td>
-                    <td>
-                        <input type="text" 
-                               inputmode="decimal" 
-                               data-field="mvol" 
-                               data-id="${row.id}"
-                               value="${row.mvol || ''}"
-                               class="${highlightedColumn === 'mvol' ? 'highlighted-column' : ''}">
-                    </td>
-                    <td contenteditable="true" data-field="data" data-id="${row.id}">${row.data || ''}</td>
-                    <td>
-                        <button onclick="deleteRow(${row.id})" class="btn-icon">🗑️</button>
-                    </td>
-                `;
-
-                tbody.appendChild(tr);
-
-                // Aggiungi event listeners
-                tr.querySelectorAll('[contenteditable="true"]').forEach(cell => {
-                    cell.addEventListener('focus', function() {
-                        if (this.textContent) {
-                            selectAllText(this);
-                        }
-                    });
-
-                    cell.addEventListener('blur', function() {
-                        const field = this.dataset.field;
-                        const id = this.dataset.id;
-                        const value = this.textContent.trim();
-                        updateRowField(id, field, value);
-                    });
-                });
-
-                tr.querySelectorAll('input[type="text"]').forEach(input => {
-                    input.addEventListener('focus', function() {
-                        if (this.value) {
-                            this.select();
-                        }
-                    });
-
-                    input.addEventListener('blur', function() {
-                        const field = this.dataset.field;
-                        const id = this.dataset.id;
-                        const value = this.value.trim();
-
-                        if (value === '') {
-                            updateRowField(id, field, '');
-                            return;
-                        }
-
-                        const result = validateAndFormat(value, field);
-
-                        if (!result.valid) {
-                            alert(result.error);
-                            this.value = '';
-                            updateRowField(id, field, '');
-                        } else {
-                            this.value = result.value;
-                            updateRowField(id, field, result.value);
-                        }
-                    });
-                });
-
-                // Context menu per copia
-                tr.addEventListener('contextmenu', function(e) {
-                    if (selectedRows.size > 1 && selectedRows.has(row.id)) {
-                        e.preventDefault();
-                        showCopyMenu(e.clientX, e.clientY);
-                    }
-                });
-            });
-        }
-
-        function selectAllText(element) {
-            const range = document.createRange();
-            range.selectNodeContents(element);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
-        }
-
-        function updateRowField(id, field, value) {
-            const row = data.find(r => r.id == id);
-            if (row) {
-                row[field] = value;
-
-                // Se modifica multipla è attiva
-                if (selectedRows.size > 1 && selectedRows.has(parseInt(id))) {
-                    // Applica a tutte le righe selezionate (escluso temp e mvol)
-                    if (field !== 'temp' && field !== 'mvol') {
-                        selectedRows.forEach(selectedId => {
-                            const selectedRow = data.find(r => r.id == selectedId);
-                            if (selectedRow) {
-                                selectedRow[field] = value;
-                            }
-                        });
-                    }
-                }
-
-                saveData();
-                if (currentView === 'desktop') {
-                    renderDesktopView();
-                }
-            }
-        }
-
-        function toggleRowSelection(id) {
-            if (selectedRows.has(id)) {
-                selectedRows.delete(id);
-            } else {
-                selectedRows.add(id);
-            }
-            renderDesktopView();
-        }
-
-        // ========== COPIA DATI ==========
-        function copyColumnData(column) {
-            // Identifica la data più recente con valori espansi
-            const dates = {};
-            data.forEach(row => {
-                if (row.data && row[column]) {
-                    if (!dates[row.data]) dates[row.data] = 0;
-                    dates[row.data]++;
-                }
-            });
-
-            const mostRecentDate = Object.keys(dates).sort().reverse()[0];
-            if (!mostRecentDate) {
-                alert('Nessun dato da copiare');
-                return;
-            }
-
-            // Copia tutti i valori di quella data (anche vuoti)
-            copiedColumnData = {
-                column: column,
-                sourceDate: mostRecentDate,
-                values: []
-            };
-
-            data.forEach(row => {
-                if (row.data === mostRecentDate) {
-                    copiedColumnData.values.push({
-                        vasca: row.vasca,
-                        value: row[column] || ''
-                    });
-                }
-            });
-
-            // Evidenzia la colonna
-            highlightedColumn = column;
-            renderDesktopView();
-
-            alert(`Copiati ${copiedColumnData.values.length} valori dalla data ${mostRecentDate}`);
-        }
-
-        function pasteColumnData(targetDate) {
-            if (!copiedColumnData) {
-                alert('Nessun dato copiato');
-                return;
-            }
-
-            copiedColumnData.values.forEach(item => {
-                const row = data.find(r => r.vasca === item.vasca && r.data === targetDate);
-                if (row) {
-                    row[copiedColumnData.column] = item.value;
-                }
-            });
-
-            saveData();
-            renderDesktopView();
-            alert('Dati incollati correttamente');
-        }
-
-        function clearHighlightedColumn() {
-            if (!highlightedColumn) return;
-
-            if (confirm(`Vuoi cancellare i dati della colonna ${highlightedColumn}?`)) {
-                data.forEach(row => {
-                    if (highlightedColumn === 'temp' || highlightedColumn === 'mvol') {
-                        row[highlightedColumn] = '';
-                    }
-                });
-
-                highlightedColumn = null;
-                copiedColumnData = null;
-                saveData();
-                renderDesktopView();
-            }
-        }
-
-        // ========== GESTIONE SELEZIONE MULTIPLA ==========
-        function showCopyMenu(x, y) {
-            const menu = document.createElement('div');
-            menu.className = 'context-menu';
-            menu.style.left = x + 'px';
-            menu.style.top = y + 'px';
-            menu.innerHTML = '<div class="menu-item" onclick="copySelectedRows()">📋 Copia</div>';
-
-            document.body.appendChild(menu);
-
-            setTimeout(() => {
-                document.addEventListener('click', function removeMenu() {
-                    menu.remove();
-                    document.removeEventListener('click', removeMenu);
-                });
-            }, 100);
-        }
-
-        function copySelectedRows() {
-            const targetDate = prompt('Inserisci la data di destinazione (YYYY-MM-DD):');
-            if (!targetDate) return;
-
-            selectedRows.forEach(id => {
-                const sourceRow = data.find(r => r.id == id);
-                if (sourceRow) {
-                    const newRow = {
-                        id: Date.now() + Math.random(),
-                        vasca: sourceRow.vasca,
-                        tipoVino: sourceRow.tipoVino,
-                        vigneto: sourceRow.vigneto,
-                        uva: sourceRow.uva,
-                        temp: sourceRow.temp,
-                        mvol: sourceRow.mvol,
-                        data: targetDate,
-                        priority: sourceRow.priority
-                    };
-                    data.push(newRow);
-                }
-            });
-
-            saveData();
-            renderDesktopView();
-            alert('Righe copiate correttamente');
-        }
-
-        function deleteSelectedRows() {
-            if (selectedRows.size === 0) return;
-
-            const choice = confirm('Scegli:
-
-OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righe selezionate');
-
-            selectedRows.forEach(id => {
-                const row = data.find(r => r.id == id);
-                if (row) {
-                    if (choice) {
-                        // Elimina solo temp e mvol
-                        row.temp = '';
-                        row.mvol = '';
-                    } else {
-                        // Elimina l'intera riga
-                        data = data.filter(r => r.id != id);
-                    }
-                }
-            });
-
-            selectedRows.clear();
-            saveData();
-            renderDesktopView();
-        }
-
-        // ========== GESTIONE EVENTI TASTIERA ==========
-        document.addEventListener('keydown', function(e) {
-            // ESC: rimuovi evidenziazione colonna
-            if (e.key === 'Escape') {
-                if (highlightedColumn) {
-                    highlightedColumn = null;
-                    copiedColumnData = null;
-                    renderDesktopView();
-                }
-            }
-
-            // CANC: cancella righe selezionate o colonna evidenziata
-            if (e.key === 'Delete') {
-                if (highlightedColumn) {
-                    clearHighlightedColumn();
-                } else if (selectedRows.size > 0) {
-                    deleteSelectedRows();
-                }
-            }
-        });
-
-        // ========== SWITCH VISTA ==========
-        function switchView(view) {
-            currentView = view;
-
-            document.getElementById('desktopView').style.display = view === 'desktop' ? 'block' : 'none';
-            document.getElementById('tabletView').style.display = view === 'tablet' ? 'block' : 'none';
-
-            document.getElementById('btnDesktop').classList.toggle('active', view === 'desktop');
-            document.getElementById('btnTablet').classList.toggle('active', view === 'tablet');
-
-            if (view === 'tablet') {
-                renderTabletView();
-            } else {
-                renderDesktopView();
-            }
-        }
-
-        // ========== SALVATAGGIO DATI ==========
-        function saveData() {
-            localStorage.setItem('vascheData', JSON.stringify(data));
-        }
-
-        function loadData() {
-            const saved = localStorage.getItem('vascheData');
-            if (saved) {
-                data = JSON.parse(saved);
-            } else {
-                // Dati di esempio
-                data = [
-                    { id: 1, vasca: 1, tipoVino: 'Rosso', vigneto: 'Vigneto A', uva: 'Merlot', temp: '', mvol: '', data: '2026-02-15', priority: true },
-                    { id: 2, vasca: 2, tipoVino: 'Bianco', vigneto: 'Vigneto B', uva: 'Chardonnay', temp: '', mvol: '', data: '2026-02-15', priority: false },
-                    { id: 3, vasca: 3, tipoVino: 'Rosso', vigneto: 'Vigneto C', uva: 'Cabernet', temp: '12,50', mvol: '1050', data: '2026-02-15', priority: true },
-                ];
-            }
-        }
-
-        function deleteRow(id) {
-            if (confirm('Vuoi eliminare questa riga?')) {
-                data = data.filter(r => r.id != id);
-                saveData();
-                renderDesktopView();
-            }
-        }
-
-        function addNewRow() {
-            const newRow = {
-                id: Date.now(),
-                vasca: data.length + 1,
-                tipoVino: '',
-                vigneto: '',
-                uva: '',
-                temp: '',
-                mvol: '',
-                data: new Date().toISOString().split('T')[0],
-                priority: false
-            };
-            data.push(newRow);
-            saveData();
-            renderDesktopView();
-        }
-
-        // ========== INIZIALIZZAZIONE ==========
-        window.addEventListener('DOMContentLoaded', function() {
-            loadData();
-            switchView('desktop');
-
-            // Rileva orientamento
-            function checkOrientation() {
-                const warning = document.getElementById('orientationWarning');
-                if (window.innerHeight < window.innerWidth && window.innerWidth < 768) {
-                    warning.style.display = 'flex';
-                } else {
-                    warning.style.display = 'none';
-                }
-            }
-
-            window.addEventListener('resize', checkOrientation);
-            window.addEventListener('orientationchange', checkOrientation);
-            checkOrientation();
-        });
-    </script>
-</script>
-
-    <script>
-        const STORAGE_KEY = 'cantina_vasche_data';
+        // ========== CONFIGURAZIONE GLOBALE ==========
+        const STORAGE_KEY = 'cantina-vasche-data';
         const FIRESTORE_COLLECTION = 'vasche';
 
         let tanksData = [];
@@ -1952,18 +1178,18 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
         let collapsedGroups = new Set();
         let firestoreListener = null;
         let isSyncing = false;
-
         let activeCell = null;
         let activeTankId = null;
         let activeField = null;
         let currentValue = '';
 
-        // GESTIONE FIREBASE SYNC SEMPLIFICATA
+        // ========== GESTIONE FIREBASE SYNC ==========
         async function initFirebase() {
-            console.log('🔥 Init Firebase sync...');
+            console.log('🔄 Init Firebase sync...');
 
             if (!window.firebaseDB) {
                 console.warn('⚠️ Firebase non disponibile');
+                updateSyncStatus('offline');
                 return false;
             }
 
@@ -1971,33 +1197,24 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
                 const { collection, getDocs, onSnapshot } = window.firestoreFunctions;
                 const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
 
-                // Download iniziale
                 const snapshot = await getDocs(tanksRef);
                 const remoteTanks = [];
                 snapshot.forEach(doc => remoteTanks.push(doc.data()));
 
-                console.log(`✅ Scaricati ${remoteTanks.length} record da Firebase`);
+                console.log(`📥 Scaricati ${remoteTanks.length} record da Firebase`);
 
                 if (remoteTanks.length > 0) {
                     tanksData = remoteTanks;
                     saveLocalStorage();
                 }
 
-                // Setup listener real-time
                 firestoreListener = onSnapshot(tanksRef, (snapshot) => {
-                    if (isSyncing) {
-                        console.log('⏸️ Sync in corso, skip listener');
-                        return;
-                    }
+                    if (isSyncing) return;
 
                     const updated = [];
                     snapshot.forEach(doc => updated.push(doc.data()));
 
-                    console.log(`🔄 Listener: ricevuti ${updated.length} record`);
-
-                    if (JSON.stringify(updated.sort((a,b) => a.id - b.id)) !== 
-                        JSON.stringify(tanksData.sort((a,b) => a.id - b.id))) {
-                        console.log('📥 Applicando update remoto');
+                    if (JSON.stringify(updated.sort((a,b) => a.id - b.id)) !== JSON.stringify(tanksData.sort((a,b) => a.id - b.id))) {
                         tanksData = updated;
                         saveLocalStorage();
                         renderCurrentView();
@@ -2009,7 +1226,6 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
 
                 updateSyncStatus('synced');
                 return true;
-
             } catch (error) {
                 console.error('❌ Firebase init error:', error);
                 updateSyncStatus('offline');
@@ -2018,29 +1234,22 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
         }
 
         async function syncToFirestore() {
-            if (!window.firebaseDB || isSyncing) {
-                console.log('⏸️ Sync skip (già in corso o Firebase offline)');
-                return;
-            }
+            if (!window.firebaseDB || isSyncing) return;
 
             isSyncing = true;
             updateSyncStatus('syncing');
-            console.log('📤 Inizio sync a Firebase...');
 
             try {
-                const { collection, doc, setDoc, getDocs, deleteDoc, writeBatch } = window.firestoreFunctions;
+                const { collection, doc, setDoc, getDocs, writeBatch } = window.firestoreFunctions;
                 const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
 
-                // Get current Firebase data
                 const snapshot = await getDocs(tanksRef);
                 const firestoreIds = new Set();
                 snapshot.forEach(doc => firestoreIds.add(doc.id));
 
-                // Batch write for efficiency
                 const batch = writeBatch(window.firebaseDB);
                 let writeCount = 0;
 
-                // Update/Insert all local tanks
                 for (const tank of tanksData) {
                     const tankId = String(tank.id);
                     const tankRef = doc(window.firebaseDB, FIRESTORE_COLLECTION, tankId);
@@ -2049,7 +1258,6 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
                     writeCount++;
                 }
 
-                // Delete removed tanks
                 for (const id of firestoreIds) {
                     const tankRef = doc(window.firebaseDB, FIRESTORE_COLLECTION, id);
                     batch.delete(tankRef);
@@ -2057,10 +1265,8 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
                 }
 
                 await batch.commit();
-
                 updateSyncStatus('synced');
                 console.log(`✅ Sync completato: ${writeCount} operazioni`);
-
             } catch (error) {
                 console.error('❌ Sync error:', error);
                 updateSyncStatus('offline');
@@ -2075,10 +1281,10 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
 
             if (!statusEl || !iconEl) return;
 
-            statusEl.className = 'sync-status ' + status;
+            statusEl.className = `sync-status ${status}`;
 
             if (status === 'synced') {
-                iconEl.textContent = '☁️';
+                iconEl.textContent = '✓';
             } else if (status === 'syncing') {
                 iconEl.innerHTML = '<div class="spinner"></div>';
             } else if (status === 'offline') {
@@ -2087,7 +1293,6 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
         }
 
         window.addEventListener('online', () => {
-            console.log('🌐 Online detected');
             if (!firestoreListener) {
                 initFirebase();
             } else {
@@ -2096,13 +1301,16 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
         });
 
         window.addEventListener('offline', () => {
-            console.log('📵 Offline detected');
             updateSyncStatus('offline');
         });
 
+        // ========== SALVATAGGIO E CARICAMENTO DATI ==========
         function saveData() {
             saveLocalStorage();
             syncToFirestore();
+            // AUTO-AGGIORNA dopo ogni salvataggio
+            renderCurrentView();
+            updateFilterOptions();
         }
 
         function saveLocalStorage() {
@@ -2117,30 +1325,30 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
             return tanksData;
         }
 
-        function renderCurrentView() {
-            const device = detectDevice();
-            if (device === 'tablet') {
-                renderTabletView();
+        // ========== VALIDAZIONE E FORMATTAZIONE ==========
+        function validateTemperature(value) {
+            if (!value || value === null || value === '') return { valid: true, value: '' };
+            const num = parseFloat(value.toString().replace(',', '.'));
+            if (isNaN(num)) return { valid: false, message: 'Valore non valido' };
+            if (num < 4) return { valid: false, message: 'Min 4°C' };
+            if (num > 33) return { valid: false, message: 'Max 33°C' };
+            return { valid: true, value: num.toFixed(2).replace('.', ',') };
+        }
+
+        function validateMVol(value) {
+            if (!value || value === null || value === '') return { valid: true, value: '' };
+            const num = parseFloat(value.toString().replace(',', '.'));
+            if (isNaN(num)) return { valid: false, message: 'Valore non valido' };
+            if (num < 970) return { valid: false, message: 'Min 970' };
+            if (num > 1200) return { valid: false, message: 'Max 1200' };
+            if (num >= 1000) {
+                return { valid: true, value: Math.round(num).toString() };
             } else {
-                renderDesktopTable();
+                return { valid: true, value: num.toFixed(1).replace('.', ',') };
             }
         }
 
-        function isTouchDevice() {
-            return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
-        }
-
-        function detectDevice() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const forceView = urlParams.get('view');
-
-            if (forceView === 'tablet') return 'tablet';
-            if (forceView === 'desktop') return 'desktop';
-
-            if (isTouchDevice() && window.innerWidth <= 1024) return 'tablet';
-            return 'desktop';
-        }
-
+        // ========== UTILITÀ DATE ==========
         function parseDate(dateStr) {
             if (!dateStr) return null;
             const [day, month, year] = dateStr.split('/');
@@ -2166,47 +1374,21 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
 
         function formatDateLong(dateStr) {
             if (!dateStr) return '';
-            const months = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
-                          'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+            const months = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
             const [day, month, year] = dateStr.split('/');
             return `${day} ${months[parseInt(month) - 1]} ${year}`;
         }
 
-        function validateTemperature(value) {
-            if (value === '' || value === null) return { valid: true, value: '' };
-            const num = parseFloat(value.toString().replace(',', '.'));
-            if (isNaN(num)) return { valid: false, message: 'Valore non valido' };
-            if (num < 4) return { valid: false, message: 'Min 4°C' };
-            if (num > 30) return { valid: false, message: 'Max 30°C' };
-            return { valid: true, value: num.toFixed(2).replace('.', ',') };
-        }
-
-        function validateMVol(value) {
-            if (value === '' || value === null) return { valid: true, value: '' };
-            const num = parseFloat(value.toString().replace(',', '.'));
-            if (isNaN(num)) return { valid: false, message: 'Valore non valido' };
-            if (num < 900) return { valid: false, message: 'Min 900' };
-            if (num > 1200) return { valid: false, message: 'Max 1200' };
-
-            if (num >= 1000) {
-                return { valid: true, value: Math.round(num).toString() };
-            } else {
-                return { valid: true, value: num.toFixed(1).replace('.', ',') };
-            }
-        }
-
-        // TASTIERINO - APPROCCIO ULTRA SEMPLICE
+        // ========== TASTIERINO NUMERICO ==========
         window.openKeypad = function(tankId, field, cellEl) {
-            console.log('🔵 openKeypad:', tankId, field);
-
-            closeKeypad(); // Chiudi eventuale tastierino aperto
+            closeKeypad();
 
             activeTankId = tankId;
             activeField = field;
             const tank = tanksData.find(t => t.id === tankId);
-            currentValue = tank[field] ? String(tank[field]) : "";
-
+            currentValue = tank[field] ? String(tank[field]) : '';
             activeCell = cellEl;
+
             cellEl.classList.add('active');
 
             document.querySelectorAll('tr').forEach(tr => tr.classList.remove('focused-row'));
@@ -2216,19 +1398,15 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
             document.body.classList.add('keyboard-open');
             document.getElementById('numericKeypad').classList.add('visible');
             document.getElementById('keypadOverlay').classList.add('visible');
-
-            console.log('✅ Tastierino aperto, valore iniziale:', currentValue);
         };
 
         function closeKeypad() {
-            console.log('🔴 closeKeypad');
             if (!activeCell) return;
 
             saveCurrentValue();
 
             activeCell.classList.remove('active');
             document.querySelectorAll('tr').forEach(tr => tr.classList.remove('focused-row'));
-
             document.body.classList.remove('keyboard-open');
             document.getElementById('numericKeypad').classList.remove('visible');
             document.getElementById('keypadOverlay').classList.remove('visible');
@@ -2245,13 +1423,12 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
             const tank = tanksData.find(t => t.id === activeTankId);
             if (!tank) return;
 
-            const validation = activeField === 'temperatura' ? 
-                validateTemperature(currentValue) : 
-                validateMVol(currentValue);
+            const validation = activeField === 'temperatura' ? validateTemperature(currentValue) : validateMVol(currentValue);
 
             if (validation.valid) {
                 tank[activeField] = validation.value;
                 saveData();
+
                 if (activeCell) {
                     activeCell.textContent = validation.value || '--';
                     if (validation.value) {
@@ -2260,19 +1437,21 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
                         activeCell.classList.remove('filled');
                     }
                 }
-                console.log('💾 Salvato:', validation.value);
-            } else if (currentValue !== '') {
-                alert(validation.message);
+            } else {
+                if (currentValue !== '') {
+                    alert(validation.message);
+                    tank[activeField] = '';
+                    if (activeCell) {
+                        activeCell.textContent = '--';
+                        activeCell.classList.remove('filled');
+                    }
+                    saveData();
+                }
             }
         }
 
         function handleKeyPress(key) {
-            console.log('⌨️ Key:', key, '| Current:', currentValue);
-
-            if (!activeCell) {
-                console.warn('⚠️ No active cell');
-                return;
-            }
+            if (!activeCell) return;
 
             if (key === 'backspace') {
                 currentValue = currentValue.slice(0, -1);
@@ -2280,65 +1459,394 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
                 if (!currentValue.includes(',')) {
                     currentValue += ',';
                 }
-            } else {
-                if (currentValue.length < 6) {
-                    currentValue += key;
-                }
+            } else if (currentValue.length < 6) {
+                currentValue += key;
             }
-
-            console.log('✏️ New value:', currentValue);
 
             if (activeCell) {
                 activeCell.textContent = currentValue || '--';
             }
         }
 
-        function showToast(message) {
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+        // ========== PARSER TSV PROFESSIONALE ==========
+        function parseTSV(text) {
+            const rows = [];
+            let currentRow = [];
+            let currentCell = '';
+            let insideQuotes = false;
+            let i = 0;
+
+            while (i < text.length) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (char === '"') {
+                    if (insideQuotes && nextChar === '"') {
+                        currentCell += '"';
+                        i += 2;
+                        continue;
+                    } else {
+                        insideQuotes = !insideQuotes;
+                        i++;
+                        continue;
+                    }
+                }
+
+                if (!insideQuotes) {
+                    if (char === '\t') {
+                        currentRow.push(currentCell.trim());
+                        currentCell = '';
+                        i++;
+                        continue;
+                    }
+
+                    if (char === '\r' || char === '\n') {
+                        if (char === '\r' && nextChar === '\n') i++;
+
+                        if (currentCell || currentRow.length > 0) {
+                            currentRow.push(currentCell.trim());
+                        }
+
+                        if (currentRow.some(cell => cell.length > 0)) {
+                            rows.push(currentRow);
+                        }
+
+                        currentRow = [];
+                        currentCell = '';
+                        i++;
+                        continue;
+                    }
+                }
+
+                if (insideQuotes && (char === '\r' || char === '\n')) {
+                    currentCell += ' ';
+                    if (char === '\r' && nextChar === '\n') i++;
+                } else {
+                    currentCell += char;
+                }
+
+                i++;
+            }
+
+            if (currentCell || currentRow.length > 0) {
+                currentRow.push(currentCell.trim());
+            }
+            if (currentRow.some(cell => cell.length > 0)) {
+                rows.push(currentRow);
+            }
+
+            return rows;
         }
 
-        // FUNZIONI DESKTOP
+        function processPastedData() {
+            const text = document.getElementById('pasteArea').value;
 
-        window.showAddRowModal = function() {
+            if (!text.trim()) {
+                alert('Nessun dato da importare');
+                return;
+            }
+
+            const rows = parseTSV(text);
+
+            if (rows.length < 2) {
+                alert('Dati insufficienti. Includi le intestazioni.');
+                return;
+            }
+
+            const headers = rows[0].map(h => h.toLowerCase().trim());
+
+            const findCol = (keywords) => {
+                for (let i = 0; i < headers.length; i++) {
+                    for (let kw of keywords) {
+                        if (headers[i].includes(kw)) return i;
+                    }
+                }
+                return -1;
+            };
+
+            const colIndexes = {
+                progressivo: findCol(['progressivo', 'prog', 'n°', 'n']),
+                vasca: findCol(['vasca']),
+                tipoVino: findCol(['tipo', 'vino']),
+                vigneto: findCol(['vigneto']),
+                uva: findCol(['uva']),
+                temperatura: findCol(['temperatura', 'temp']),
+                mVol: findCol(['m.vol', 'mvol', 'vol']),
+                data: findCol(['data']),
+                daFare: findCol(['da', 'fare', 'x'])
+            };
+
+            if (colIndexes.vasca === -1 || colIndexes.data === -1) {
+                alert('Colonne VASCA e Data obbligatorie');
+                return;
+            }
+
+            let importedCount = 0;
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+
+                const newTank = {
+                    id: Date.now() + importedCount + Math.random(),
+                    progressivo: (row[colIndexes.progressivo] || '').trim(),
+                    vasca: (row[colIndexes.vasca] || '').trim(),
+                    tipoVino: (row[colIndexes.tipoVino] || '').trim(),
+                    vigneto: (row[colIndexes.vigneto] || '').replace(/\n/g, ' ').trim(),
+                    uva: (row[colIndexes.uva] || '').trim(),
+                    temperatura: (row[colIndexes.temperatura] || '').trim(),
+                    mVol: (row[colIndexes.mVol] || '').trim(),
+                    data: (row[colIndexes.data] || '').trim(),
+                    daFare: (row[colIndexes.daFare] || '').toUpperCase() === 'X',
+                    priority: false
+                };
+
+                if (newTank.vasca) {
+                    tanksData.push(newTank);
+                    importedCount++;
+                }
+            }
+
+            saveData();
+            closePasteArea();
+            showToast(`✅ ${importedCount} righe importate!`);
+        }
+
+        function showPasteArea() {
+            document.getElementById('pasteSection').classList.remove('hidden');
+            document.getElementById('pasteArea').focus();
+        }
+
+        function closePasteArea() {
+            document.getElementById('pasteSection').classList.add('hidden');
+            document.getElementById('pasteArea').value = '';
+        }
+
+        // ========== COPIA VALORI NEGLI APPUNTI ==========
+        window.copyFirstDateValues = function(field) {
+            console.log('📋 Copia valori campo negli appunti:', field);
+
+            const grouped = {};
+            tanksData.forEach(tank => {
+                const date = tank.data || 'Senza Data';
+                if (!grouped[date]) grouped[date] = [];
+                grouped[date].push(tank);
+            });
+
+            const sortedDates = Object.keys(grouped).sort((a, b) => {
+                if (a === 'Senza Data') return 1;
+                if (b === 'Senza Data') return -1;
+                return parseDate(b) - parseDate(a);
+            });
+
+            let expandedDate = null;
+            for (const date of sortedDates) {
+                if (!collapsedGroups.has(date)) {
+                    expandedDate = date;
+                    break;
+                }
+            }
+
+            if (!expandedDate) {
+                alert('Nessuna data espansa. Espandi un gruppo per copiare i valori.');
+                return;
+            }
+
+            const sourceTanks = grouped[expandedDate];
+            const values = sourceTanks.map(tank => tank[field] || '');
+
+            if (values.length === 0) {
+                alert('Nessun valore trovato');
+                return;
+            }
+
+            const text = values.join('\n');
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast(`✅ Copiati ${values.length} valori di ${field === 'temperatura' ? 'Temperatura' : 'M.Vol'} da ${expandedDate}`);
+                }).catch(err => {
+                    console.error('Errore copia clipboard:', err);
+                    fallbackCopyToClipboard(text);
+                });
+            } else {
+                fallbackCopyToClipboard(text);
+            }
+        };
+
+        function fallbackCopyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                showToast('✅ Valori copiati negli appunti');
+            } catch (err) {
+                alert('Impossibile copiare negli appunti');
+            }
+
+            document.body.removeChild(textarea);
+        }
+
+        // ========== MODIFICA DESKTOP ==========
+        function updateTank(id, field, value, inputElement) {
+            const tank = tanksData.find(t => t.id === id);
+            if (!tank) return;
+
+            if (field === 'temperatura') {
+                const validation = validateTemperature(value);
+                if (!validation.valid) {
+                    if (value !== '') {
+                        alert(validation.message);
+                    }
+                    tank[field] = '';
+                    if (inputElement) inputElement.value = '';
+                    saveData();
+                    return;
+                }
+                tank[field] = validation.value;
+            } else if (field === 'mVol') {
+                const validation = validateMVol(value);
+                if (!validation.valid) {
+                    if (value !== '') {
+                        alert(validation.message);
+                    }
+                    tank[field] = '';
+                    if (inputElement) inputElement.value = '';
+                    saveData();
+                    return;
+                }
+                tank[field] = validation.value;
+            } else {
+                tank[field] = value;
+            }
+
+            saveData();
+        }
+
+        // ========== MODIFICA MASSIVA SELEZIONATE ==========
+        window.showBulkEditModal = function() {
+            const selected = getSelectedTankIds();
+            if (selected.length === 0) {
+                alert('Seleziona almeno una riga');
+                return;
+            }
+
             const modal = document.createElement('div');
             modal.className = 'modal-overlay';
             modal.innerHTML = `
                 <div class="modal-content">
-                    <div class="modal-header">➕ Aggiungi Nuova Vasca</div>
+                    <div class="modal-header">Modifica ${selected.length} Vasche Selezionate</div>
+                    <div class="modal-body">
+                        <div class="modal-info">I campi lasciati vuoti non verranno modificati</div>
+                        <label>Tipo Vino</label>
+                        <input type="text" id="bulkTipoVino" placeholder="Lascia vuoto per non modificare">
+                        <label>Uva</label>
+                        <input type="text" id="bulkUva" placeholder="Lascia vuoto per non modificare">
+                        <label>Data</label>
+                        <input type="date" id="bulkData">
+                    </div>
+                    <div class="modal-footer">
+                        <button class="modal-btn-cancel" onclick="closeBulkEditModal()">Annulla</button>
+                        <button class="modal-btn-confirm" onclick="applyBulkEdit()">Applica Modifiche</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        };
+
+        function closeBulkEditModal() {
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) modal.remove();
+        }
+
+        window.applyBulkEdit = function() {
+            const selected = getSelectedTankIds();
+            const tipoVino = document.getElementById('bulkTipoVino').value.trim();
+            const uva = document.getElementById('bulkUva').value.trim();
+            const dataInput = document.getElementById('bulkData').value;
+            const data = dataInput ? formatDateFromInput(dataInput) : null;
+
+            console.log('🔧 applyBulkEdit:', { selected, tipoVino, uva, data });
+
+            selected.forEach(id => {
+                const tank = tanksData.find(t => t.id === id);
+                if (!tank) return;
+
+                if (tipoVino) {
+                    tank.tipoVino = tipoVino;
+                }
+                if (uva) {
+                    tank.uva = uva;
+                }
+                if (data) {
+                    tank.data = data;
+                }
+            });
+
+            saveData();
+            closeBulkEditModal();
+            showToast(`✅ Modificate ${selected.length} vasche`);
+        };
+
+        window.closeBulkEditModal = closeBulkEditModal;
+
+        // ========== AGGIUNGI RIGA ==========
+        window.showAddRowModal = function() {
+            const grouped = {};
+            tanksData.forEach(tank => {
+                const date = tank.data || 'Senza Data';
+                if (!grouped[date]) grouped[date] = [];
+                grouped[date].push(tank);
+            });
+
+            const sortedDates = Object.keys(grouped).sort((a, b) => {
+                if (a === 'Senza Data') return 1;
+                if (b === 'Senza Data') return -1;
+                return parseDate(b) - parseDate(a);
+            });
+
+            let expandedDate = null;
+            for (const date of sortedDates) {
+                if (!collapsedGroups.has(date)) {
+                    expandedDate = date;
+                    break;
+                }
+            }
+
+            if (!expandedDate) {
+                expandedDate = getTodayString();
+            }
+
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">Aggiungi Nuova Vasca</div>
                     <div class="modal-body">
                         <label>Progressivo</label>
                         <input type="number" id="newProgressivo" placeholder="Es: 1">
-
-                        <label>Vasca *</label>
+                        <label>Vasca</label>
                         <input type="text" id="newVasca" placeholder="Es: 42" required>
-
                         <label>Tipo Vino</label>
                         <input type="text" id="newTipoVino" placeholder="Es: Amarone">
-
                         <label>Vigneto</label>
                         <input type="text" id="newVigneto" placeholder="Es: Vigneto Monte">
-
                         <label>Uva</label>
                         <input type="text" id="newUva" placeholder="Es: Corvina">
-
                         <label>Data</label>
-                        <input type="date" id="newData" value="${formatDateForInput(getTodayString())}">
-
-                        <label>Temperatura (°C)</label>
+                        <input type="date" id="newData" value="${formatDateForInput(expandedDate)}">
+                        <label>Temperatura °C</label>
                         <input type="text" inputmode="numeric" id="newTemperatura" placeholder="Es: 18,5">
-
                         <label>M.Vol</label>
                         <input type="text" inputmode="numeric" id="newMVol" placeholder="Es: 1025">
-
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="checkbox" id="newPriority" style="width: auto; margin: 0;">
                             Priorità
                         </label>
-
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="checkbox" id="newDaFare" style="width: auto; margin: 0;">
                             Da Fare
@@ -2379,269 +1887,106 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
 
             tanksData.push(newTank);
             saveData();
-            renderDesktopTable();
             document.querySelector('.modal-overlay').remove();
-            showToast('✓ Vasca aggiunta');
+            showToast('✅ Vasca aggiunta');
         };
 
-        // COPIA VALORI (RIPRISTINATA)
-        window.copyFirstDateValues = function(field) {
-            console.log('📋 Copia valori campo:', field);
-
-            const grouped = {};
-            tanksData.forEach(tank => {
-                const date = tank.data || 'Senza Data';
-                if (!grouped[date]) grouped[date] = [];
-                grouped[date].push(tank);
-            });
-
-            const sortedDates = Object.keys(grouped).sort((a, b) => {
-                if (a === 'Senza Data') return 1;
-                if (b === 'Senza Data') return -1;
-                return parseDate(b) - parseDate(a);
-            });
-
-            if (sortedDates.length < 2) {
-                alert('Servono almeno 2 date diverse per copiare i valori');
-                return;
-            }
-
-            const firstDate = sortedDates[0];
-            const secondDate = sortedDates[1];
-
-            const sourceTanks = grouped[firstDate];
-            const targetTanks = grouped[secondDate];
-
-            let copiedCount = 0;
-
-            targetTanks.forEach(targetTank => {
-                const sourceTank = sourceTanks.find(s => s.vasca === targetTank.vasca);
-                if (sourceTank && sourceTank[field]) {
-                    targetTank[field] = sourceTank[field];
-                    copiedCount++;
-                }
-            });
-
-            if (copiedCount > 0) {
-                saveData();
-                renderDesktopTable();
-                showToast(`✓ Copiati ${copiedCount} valori di ${field} da ${firstDate} a ${secondDate}`);
+        // ========== RENDER VIEWS ==========
+        function renderCurrentView() {
+            const device = detectDevice();
+            if (device === 'tablet') {
+                renderTabletView();
             } else {
-                alert('Nessun valore da copiare (vasche non corrispondenti)');
+                renderDesktopTable();
             }
-        };
-
-        // MODIFICA MULTIPLA (RIPRISTINATA)
-        window.showBulkEditModal = function() {
-            const selected = getSelectedTankIds();
-            if (selected.length === 0) {
-                alert('Seleziona almeno una riga');
-                return;
-            }
-
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <div class="modal-header">✏️ Modifica ${selected.length} Vasche Selezionate</div>
-                    <div class="modal-body">
-                        <div class="modal-info">
-                            I campi lasciati vuoti non verranno modificati
-                        </div>
-
-                        <label>Tipo Vino</label>
-                        <input type="text" id="bulkTipoVino" placeholder="Lascia vuoto per non modificare">
-
-                        <label>Uva</label>
-                        <input type="text" id="bulkUva" placeholder="Lascia vuoto per non modificare">
-
-                        <label>Data</label>
-                        <input type="date" id="bulkData">
-
-                        <label>Temperatura (°C)</label>
-                        <input type="text" id="bulkTemperatura" placeholder="Es: 18,5">
-
-                        <label>M.Vol</label>
-                        <input type="text" id="bulkMVol" placeholder="Es: 1025">
-
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="bulkPriority" style="width: auto; margin: 0;">
-                            Imposta tutte come prioritarie
-                        </label>
-
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="bulkDaFare" style="width: auto; margin: 0;">
-                            Imposta tutte come "Da Fare"
-                        </label>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="modal-btn-cancel" onclick="closeBulkEditModal()">Annulla</button>
-                        <button class="modal-btn-confirm" onclick="applyBulkEdit()">Applica Modifiche</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        };
-
-        function closeBulkEditModal() {
-            const modal = document.querySelector('.modal-overlay');
-            if (modal) modal.remove();
         }
 
-        function applyBulkEdit() {
-            const selected = getSelectedTankIds();
+        function detectDevice() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const forceView = urlParams.get('view');
 
-            const updates = {
-                tipoVino: document.getElementById('bulkTipoVino').value.trim(),
-                uva: document.getElementById('bulkUva').value.trim(),
-                data: document.getElementById('bulkData').value ? formatDateFromInput(document.getElementById('bulkData').value) : null,
-                temperatura: document.getElementById('bulkTemperatura').value.trim(),
-                mVol: document.getElementById('bulkMVol').value.trim(),
-                priority: document.getElementById('bulkPriority').checked,
-                daFare: document.getElementById('bulkDaFare').checked
+            if (forceView === 'tablet') return 'tablet';
+            if (forceView === 'desktop') return 'desktop';
+
+            if (isTouchDevice() && window.innerWidth <= 1024) return 'tablet';
+            return 'desktop';
+        }
+
+        function isTouchDevice() {
+            return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        }
+
+        // ========== RENDER TABLET VIEW ==========
+        function renderTabletView() {
+            const today = getTodayString();
+            const todayEl = document.getElementById('tabletCurrentDate');
+            if (todayEl) {
+                todayEl.textContent = formatDateLong(today);
+            }
+
+            // FIX 1: Mostra solo vasche NON flaggate "da fare" (!t.daFare === false)
+            const todayTanks = tanksData.filter(t => t.data === today && t.daFare === false);
+            const toDo = todayTanks.filter(t => !t.temperatura || !t.mVol);
+            const completed = todayTanks.filter(t => t.temperatura && t.mVol);
+
+            const sortTanks = (tanks) => {
+                return tanks.sort((a, b) => {
+                    if (a.priority && !b.priority) return -1;
+                    if (!a.priority && b.priority) return 1;
+                    return (parseInt(a.vasca) || 0) - (parseInt(b.vasca) || 0);
+                });
             };
 
-            let modifiedCount = 0;
+            const container = document.getElementById('tabletTableContainer');
+            if (!container) return;
 
-            selected.forEach(id => {
-                const tank = tanksData.find(t => t.id === id);
-                if (!tank) return;
-
-                if (updates.tipoVino) tank.tipoVino = updates.tipoVino;
-                if (updates.uva) tank.uva = updates.uva;
-                if (updates.data) tank.data = updates.data;
-                if (updates.temperatura) tank.temperatura = updates.temperatura;
-                if (updates.mVol) tank.mVol = updates.mVol;
-                if (updates.priority) tank.priority = true;
-                if (updates.daFare) tank.daFare = true;
-
-                modifiedCount++;
-            });
-
-            saveData();
-            renderDesktopTable();
-            closeBulkEditModal();
-            showToast(`✓ Modificate ${modifiedCount} vasche`);
-        }
-
-        function showPasteArea() {
-            document.getElementById('pasteSection').classList.remove('hidden');
-            document.getElementById('pasteArea').focus();
-        }
-
-        function closePasteArea() {
-            document.getElementById('pasteSection').classList.add('hidden');
-            document.getElementById('pasteArea').value = '';
-        }
-
-        function processPastedData() {
-            alert('Funzione import Excel');
-        }
-
-        function exportToCSV() {
-            if (tanksData.length === 0) {
-                alert('Nessun dato da esportare');
+            if (todayTanks.length === 0) {
+                container.innerHTML = '<div class="no-data">Nessuna vasca da controllare oggi</div>';
                 return;
             }
 
-            const headers = ['PROGRESSIVO', 'VASCA', 'TIPO VINO', 'VIGNETO', 'UVA', 'Temperatura', 'M.Vol', 'Data', 'Priorità', 'Da Fare'];
-            let csv = headers.join(',') + '\n';
+            let html = '<table class="tablet-table"><thead><tr>';
+            html += '<th>Vasca</th><th>Tipo</th><th>Uva</th><th>Temp °C</th><th>M.Vol</th>';
+            html += '</tr></thead><tbody>';
 
-            tanksData.forEach(tank => {
-                const row = [
-                    tank.progressivo || '', tank.vasca || '', tank.tipoVino || '', 
-                    tank.vigneto || '', tank.uva || '', tank.temperatura || '', 
-                    tank.mVol || '', tank.data || '',
-                    tank.priority ? 'Sì' : 'No', tank.daFare ? 'X' : ''
-                ];
-                csv += row.map(cell => `"${cell}"`).join(',') + '\n';
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `controllo_vasche_${getTodayString().replace(/\//g, '-')}.csv`;
-            link.click();
-        }
-
-        function deleteSelected() {
-            const selected = getSelectedTankIds();
-            if (selected.length === 0) {
-                alert('Nessuna riga selezionata');
-                return;
-            }
-
-            if (confirm(`Eliminare ${selected.length} vasche?`)) {
-                tanksData = tanksData.filter(t => !selected.includes(t.id));
-                saveData();
-                renderDesktopTable();
-                showToast(`✓ ${selected.length} vasche eliminate`);
-            }
-        }
-
-        function refreshData() {
-            if (window.firebaseDB) {
-                showToast('🔄 Ricaricamento da Firebase...');
-                initFirebase().then(() => {
-                    renderDesktopTable();
-                    showToast('✓ Dati aggiornati');
+            if (toDo.length > 0) {
+                html += '<tr><td colspan="5" class="section-divider">Da Controllare (' + toDo.length + ')</td></tr>';
+                sortTanks(toDo).forEach(tank => {
+                    html += createTabletRow(tank);
                 });
-            } else {
-                loadData();
-                renderDesktopTable();
-                showToast('✓ Dati ricaricati');
-            }
-        }
-
-        function applyFilters() {
-            renderDesktopTable();
-        }
-
-        function sortTable(column) {
-            if (currentSort.column === column) {
-                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort.column = column;
-                currentSort.direction = 'asc';
             }
 
-            tanksData.sort((a, b) => {
-                let aVal = a[column] || '';
-                let bVal = b[column] || '';
+            if (completed.length > 0) {
+                html += '<tr><td colspan="5" class="section-divider completed">Completate (' + completed.length + ')</td></tr>';
+                sortTanks(completed).forEach(tank => {
+                    html += createTabletRow(tank);
+                });
+            }
 
-                if (column === 'vasca' || column === 'progressivo') {
-                    aVal = parseInt(aVal) || 0;
-                    bVal = parseInt(bVal) || 0;
-                } else if (column === 'data') {
-                    aVal = parseDate(aVal) || new Date(0);
-                    bVal = parseDate(bVal) || new Date(0);
-                }
-
-                if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
-                if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            saveData();
-            renderDesktopTable();
+            html += '</tbody></table>';
+            container.innerHTML = html;
         }
 
-        function toggleSelectAll() {
-            const checked = document.getElementById('selectAll').checked;
-            document.querySelectorAll('.row-select').forEach(cb => cb.checked = checked);
+        function createTabletRow(tank) {
+            const rowClass = tank.priority ? 'priority' : (tank.temperatura && tank.mVol ? 'completed' : '');
+            const priority = tank.priority ? '<span class="priority-indicator">⭐</span>' : '';
+            const tempClass = tank.temperatura ? 'filled' : '';
+            const mvolClass = tank.mVol ? 'filled' : '';
+
+            return `<tr class="${rowClass}" data-tank-id="${tank.id}">
+                <td><span class="tank-number">${priority}${tank.vasca}</span></td>
+                <td>${tank.tipoVino || ''}</td>
+                <td>${tank.uva || ''}</td>
+                <td><div class="input-cell ${tempClass}" onclick="openKeypad(${tank.id}, 'temperatura', this)">${tank.temperatura || '--'}</div></td>
+                <td><div class="input-cell ${mvolClass}" onclick="openKeypad(${tank.id}, 'mVol', this)">${tank.mVol || '--'}</div></td>
+            </tr>`;
         }
 
-        function getSelectedTankIds() {
-            return Array.from(document.querySelectorAll('.row-select:checked'))
-                       .map(cb => parseInt(cb.getAttribute('data-id')));
-        }
-
-        function getFilteredData() {
-            return tanksData;
-        }
-
+        // ========== RENDER DESKTOP TABLE ==========
         function renderDesktopTable() {
             const tbody = document.getElementById('tableBody');
+            if (!tbody) return;
+
             const filtered = getFilteredData();
 
             const grouped = {};
@@ -2661,56 +2006,165 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
 
             sortedDates.forEach(date => {
                 const headerRow = document.createElement('tr');
-                headerRow.innerHTML = `
-                    <td colspan="12" class="date-group-header ${collapsedGroups.has(date) ? 'collapsed' : ''}" 
-                        onclick="toggleDateGroup('${date}')">
-                        ${date} (${grouped[date].length} vasche)
-                    </td>
-                `;
+                headerRow.innerHTML = `<td colspan="12" class="date-group-header ${collapsedGroups.has(date) ? 'collapsed' : ''}" onclick="toggleDateGroup('${date}')">${date} (${grouped[date].length} vasche)</td>`;
                 tbody.appendChild(headerRow);
 
                 if (!collapsedGroups.has(date)) {
-                    grouped[date].forEach(tank => tbody.appendChild(createTableRow(tank)));
+                    grouped[date].forEach(tank => {
+                        tbody.appendChild(createTableRow(tank));
+                    });
                 }
             });
         }
 
         function createTableRow(tank) {
             const tr = document.createElement('tr');
-            if (tank.temperatura && tank.mVol) tr.classList.add('completed');
+            if (tank.temperatura && tank.mVol) {
+                tr.classList.add('completed');
+            }
 
             const dateValue = tank.data ? formatDateForInput(tank.data) : '';
 
             tr.innerHTML = `
                 <td><input type="checkbox" class="row-select" data-id="${tank.id}"></td>
-                <td>${tank.progressivo || ''}</td>
-                <td><strong>${tank.vasca}</strong></td>
-                <td>${tank.tipoVino || ''}</td>
-                <td class="col-vigneto">${tank.vigneto || ''}</td>
-                <td>${tank.uva || ''}</td>
-                <td><input type="text" 
-                           inputmode="numeric" 
-                           value="${tank.temperatura || ''}" 
-                           onchange="updateTank(${tank.id}, 'temperatura', this.value)" 
-                           style="min-width:70px;"></td>
-                <td><input type="text" 
-                           inputmode="numeric" 
-                           value="${tank.mVol || ''}" 
-                           onchange="updateTank(${tank.id}, 'mVol', this.value)" 
-                           style="min-width:70px;"></td>
-                <td><input type="date" value="${dateValue}" onchange="updateTank(${tank.id}, 'data', formatDateFromInput(this.value)); renderDesktopTable();"></td>
-                <td style="text-align:center;">
-                    <span class="priority-star ${tank.priority ? 'active' : 'inactive'}" onclick="togglePriority(${tank.id})">★</span>
-                </td>
-                <td style="text-align:center;">
-                    <input type="checkbox" ${tank.daFare ? 'checked' : ''} onchange="updateTank(${tank.id}, 'daFare', this.checked)">
-                </td>
-                <td style="text-align:center;">
-                    <button class="delete-icon" onclick="deleteTank(${tank.id})" title="Elimina">✕</button>
-                </td>
+                <td><input type="text" value="${tank.progressivo || ''}" data-id="${tank.id}" data-field="progressivo" style="width:50px"></td>
+                <td><input type="text" value="${tank.vasca}" data-id="${tank.id}" data-field="vasca" style="width:60px"></td>
+                <td><input type="text" value="${tank.tipoVino || ''}" data-id="${tank.id}" data-field="tipoVino" style="min-width:100px"></td>
+                <td class="col-vigneto"><input type="text" value="${tank.vigneto || ''}" data-id="${tank.id}" data-field="vigneto" style="min-width:150px"></td>
+                <td><input type="text" value="${tank.uva || ''}" data-id="${tank.id}" data-field="uva" style="min-width:80px"></td>
+                <td><input type="text" inputmode="numeric" value="${tank.temperatura || ''}" data-id="${tank.id}" data-field="temperatura" class="temp-input" style="min-width:70px"></td>
+                <td><input type="text" inputmode="numeric" value="${tank.mVol || ''}" data-id="${tank.id}" data-field="mVol" class="mvol-input" style="min-width:70px"></td>
+                <td><input type="text" value="${tank.data || ''}" data-id="${tank.id}" data-field="data" placeholder="gg/mm/aaaa" style="min-width:90px"></td>
+                <td style="text-align:center"><span class="priority-star ${tank.priority ? 'active' : 'inactive'}" onclick="togglePriority(${tank.id})">⭐</span></td>
+                <td style="text-align:center"><input type="checkbox" ${tank.daFare ? 'checked' : ''} data-id="${tank.id}" data-field="daFare"></td>
+                <td style="text-align:center"><button class="delete-icon" onclick="deleteTank(${tank.id})" title="Elimina">✖</button></td>
             `;
 
+            // Event listeners per TUTTI gli input
+            const allInputs = tr.querySelectorAll('input[type="text"]');
+            allInputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    if (this.value) {
+                        this.select();
+                    }
+                });
+
+                const field = input.dataset.field;
+
+                if (field === 'temperatura' || field === 'mVol') {
+                    input.addEventListener('blur', function() {
+                        const id = parseInt(this.dataset.id);
+                        const value = this.value.trim();
+                        updateTank(id, field, value, this);
+                    });
+
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const id = parseInt(this.dataset.id);
+                            const value = this.value.trim();
+
+                            const validation = field === 'temperatura' ? validateTemperature(value) : validateMVol(value);
+
+                            if (validation.valid) {
+                                updateTank(id, field, value, this);
+
+                                const allInputs = Array.from(document.querySelectorAll(`#tableBody .${field}-input`));
+                                const currentIndex = allInputs.indexOf(this);
+                                if (currentIndex >= 0 && currentIndex < allInputs.length - 1) {
+                                    allInputs[currentIndex + 1].focus();
+                                }
+                            } else {
+                                if (value !== '') {
+                                    alert(validation.message);
+                                }
+                                this.value = '';
+                                updateTank(id, field, '', this);
+                            }
+                        } else if (e.key === 'Tab') {
+                            e.preventDefault();
+                            const id = parseInt(this.dataset.id);
+                            const value = this.value.trim();
+                            updateTank(id, field, value, this);
+
+                            if (field === 'temperatura') {
+                                const mvolInput = tr.querySelector('.mvol-input');
+                                if (mvolInput) mvolInput.focus();
+                            } else if (field === 'mVol') {
+                                const allTempInputs = Array.from(document.querySelectorAll('#tableBody .temp-input'));
+                                const currentTr = this.closest('tr');
+                                const allTrs = Array.from(document.querySelectorAll('#tableBody tr:not(:has(.date-group-header))'));
+                                const currentRowIndex = allTrs.indexOf(currentTr);
+
+                                if (currentRowIndex >= 0 && currentRowIndex < allTrs.length - 1) {
+                                    const nextTr = allTrs[currentRowIndex + 1];
+                                    const nextTempInput = nextTr.querySelector('.temp-input');
+                                    if (nextTempInput) nextTempInput.focus();
+                                }
+                            }
+                        }
+                    });
+                } else if (field === 'data') {
+                    // FIX 2: Modifica data sposta vasca nel gruppo corretto
+                    input.addEventListener('blur', function() {
+                        const id = parseInt(this.dataset.id);
+                        let value = this.value.trim();
+
+                        // Converti da ISO se necessario
+                        if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                            value = formatDateFromInput(value);
+                            this.value = value;
+                        }
+
+                        const tank = tanksData.find(t => t.id === id);
+                        if (tank && tank.data !== value) {
+                            tank.data = value;
+                            console.log(`📅 Data modificata per vasca ${tank.vasca}: ${value}`);
+                            saveData(); // Questo ora chiama renderCurrentView() che ri-raggruppa
+                        }
+                    });
+
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            this.blur();
+                        }
+                    });
+                } else {
+                    // Altri campi
+                    input.addEventListener('blur', function() {
+                        const id = parseInt(this.dataset.id);
+                        const value = this.value.trim();
+                        updateTank(id, field, value, this);
+                    });
+
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            this.blur();
+                        }
+                    });
+                }
+            });
+
+            // Checkbox daFare
+            const daFareCheckbox = tr.querySelector('input[type="checkbox"]');
+            if (daFareCheckbox && daFareCheckbox.dataset.field === 'daFare') {
+                daFareCheckbox.addEventListener('change', function() {
+                    updateTank(parseInt(this.dataset.id), 'daFare', this.checked);
+                });
+            }
+
             return tr;
+        }
+
+        // ========== UTILITY FUNCTIONS ==========
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }
 
         function toggleDateGroup(date) {
@@ -2718,140 +2172,235 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
             renderDesktopTable();
         }
 
-        function updateTank(id, field, value) {
-            const tank = tanksData.find(t => t.id === id);
-            if (!tank) return;
-
-            if (field === 'temperatura') {
-                const validation = validateTemperature(value);
-                if (!validation.valid && value !== '') {
-                    alert(validation.message);
-                    renderDesktopTable();
-                    return;
-                }
-                tank[field] = validation.value;
-            } else if (field === 'mVol') {
-                const validation = validateMVol(value);
-                if (!validation.valid && value !== '') {
-                    alert(validation.message);
-                    renderDesktopTable();
-                    return;
-                }
-                tank[field] = validation.value;
-            } else {
-                tank[field] = value;
-            }
-
-            saveData();
-        }
-
         function togglePriority(id) {
             const tank = tanksData.find(t => t.id === id);
             if (tank) {
                 tank.priority = !tank.priority;
                 saveData();
-                renderDesktopTable();
             }
         }
 
         function deleteTank(id) {
             if (confirm('Eliminare questa vasca?')) {
-                tanksData = tanksData.filter(t => t.id !== id);
-                saveData();
-                renderDesktopTable();
-                showToast('✓ Vasca eliminata');
+                const index = tanksData.findIndex(t => t.id === id);
+                if (index !== -1) {
+                    tanksData.splice(index, 1);
+                    saveData();
+                    showToast('✅ Vasca eliminata');
+                }
             }
         }
 
-        function renderTabletView() {
-            const today = getTodayString();
-            document.getElementById('tabletCurrentDate').textContent = formatDateLong(today);
+        function getFilteredData() {
+            let filtered = [...tanksData];
 
-            const todayTanks = tanksData.filter(t => t.data === today && !t.daFare);
-            const toDo = todayTanks.filter(t => !t.temperatura || !t.mVol);
-            const completed = todayTanks.filter(t => t.temperatura && t.mVol);
+            const search = document.getElementById('searchBar');
+            if (search && search.value) {
+                const searchText = search.value.toLowerCase();
+                filtered = filtered.filter(t => 
+                    (t.vasca && t.vasca.toLowerCase().includes(searchText)) ||
+                    (t.tipoVino && t.tipoVino.toLowerCase().includes(searchText)) ||
+                    (t.vigneto && t.vigneto.toLowerCase().includes(searchText)) ||
+                    (t.uva && t.uva.toLowerCase().includes(searchText)) ||
+                    (t.progressivo && t.progressivo.toString().toLowerCase().includes(searchText))
+                );
+            }
 
-            const sortTanks = (tanks) => tanks.sort((a, b) => {
-                if (a.priority !== b.priority) return b.priority - a.priority;
-                return (parseInt(a.vasca) || 0) - (parseInt(b.vasca) || 0);
+            const tipoVinoFilter = document.getElementById('filterTipoVino');
+            if (tipoVinoFilter && tipoVinoFilter.value) {
+                filtered = filtered.filter(t => t.tipoVino === tipoVinoFilter.value);
+            }
+
+            const uvaFilter = document.getElementById('filterUva');
+            if (uvaFilter && uvaFilter.value) {
+                filtered = filtered.filter(t => t.uva === uvaFilter.value);
+            }
+
+            const priorityFilter = document.getElementById('filterPriority');
+            if (priorityFilter && priorityFilter.value) {
+                if (priorityFilter.value === 'priority') {
+                    filtered = filtered.filter(t => t.priority);
+                } else if (priorityFilter.value === 'normal') {
+                    filtered = filtered.filter(t => !t.priority);
+                }
+            }
+
+            const completeFilter = document.getElementById('filterComplete');
+            if (completeFilter && completeFilter.value) {
+                if (completeFilter.value === 'complete') {
+                    filtered = filtered.filter(t => t.temperatura && t.mVol);
+                } else if (completeFilter.value === 'incomplete') {
+                    filtered = filtered.filter(t => !t.temperatura || !t.mVol);
+                }
+            }
+
+            const dateFilter = document.getElementById('filterDate');
+            if (dateFilter && dateFilter.value) {
+                filtered = filtered.filter(t => t.data === dateFilter.value);
+            }
+
+            return filtered;
+        }
+
+        function updateFilterOptions() {
+            const updateSelect = (id, values) => {
+                const select = document.getElementById(id);
+                if (!select) return;
+
+                const current = select.value;
+                const first = select.options[0].text;
+                select.innerHTML = `<option value="">${first}</option>`;
+
+                Array.from(values).sort().forEach(val => {
+                    const opt = document.createElement('option');
+                    opt.value = opt.textContent = val;
+                    select.appendChild(opt);
+                });
+
+                select.value = current;
+            };
+
+            updateSelect('filterTipoVino', new Set(tanksData.map(t => t.tipoVino).filter(v => v)));
+            updateSelect('filterUva', new Set(tanksData.map(t => t.uva).filter(v => v)));
+
+            const dateSet = new Set(tanksData.map(t => t.data).filter(v => v));
+            const dateSelect = document.getElementById('filterDate');
+            if (dateSelect) {
+                const currentDate = dateSelect.value;
+                dateSelect.innerHTML = '<option value="">Tutte le Date</option>';
+
+                Array.from(dateSet).sort((a, b) => parseDate(b) - parseDate(a)).forEach(date => {
+                    const opt = document.createElement('option');
+                    opt.value = opt.textContent = date;
+                    dateSelect.appendChild(opt);
+                });
+
+                dateSelect.value = currentDate;
+            }
+        }
+
+        function getSelectedTankIds() {
+            const checkboxes = document.querySelectorAll('.row-select:checked');
+            const ids = [];
+            checkboxes.forEach(cb => {
+                const id = parseInt(cb.getAttribute('data-id'));
+                if (!isNaN(id)) {
+                    ids.push(id);
+                }
             });
+            console.log('✅ Selected IDs:', ids);
+            return ids;
+        }
 
-            const container = document.getElementById('tabletTableContainer');
+        function deleteSelected() {
+            const selected = getSelectedTankIds();
+            console.log('🗑️ deleteSelected called, IDs:', selected);
 
-            if (todayTanks.length === 0) {
-                container.innerHTML = '<div class="no-data">✓ Nessuna vasca da controllare oggi</div>';
+            if (selected.length === 0) {
+                alert('Nessuna riga selezionata');
                 return;
             }
 
-            let html = '<table class="tablet-table"><thead><tr>';
-            html += '<th>Vasca</th><th>Tipo</th><th>Uva</th><th>Temp (°C)</th><th>M.Vol</th>';
-            html += '</tr></thead><tbody>';
+            if (confirm(`Eliminare ${selected.length} vasche?`)) {
+                // FIX 3: Elimina correttamente usando splice in loop inverso
+                console.log('Before delete:', tanksData.length);
 
-            if (toDo.length > 0) {
-                html += `<tr><td colspan="5" class="section-divider">Da Controllare (${toDo.length})</td></tr>`;
-                sortTanks(toDo).forEach(tank => {
-                    html += createTabletRow(tank);
-                });
-            }
-
-            if (completed.length > 0) {
-                html += `<tr><td colspan="5" class="section-divider completed">Completate (${completed.length})</td></tr>`;
-                sortTanks(completed).forEach(tank => {
-                    html += createTabletRow(tank);
-                });
-            }
-
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
-
-        function createTabletRow(tank) {
-            const rowClass = tank.priority ? ' priority' : (tank.temperatura && tank.mVol ? ' completed' : '');
-            const priority = tank.priority ? '<span class="priority-indicator">★</span> ' : '';
-            const tempClass = tank.temperatura ? 'filled' : '';
-            const mvolClass = tank.mVol ? 'filled' : '';
-
-            return `
-                <tr class="${rowClass}" data-tank-id="${tank.id}">
-                    <td><span class="tank-number">${priority}${tank.vasca}</span></td>
-                    <td>${tank.tipoVino || ''}</td>
-                    <td>${tank.uva || ''}</td>
-                    <td>
-                        <div class="input-cell ${tempClass}" 
-                             onclick="openKeypad(${tank.id}, 'temperatura', this)">
-                            ${tank.temperatura || '--'}
-                        </div>
-                    </td>
-                    <td>
-                        <div class="input-cell ${mvolClass}" 
-                             onclick="openKeypad(${tank.id}, 'mVol', this)">
-                            ${tank.mVol || '--'}
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }
-
-        // SETUP EVENTI
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🟢 DOMContentLoaded');
-
-            // TASTIERINO: setup semplice
-            const overlay = document.getElementById('keypadOverlay');
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    closeKeypad();
+                for (let i = tanksData.length - 1; i >= 0; i--) {
+                    if (selected.includes(tanksData[i].id)) {
+                        console.log('Removing tank:', tanksData[i].vasca, 'id:', tanksData[i].id);
+                        tanksData.splice(i, 1);
+                    }
                 }
+
+                console.log('After delete:', tanksData.length);
+                saveData();
+                showToast(`✅ ${selected.length} vasche eliminate`);
+            }
+        }
+
+        function exportToCSV() {
+            if (tanksData.length === 0) {
+                alert('Nessun dato da esportare');
+                return;
+            }
+
+            const headers = ['PROGRESSIVO', 'VASCA', 'TIPO VINO', 'VIGNETO', 'UVA', 'Temperatura', 'M.Vol', 'Data', 'Priorità', 'Da Fare'];
+            let csv = headers.join(',') + '\n';
+
+            tanksData.forEach(tank => {
+                const row = [
+                    tank.progressivo || '',
+                    tank.vasca || '',
+                    tank.tipoVino || '',
+                    tank.vigneto || '',
+                    tank.uva || '',
+                    tank.temperatura || '',
+                    tank.mVol || '',
+                    tank.data || '',
+                    tank.priority ? 'Sì' : 'No',
+                    tank.daFare ? 'X' : ''
+                ];
+                csv += row.map(cell => `"${cell}"`).join(',') + '\n';
             });
 
-            // Attach eventi ai tasti
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `controllo-vasche-${getTodayString().replace(/\//g, '-')}.csv`;
+            link.click();
+        }
+
+        function applyFilters() {
+            renderDesktopTable();
+        }
+
+        function sortTable(column) {
+            renderDesktopTable();
+        }
+
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) {
+                const checked = selectAllCheckbox.checked;
+                document.querySelectorAll('.row-select').forEach(cb => cb.checked = checked);
+            }
+        }
+
+        // Rendi funzioni globali
+        window.copyFirstDateValues = window.copyFirstDateValues;
+        window.togglePriority = togglePriority;
+        window.deleteTank = deleteTank;
+        window.deleteSelected = deleteSelected;
+        window.exportToCSV = exportToCSV;
+        window.showAddRowModal = showAddRowModal;
+        window.addNewRow = addNewRow;
+        window.showPasteArea = showPasteArea;
+        window.processPastedData = processPastedData;
+        window.closePasteArea = closePasteArea;
+        window.showBulkEditModal = showBulkEditModal;
+        window.applyBulkEdit = applyBulkEdit;
+        window.applyFilters = applyFilters;
+        window.sortTable = sortTable;
+        window.toggleSelectAll = toggleSelectAll;
+        window.toggleDateGroup = toggleDateGroup;
+
+        // ========== INIZIALIZZAZIONE ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 DOMContentLoaded');
+
+            const overlay = document.getElementById('keypadOverlay');
+            if (overlay) {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) closeKeypad();
+                });
+            }
+
             document.querySelectorAll('.key-btn').forEach(btn => {
                 const key = btn.getAttribute('data-key');
 
                 btn.addEventListener('mousedown', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('🖱️ mousedown:', key);
                     this.classList.add('pressed');
                     handleKeyPress(key);
                 });
@@ -2863,7 +2412,6 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
                 btn.addEventListener('touchstart', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('👆 touchstart:', key);
                     this.classList.add('pressed');
                     handleKeyPress(key);
                 }, { passive: false });
@@ -2874,42 +2422,106 @@ OK = Elimina solo i dati di Temperatura e M.Vol\nAnnulla = Elimina tutte le righ
                 }, { passive: false });
             });
 
-            // Tab switching
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
                     btn.classList.add('active');
                     const tabId = btn.getAttribute('data-tab');
-                    document.getElementById(tabId).classList.add('active');
+                    const tabContent = document.getElementById(tabId);
+                    if (tabContent) tabContent.classList.add('active');
+
+                    if (tabId === 'tablet-preview') {
+                        const previewContainer = document.getElementById('tabletPreviewContainer');
+                        if (previewContainer) {
+                            previewContainer.innerHTML = `
+                                <div style="max-width: 600px; margin: 0 auto; box-shadow: var(--shadow-lg); border-radius: 8px; overflow: hidden;">
+                                    <div class="tablet-header">
+                                        <h1>Controllo Vasche</h1>
+                                        <div class="current-date">${formatDateLong(getTodayString())}</div>
+                                    </div>
+                                    <div class="tablet-table-container" id="previewTable"></div>
+                                </div>
+                            `;
+
+                            const previewTable = document.getElementById('previewTable');
+                            if (previewTable) {
+                                const today = getTodayString();
+                                const todayTanks = tanksData.filter(t => t.data === today && t.daFare === false);
+                                const toDo = todayTanks.filter(t => !t.temperatura || !t.mVol);
+                                const completed = todayTanks.filter(t => t.temperatura && t.mVol);
+
+                                const sortTanks = (tanks) => {
+                                    return tanks.sort((a, b) => {
+                                        if (a.priority && !b.priority) return -1;
+                                        if (!a.priority && b.priority) return 1;
+                                        return (parseInt(a.vasca) || 0) - (parseInt(b.vasca) || 0);
+                                    });
+                                };
+
+                                if (todayTanks.length === 0) {
+                                    previewTable.innerHTML = '<div class="no-data">Nessuna vasca da controllare oggi</div>';
+                                } else {
+                                    let html = '<table class="tablet-table"><thead><tr>';
+                                    html += '<th>Vasca</th><th>Tipo</th><th>Uva</th><th>Temp</th><th>M.Vol</th>';
+                                    html += '</tr></thead><tbody>';
+
+                                    if (toDo.length > 0) {
+                                        html += '<tr><td colspan="5" class="section-divider">Da Controllare (' + toDo.length + ')</td></tr>';
+                                        sortTanks(toDo).forEach(tank => {
+                                            const priority = tank.priority ? '<span class="priority-indicator">⭐</span>' : '';
+                                            html += `<tr class="${tank.priority ? 'priority' : ''}">
+                                                <td><span class="tank-number">${priority}${tank.vasca}</span></td>
+                                                <td>${tank.tipoVino || ''}</td>
+                                                <td>${tank.uva || ''}</td>
+                                                <td>${tank.temperatura || '--'}</td>
+                                                <td>${tank.mVol || '--'}</td>
+                                            </tr>`;
+                                        });
+                                    }
+
+                                    if (completed.length > 0) {
+                                        html += '<tr><td colspan="5" class="section-divider completed">Completate (' + completed.length + ')</td></tr>';
+                                        sortTanks(completed).forEach(tank => {
+                                            const priority = tank.priority ? '<span class="priority-indicator">⭐</span>' : '';
+                                            html += `<tr class="completed">
+                                                <td><span class="tank-number">${priority}${tank.vasca}</span></td>
+                                                <td>${tank.tipoVino || ''}</td>
+                                                <td>${tank.uva || ''}</td>
+                                                <td>${tank.temperatura}</td>
+                                                <td>${tank.mVol}</td>
+                                            </tr>`;
+                                        });
+                                    }
+
+                                    html += '</tbody></table>';
+                                    previewTable.innerHTML = html;
+                                }
+                            }
+                        }
+                    }
                 });
             });
 
-            console.log('✅ Eventi tastierino attachati');
-        });
+            async function init() {
+                const device = detectDevice();
+                loadData();
 
-        // INIT
-        async function init() {
-            const device = detectDevice();
+                if (device === 'tablet') {
+                    document.getElementById('tabletView').classList.remove('hidden');
+                    renderTabletView();
+                } else {
+                    document.getElementById('desktopView').classList.remove('hidden');
+                    renderDesktopTable();
+                    updateFilterOptions();
+                }
 
-            loadData();
-
-            if (device === 'tablet') {
-                document.getElementById('tabletView').classList.remove('hidden');
-                renderTabletView();
-                console.log('📱 Tablet mode');
-            } else {
-                document.getElementById('desktopView').classList.remove('hidden');
-                renderDesktopTable();
-                console.log('🖥️ Desktop mode');
+                await initFirebase();
             }
 
-            // Init Firebase
-            await initFirebase();
-        }
-
-        init();
+            init();
+        });
     </script>
+
 </body>
 </html>
