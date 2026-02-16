@@ -491,21 +491,25 @@
         }
 
         .priority-star {
-            font-size: 18px;
+            font-size: 22px;
             cursor: pointer;
-            transition: transform 0.15s;
+            transition: transform 0.15s, color 0.2s;
+            line-height: 1;
         }
 
         .priority-star.active {
             color: var(--star);
+            text-shadow: 0 0 4px rgba(255, 185, 0, 0.4);
         }
 
         .priority-star.inactive {
-            color: var(--border-medium);
+            color: var(--border-light);
+            opacity: 0.5;
         }
 
         .priority-star:hover {
-            transform: scale(1.2);
+            transform: scale(1.3);
+            opacity: 1;
         }
 
         .delete-icon {
@@ -845,6 +849,109 @@
             background: var(--warning) !important;
         }
 
+        .alert-icon {
+            display: inline-block;
+            color: #D9534F;
+            font-weight: 700;
+            font-size: 14px;
+            margin-left: 3px;
+            cursor: help;
+            animation: alertPulse 2s ease-in-out infinite;
+            vertical-align: middle;
+        }
+
+        .alert-icon.tablet {
+            font-size: 12px;
+            margin-left: 2px;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .threshold-settings {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 10px 16px;
+            background: #FFF9E6;
+            border-radius: 6px;
+            border: 1px solid #FFE082;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .threshold-settings label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .threshold-settings input {
+            width: 60px;
+            padding: 4px 8px;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .threshold-settings input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .threshold-settings .threshold-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-right: 8px;
+        }
+
+        /* Drag & Drop */
+        .data-table tbody tr[draggable="true"] {
+            cursor: grab;
+        }
+
+        .data-table tbody tr[draggable="true"]:active {
+            cursor: grabbing;
+        }
+
+        .data-table tbody tr.dragging {
+            opacity: 0.4;
+            background: #FFF3E0 !important;
+        }
+
+        .data-table tbody tr.drag-over-top {
+            border-top: 3px solid var(--primary) !important;
+        }
+
+        .data-table tbody tr.drag-over-bottom {
+            border-bottom: 3px solid var(--primary) !important;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: var(--border-medium);
+            font-size: 16px;
+            padding: 0 4px;
+            user-select: none;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .drag-handle:hover {
+            color: var(--text-secondary);
+        }
+
+        .dragging .drag-handle {
+            cursor: grabbing;
+        }
+
         .tablet-table td {
             padding: 14px 10px;
             font-size: 14px;
@@ -860,6 +967,7 @@
         .tablet-table .priority-indicator {
             color: var(--star);
             font-size: 18px;
+            text-shadow: 0 0 3px rgba(255, 185, 0, 0.4);
         }
 
         .tablet-table .input-cell {
@@ -1089,7 +1197,13 @@
                 <button class="btn-secondary" onclick="exportToCSV()">💾 Esporta CSV</button>
                 <button class="btn-warning" onclick="showBulkEditModal()">✏️ Modifica Selezionate</button>
                 <button class="btn-outline" onclick="deleteSelected()">🗑️ Elimina Selezionate</button>
-                
+                <button class="btn-outline" onclick="toggleThresholdSettings()">⚠️ Soglie Alert</button>
+            </div>
+
+            <div id="thresholdSettings" class="threshold-settings hidden">
+                <span class="threshold-title">⚠️ Soglie di allerta giornaliera:</span>
+                <label>Δ Temp °C: <input type="text" id="threshTempDelta" value="1" inputmode="decimal" onchange="saveThresholds()"></label>
+                <label>M.Vol calo max: <input type="text" id="threshMVolDown" value="30" inputmode="numeric" onchange="saveThresholds()"></label>
             </div>
 
             <div id="pasteSection" class="hidden">
@@ -1099,7 +1213,7 @@
             </div>
 
             <div class="filters-section">
-                <input type="text" class="search-bar" id="searchBar" placeholder="🔍 Cerca per vasca, vigneto, tipo vino...">
+                <input type="text" class="search-bar" id="searchBar" placeholder="🔍 Cerca per vasca, vigneto, tipo vino..." oninput="applyFilters()">
                 <div class="filters-row">
                     <select class="filter-select" id="filterTipoVino" onchange="applyFilters()">
                         <option value="">Tutti i Tipi Vino</option>
@@ -1119,6 +1233,11 @@
                     </select>
                     <select class="filter-select" id="filterDate" onchange="applyFilters()">
                         <option value="">Tutte le Date</option>
+                    </select>
+                    <select class="filter-select" id="filterDaFare" onchange="applyFilters()">
+                        <option value="">Da Fare: Tutte</option>
+                        <option value="X">Solo con X (non trasmesse)</option>
+                        <option value="empty">Solo senza X (trasmesse)</option>
                     </select>
                 </div>
             </div>
@@ -1226,6 +1345,125 @@
         let offlineQueue = [];
         let isOnline = navigator.onLine;
         let pendingRemoteUpdate = null; // deferred update when keypad is active
+
+        // ========== SOGLIE ALLERTA ==========
+        const THRESHOLDS_KEY = 'cantina-alert-thresholds';
+        let alertThresholds = {
+            tempDelta: 1,      // °C: alert se |oggi - ieri| > tempDelta
+            mVolDown: 30       // punti: alert se ieri - oggi > mVolDown
+            // mVol UP: alert se oggi > ieri (qualsiasi incremento)
+        };
+
+        function loadThresholds() {
+            try {
+                const stored = localStorage.getItem(THRESHOLDS_KEY);
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    alertThresholds.tempDelta = parsed.tempDelta ?? 1;
+                    alertThresholds.mVolDown = parsed.mVolDown ?? 30;
+                }
+            } catch(e) {}
+        }
+
+        function saveThresholds() {
+            const tempInput = document.getElementById('threshTempDelta');
+            const mvolInput = document.getElementById('threshMVolDown');
+            if (tempInput) alertThresholds.tempDelta = parseFloat(tempInput.value.replace(',','.')) || 1;
+            if (mvolInput) alertThresholds.mVolDown = parseFloat(mvolInput.value.replace(',','.')) || 30;
+            localStorage.setItem(THRESHOLDS_KEY, JSON.stringify(alertThresholds));
+            renderCurrentView();
+        }
+        window.saveThresholds = saveThresholds;
+
+        function toggleThresholdSettings() {
+            const el = document.getElementById('thresholdSettings');
+            if (el) {
+                el.classList.toggle('hidden');
+                // Populate current values
+                const ti = document.getElementById('threshTempDelta');
+                const mi = document.getElementById('threshMVolDown');
+                if (ti) ti.value = alertThresholds.tempDelta;
+                if (mi) mi.value = alertThresholds.mVolDown;
+            }
+        }
+        window.toggleThresholdSettings = toggleThresholdSettings;
+
+        // ========== CONFRONTO GIORNO PRECEDENTE ==========
+        function getYesterdayTank(tank) {
+            // Trova la stessa vasca (stesso numero) con la data più recente PRIMA della data corrente
+            if (!tank.data || !tank.vasca) return null;
+
+            const currentDate = parseDate(tank.data);
+            if (!currentDate) return null;
+
+            let bestMatch = null;
+            let bestDate = null;
+
+            for (const t of tanksData) {
+                if (t.vasca !== tank.vasca || t.id === tank.id || !t.data) continue;
+                const tDate = parseDate(t.data);
+                if (!tDate || tDate >= currentDate) continue;
+
+                if (!bestDate || tDate > bestDate) {
+                    bestDate = tDate;
+                    bestMatch = t;
+                }
+            }
+
+            return bestMatch;
+        }
+
+        function getTankAlerts(tank) {
+            const alerts = { temp: null, mVol: null };
+            const yesterday = getYesterdayTank(tank);
+            if (!yesterday) return alerts;
+
+            // Temperatura alert
+            if (tank.temperatura && yesterday.temperatura) {
+                const todayTemp = parseFloat(String(tank.temperatura).replace(',', '.'));
+                const yesterTemp = parseFloat(String(yesterday.temperatura).replace(',', '.'));
+                if (!isNaN(todayTemp) && !isNaN(yesterTemp)) {
+                    const delta = Math.abs(todayTemp - yesterTemp);
+                    if (delta > alertThresholds.tempDelta) {
+                        const dir = todayTemp > yesterTemp ? '↑' : '↓';
+                        alerts.temp = {
+                            icon: '⚠',
+                            title: `Temp ${dir}${delta.toFixed(1)}°C vs ieri (${yesterday.temperatura})`,
+                            direction: dir
+                        };
+                    }
+                }
+            }
+
+            // M.Vol alert
+            if (tank.mVol && yesterday.mVol) {
+                const todayMVol = parseFloat(String(tank.mVol).replace(',', '.'));
+                const yesterMVol = parseFloat(String(yesterday.mVol).replace(',', '.'));
+                if (!isNaN(todayMVol) && !isNaN(yesterMVol)) {
+                    if (todayMVol > yesterMVol) {
+                        // Qualsiasi incremento = alert
+                        alerts.mVol = {
+                            icon: '⚠',
+                            title: `M.Vol ↑ vs ieri (${yesterday.mVol})`,
+                            direction: '↑'
+                        };
+                    } else if ((yesterMVol - todayMVol) > alertThresholds.mVolDown) {
+                        alerts.mVol = {
+                            icon: '⚠',
+                            title: `M.Vol ↓${(yesterMVol - todayMVol).toFixed(1)} vs ieri (${yesterday.mVol})`,
+                            direction: '↓'
+                        };
+                    }
+                }
+            }
+
+            return alerts;
+        }
+
+        function renderAlertIcon(alert, cssClass) {
+            if (!alert) return '';
+            return `<span class="alert-icon ${cssClass || ''}" title="${alert.title}">${alert.icon}</span>`;
+        }
 
         // ========== GESTIONE FIREBASE SYNC ==========
         async function initFirebase() {
@@ -1827,7 +2065,7 @@
                 temperatura: findCol(['temperatura', 'temp']),
                 mVol: findCol(['m.vol', 'mvol', 'vol']),
                 data: findCol(['data']),
-                daFare: findCol(['da', 'fare', 'x'])
+                daFare: findCol(['da fare', 'dafare'])
             };
 
             if (colIndexes.vasca === -1 || colIndexes.data === -1) {
@@ -1850,7 +2088,7 @@
                     temperatura: (row[colIndexes.temperatura] || '').trim(),
                     mVol: (row[colIndexes.mVol] || '').trim(),
                     data: (row[colIndexes.data] || '').trim(),
-                    daFare: (row[colIndexes.daFare] || '').toUpperCase() === 'X',
+                    daFare: (row[colIndexes.daFare] || '').trim().toUpperCase() === 'X' ? 'X' : '',
                     priority: false
                 };
 
@@ -1974,6 +2212,11 @@
                     return;
                 }
                 tank[field] = validation.value;
+            } else if (field === 'daFare') {
+                // Normalize: 'X' or empty string
+                const normalized = String(value).trim().toUpperCase() === 'X' ? 'X' : '';
+                tank[field] = normalized;
+                if (inputElement) inputElement.value = normalized;
             } else {
                 tank[field] = value;
             }
@@ -2101,10 +2344,8 @@
                             <input type="checkbox" id="newPriority" style="width: auto; margin: 0;">
                             Priorità
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="newDaFare" style="width: auto; margin: 0;">
-                            Da Fare
-                        </label>
+                        <label>Da Fare (X = non trasmettere al tablet)</label>
+                        <input type="text" id="newDaFare" placeholder="X oppure vuoto" style="width:80px;text-transform:uppercase">
                     </div>
                     <div class="modal-footer">
                         <button class="modal-btn-cancel" onclick="this.closest('.modal-overlay').remove()">Annulla</button>
@@ -2136,7 +2377,7 @@
                 mVol: document.getElementById('newMVol').value || '',
                 data: formatDateFromInput(document.getElementById('newData').value) || getTodayString(),
                 priority: document.getElementById('newPriority').checked,
-                daFare: document.getElementById('newDaFare').checked
+                daFare: (document.getElementById('newDaFare').value || '').trim().toUpperCase() === 'X' ? 'X' : ''
             };
 
             tanksData.push(newTank);
@@ -2223,16 +2464,20 @@
 
         function createTabletRow(tank) {
             const rowClass = tank.priority ? 'priority' : (tank.temperatura && tank.mVol ? 'completed' : '');
-            const priority = tank.priority ? '<span class="priority-indicator">⭐</span>' : '';
+            const priority = tank.priority ? '<span class="priority-indicator">★</span>' : '';
             const tempClass = tank.temperatura ? 'filled' : '';
             const mvolClass = tank.mVol ? 'filled' : '';
+
+            const alerts = getTankAlerts(tank);
+            const tempAlert = renderAlertIcon(alerts.temp, 'tablet');
+            const mvolAlert = renderAlertIcon(alerts.mVol, 'tablet');
 
             return `<tr class="${rowClass}" data-tank-id="${tank.id}">
                 <td><span class="tank-number">${priority}${tank.vasca}</span></td>
                 <td>${tank.tipoVino || ''}</td>
                 <td>${tank.uva || ''}</td>
-                <td><div class="input-cell ${tempClass}" onclick="openKeypad(${tank.id}, 'temperatura', this)">${tank.temperatura || '--'}</div></td>
-                <td><div class="input-cell ${mvolClass}" onclick="openKeypad(${tank.id}, 'mVol', this)">${tank.mVol || '--'}</div></td>
+                <td><div class="input-cell ${tempClass}" onclick="openKeypad(${tank.id}, 'temperatura', this)">${tank.temperatura || '--'}${tempAlert}</div></td>
+                <td><div class="input-cell ${mvolClass}" onclick="openKeypad(${tank.id}, 'mVol', this)">${tank.mVol || '--'}${mvolAlert}</div></td>
             </tr>`;
         }
 
@@ -2295,24 +2540,30 @@
 
         function createTableRow(tank) {
             const tr = document.createElement('tr');
+            tr.setAttribute('draggable', 'true');
+            tr.setAttribute('data-tank-id', String(tank.id));
+            tr.setAttribute('data-date', tank.data || 'Senza Data');
             if (tank.temperatura && tank.mVol) {
                 tr.classList.add('completed');
             }
 
             const dateValue = tank.data ? formatDateForInput(tank.data) : '';
+            const alerts = getTankAlerts(tank);
+            const tempAlertHtml = renderAlertIcon(alerts.temp, '');
+            const mvolAlertHtml = renderAlertIcon(alerts.mVol, '');
 
             tr.innerHTML = `
-                <td><input type="checkbox" class="row-select" data-id="${tank.id}"></td>
-                <td><input type="text" value="${tank.progressivo || ''}" data-id="${tank.id}" data-field="progressivo" style="width:50px"></td>
-                <td><input type="text" value="${tank.vasca}" data-id="${tank.id}" data-field="vasca" style="width:60px"></td>
+                <td><span class="drag-handle" title="Trascina per riordinare">⠿</span> <input type="checkbox" class="row-select" data-id="${tank.id}"></td>
+                <td><input type="text" value="${tank.progressivo || ''}" data-id="${tank.id}" data-field="progressivo" style="width:50px;color:#999;font-weight:400"></td>
+                <td><input type="text" value="${tank.vasca}" data-id="${tank.id}" data-field="vasca" style="width:60px;font-weight:700"></td>
                 <td><input type="text" value="${tank.tipoVino || ''}" data-id="${tank.id}" data-field="tipoVino" style="min-width:100px"></td>
                 <td class="col-vigneto"><input type="text" value="${tank.vigneto || ''}" data-id="${tank.id}" data-field="vigneto" style="min-width:150px"></td>
                 <td><input type="text" value="${tank.uva || ''}" data-id="${tank.id}" data-field="uva" style="min-width:80px"></td>
-                <td><input type="text" inputmode="numeric" value="${tank.temperatura || ''}" data-id="${tank.id}" data-field="temperatura" class="temp-input" style="min-width:70px"></td>
-                <td><input type="text" inputmode="numeric" value="${tank.mVol || ''}" data-id="${tank.id}" data-field="mVol" class="mvol-input" style="min-width:70px"></td>
+                <td style="white-space:nowrap"><input type="text" inputmode="numeric" value="${tank.temperatura || ''}" data-id="${tank.id}" data-field="temperatura" class="temp-input" style="min-width:70px;display:inline-block;width:calc(100% - 22px)">${tempAlertHtml}</td>
+                <td style="white-space:nowrap"><input type="text" inputmode="numeric" value="${tank.mVol || ''}" data-id="${tank.id}" data-field="mVol" class="mvol-input" style="min-width:70px;display:inline-block;width:calc(100% - 22px)">${mvolAlertHtml}</td>
                 <td><input type="text" value="${tank.data || ''}" data-id="${tank.id}" data-field="data" placeholder="gg/mm/aaaa" style="min-width:90px"></td>
-                <td style="text-align:center"><span class="priority-star ${tank.priority ? 'active' : 'inactive'}" onclick="togglePriority(${tank.id})">⭐</span></td>
-                <td style="text-align:center"><input type="checkbox" ${tank.daFare ? 'checked' : ''} data-id="${tank.id}" data-field="daFare"></td>
+                <td style="text-align:center"><span class="priority-star ${tank.priority ? 'active' : 'inactive'}" onclick="togglePriority(${tank.id})">★</span></td>
+                <td style="text-align:center"><input type="text" value="${tank.daFare || ''}" data-id="${tank.id}" data-field="daFare" class="dafare-input" style="width:40px;text-align:center;text-transform:uppercase"></td>
                 <td style="text-align:center"><button class="delete-icon" onclick="deleteTank(${tank.id})" title="Elimina">✖</button></td>
             `;
 
@@ -2327,111 +2578,259 @@
 
                 const field = input.dataset.field;
 
+                // ---- BLUR: save value ----
                 if (field === 'temperatura' || field === 'mVol') {
                     input.addEventListener('blur', function() {
                         const id = Number(this.dataset.id);
-                        const value = this.value.trim();
-                        updateTank(id, field, value, this);
-                    });
-
-                    input.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            const id = Number(this.dataset.id);
-                            const value = this.value.trim();
-
-                            const validation = field === 'temperatura' ? validateTemperature(value) : validateMVol(value);
-
-                            if (validation.valid) {
-                                updateTank(id, field, value, this);
-
-                                const allInputs = Array.from(document.querySelectorAll(`#tableBody .${field}-input`));
-                                const currentIndex = allInputs.indexOf(this);
-                                if (currentIndex >= 0 && currentIndex < allInputs.length - 1) {
-                                    allInputs[currentIndex + 1].focus();
-                                }
-                            } else {
-                                if (value !== '') {
-                                    alert(validation.message);
-                                }
-                                this.value = '';
-                                updateTank(id, field, '', this);
-                            }
-                        } else if (e.key === 'Tab') {
-                            e.preventDefault();
-                            const id = Number(this.dataset.id);
-                            const value = this.value.trim();
-                            updateTank(id, field, value, this);
-
-                            if (field === 'temperatura') {
-                                const mvolInput = tr.querySelector('.mvol-input');
-                                if (mvolInput) mvolInput.focus();
-                            } else if (field === 'mVol') {
-                                const allTempInputs = Array.from(document.querySelectorAll('#tableBody .temp-input'));
-                                const currentTr = this.closest('tr');
-                                const allTrs = Array.from(document.querySelectorAll('#tableBody tr:not(:has(.date-group-header))'));
-                                const currentRowIndex = allTrs.indexOf(currentTr);
-
-                                if (currentRowIndex >= 0 && currentRowIndex < allTrs.length - 1) {
-                                    const nextTr = allTrs[currentRowIndex + 1];
-                                    const nextTempInput = nextTr.querySelector('.temp-input');
-                                    if (nextTempInput) nextTempInput.focus();
-                                }
-                            }
-                        }
+                        updateTank(id, field, this.value.trim(), this);
                     });
                 } else if (field === 'data') {
-                    // FIX 2: Modifica data sposta vasca nel gruppo corretto
                     input.addEventListener('blur', function() {
                         const id = Number(this.dataset.id);
                         let value = this.value.trim();
-
-                        // Converti da ISO se necessario
                         if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
                             value = formatDateFromInput(value);
                             this.value = value;
                         }
-
                         const tank = tanksData.find(t => t.id === id);
                         if (tank && tank.data !== value) {
                             tank.data = value;
-                            console.log(`📅 Data modificata per vasca ${tank.vasca}: ${value}`);
-                            saveData(); // Questo ora chiama renderCurrentView() che ri-raggruppa
-                        }
-                    });
-
-                    input.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            this.blur();
+                            saveData();
                         }
                     });
                 } else {
-                    // Altri campi
                     input.addEventListener('blur', function() {
                         const id = Number(this.dataset.id);
-                        const value = this.value.trim();
-                        updateTank(id, field, value, this);
+                        updateTank(id, field, this.value.trim(), this);
                     });
+                }
 
-                    input.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            this.blur();
+                // ---- KEYDOWN: unified Excel-like navigation ----
+                input.addEventListener('keydown', function(e) {
+                    const key = e.key;
+
+                    // Enter: validate (temp/mVol), then move down to same column
+                    if (key === 'Enter') {
+                        e.preventDefault();
+                        if (field === 'temperatura' || field === 'mVol') {
+                            const validation = field === 'temperatura' ? validateTemperature(this.value.trim()) : validateMVol(this.value.trim());
+                            if (!validation.valid && this.value.trim() !== '') {
+                                alert(validation.message);
+                                this.value = '';
+                                updateTank(Number(this.dataset.id), field, '', this);
+                                return;
+                            }
                         }
-                    });
+                        this.blur();
+                        navigateCell(this, 'down');
+                        return;
+                    }
+
+                    // Tab / Shift+Tab: move right/left
+                    if (key === 'Tab') {
+                        e.preventDefault();
+                        this.blur();
+                        navigateCell(this, e.shiftKey ? 'left' : 'right');
+                        return;
+                    }
+
+                    // Arrow keys: navigate (only when not mid-text-edit for left/right)
+                    if (key === 'ArrowDown') {
+                        e.preventDefault();
+                        this.blur();
+                        navigateCell(this, 'down');
+                        return;
+                    }
+                    if (key === 'ArrowUp') {
+                        e.preventDefault();
+                        this.blur();
+                        navigateCell(this, 'up');
+                        return;
+                    }
+                    // ArrowLeft/Right: only navigate cells if cursor is at start/end
+                    if (key === 'ArrowLeft' && this.selectionStart === 0) {
+                        e.preventDefault();
+                        this.blur();
+                        navigateCell(this, 'left');
+                        return;
+                    }
+                    if (key === 'ArrowRight' && this.selectionStart === this.value.length) {
+                        e.preventDefault();
+                        this.blur();
+                        navigateCell(this, 'right');
+                        return;
+                    }
+
+                    // Escape: cancel edit, restore original value
+                    if (key === 'Escape') {
+                        e.preventDefault();
+                        const tank = tanksData.find(t => t.id === Number(this.dataset.id));
+                        if (tank) this.value = tank[field] || '';
+                        this.blur();
+                        return;
+                    }
+                });
+            });
+
+            // Drag & Drop handlers
+            tr.addEventListener('dragstart', function(e) {
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', String(tank.id));
+                window._dragSourceDate = this.getAttribute('data-date');
+            });
+
+            tr.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                document.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+                    el.classList.remove('drag-over-top', 'drag-over-bottom');
+                });
+                window._dragSourceDate = null;
+            });
+
+            tr.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                // Only allow drop within same date group
+                if (this.getAttribute('data-date') !== window._dragSourceDate) return;
+                if (this.classList.contains('dragging')) return;
+
+                e.dataTransfer.dropEffect = 'move';
+                const rect = this.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+
+                this.classList.remove('drag-over-top', 'drag-over-bottom');
+                if (e.clientY < midY) {
+                    this.classList.add('drag-over-top');
+                } else {
+                    this.classList.add('drag-over-bottom');
                 }
             });
 
-            // Checkbox daFare
-            const daFareCheckbox = tr.querySelector('input[type="checkbox"]');
-            if (daFareCheckbox && daFareCheckbox.dataset.field === 'daFare') {
-                daFareCheckbox.addEventListener('change', function() {
-                    updateTank(Number(this.dataset.id), 'daFare', this.checked);
-                });
-            }
+            tr.addEventListener('dragleave', function() {
+                this.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            tr.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over-top', 'drag-over-bottom');
+
+                const draggedId = Number(e.dataTransfer.getData('text/plain'));
+                const targetId = Number(this.getAttribute('data-tank-id'));
+                if (draggedId === targetId) return;
+
+                // Only within same date group
+                const targetDate = this.getAttribute('data-date');
+                if (targetDate !== window._dragSourceDate) return;
+
+                // Determine insert position (above or below)
+                const rect = this.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const insertAfter = e.clientY >= midY;
+
+                reorderTankInGroup(draggedId, targetId, targetDate, insertAfter);
+            });
 
             return tr;
+        }
+
+        // ========== EXCEL-LIKE KEYBOARD NAVIGATION ==========
+        function navigateCell(currentInput, direction) {
+            // Get all visible data rows (skip date group headers)
+            const allRows = Array.from(document.querySelectorAll('#tableBody tr[data-tank-id]'));
+            if (allRows.length === 0) return;
+
+            const currentRow = currentInput.closest('tr');
+            const rowIndex = allRows.indexOf(currentRow);
+            if (rowIndex === -1) return;
+
+            // Get all text inputs in the current row to determine column position
+            const rowInputs = Array.from(currentRow.querySelectorAll('input[type="text"]'));
+            const colIndex = rowInputs.indexOf(currentInput);
+            if (colIndex === -1) return;
+
+            let targetRow = rowIndex;
+            let targetCol = colIndex;
+
+            if (direction === 'right') {
+                targetCol++;
+                if (targetCol >= rowInputs.length) {
+                    // Wrap to first column of next row
+                    targetCol = 0;
+                    targetRow++;
+                }
+            } else if (direction === 'left') {
+                targetCol--;
+                if (targetCol < 0) {
+                    // Wrap to last column of previous row
+                    targetRow--;
+                    if (targetRow >= 0) {
+                        const prevRowInputs = allRows[targetRow].querySelectorAll('input[type="text"]');
+                        targetCol = prevRowInputs.length - 1;
+                    }
+                }
+            } else if (direction === 'down') {
+                targetRow++;
+            } else if (direction === 'up') {
+                targetRow--;
+            }
+
+            // Bounds check
+            if (targetRow < 0 || targetRow >= allRows.length) return;
+
+            const targetRowEl = allRows[targetRow];
+            const targetInputs = Array.from(targetRowEl.querySelectorAll('input[type="text"]'));
+
+            // Clamp column
+            if (targetCol < 0) targetCol = 0;
+            if (targetCol >= targetInputs.length) targetCol = targetInputs.length - 1;
+
+            const targetInput = targetInputs[targetCol];
+            if (targetInput) {
+                targetInput.focus();
+            }
+        }
+
+        // ========== DRAG & DROP REORDER ==========
+        function reorderTankInGroup(draggedId, targetId, dateGroup, insertAfter) {
+            // Get all tanks in this date group, in current order
+            const groupTanks = tanksData.filter(t => (t.data || 'Senza Data') === dateGroup);
+            const otherTanks = tanksData.filter(t => (t.data || 'Senza Data') !== dateGroup);
+
+            // Remove dragged tank from group
+            const draggedIndex = groupTanks.findIndex(t => t.id === draggedId);
+            if (draggedIndex === -1) return;
+            const [draggedTank] = groupTanks.splice(draggedIndex, 1);
+
+            // Find target position
+            const targetIndex = groupTanks.findIndex(t => t.id === targetId);
+            if (targetIndex === -1) return;
+
+            // Insert at correct position
+            const insertIndex = insertAfter ? targetIndex + 1 : targetIndex;
+            groupTanks.splice(insertIndex, 0, draggedTank);
+
+            // Rebuild tanksData preserving order: iterate through current tanksData
+            // Replace group tanks in-place to maintain overall order
+            const newTanksData = [];
+            let groupIdx = 0;
+            let insertedGroup = false;
+
+            for (const tank of tanksData) {
+                if ((tank.data || 'Senza Data') === dateGroup) {
+                    if (!insertedGroup) {
+                        // Insert all reordered group tanks at the position of the first group tank
+                        newTanksData.push(...groupTanks);
+                        insertedGroup = true;
+                    }
+                    // Skip original group tanks (already inserted)
+                } else {
+                    newTanksData.push(tank);
+                }
+            }
+
+            tanksData = newTanksData;
+            saveData();
+            console.log(`↕️ Riordinata vasca ${draggedTank.vasca} nel gruppo ${dateGroup}`);
         }
 
         // ========== UTILITY FUNCTIONS ==========
@@ -2513,6 +2912,15 @@
             const dateFilter = document.getElementById('filterDate');
             if (dateFilter && dateFilter.value) {
                 filtered = filtered.filter(t => t.data === dateFilter.value);
+            }
+
+            const daFareFilter = document.getElementById('filterDaFare');
+            if (daFareFilter && daFareFilter.value) {
+                if (daFareFilter.value === 'X') {
+                    filtered = filtered.filter(t => t.daFare === 'X');
+                } else if (daFareFilter.value === 'empty') {
+                    filtered = filtered.filter(t => !t.daFare);
+                }
             }
 
             return filtered;
@@ -2766,7 +3174,7 @@
                                     if (toDo.length > 0) {
                                         html += '<tr><td colspan="5" class="section-divider">Da Controllare (' + toDo.length + ')</td></tr>';
                                         sortTanks(toDo).forEach(tank => {
-                                            const priority = tank.priority ? '<span class="priority-indicator">⭐</span>' : '';
+                                            const priority = tank.priority ? '<span class="priority-indicator">★</span>' : '';
                                             html += `<tr class="${tank.priority ? 'priority' : ''}">
                                                 <td><span class="tank-number">${priority}${tank.vasca}</span></td>
                                                 <td>${tank.tipoVino || ''}</td>
@@ -2780,7 +3188,7 @@
                                     if (completed.length > 0) {
                                         html += '<tr><td colspan="5" class="section-divider completed">Completate (' + completed.length + ')</td></tr>';
                                         sortTanks(completed).forEach(tank => {
-                                            const priority = tank.priority ? '<span class="priority-indicator">⭐</span>' : '';
+                                            const priority = tank.priority ? '<span class="priority-indicator">★</span>' : '';
                                             html += `<tr class="completed">
                                                 <td><span class="tank-number">${priority}${tank.vasca}</span></td>
                                                 <td>${tank.tipoVino || ''}</td>
@@ -2804,6 +3212,7 @@
                 const device = detectDevice();
                 loadData();
                 loadOfflineQueue();
+                loadThresholds();
                 isOnline = navigator.onLine;
 
                 if (device === 'tablet') {
