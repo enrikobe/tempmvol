@@ -5,15 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Controllo Vasche">
+    <meta name="apple-mobile-web-app-title" content="Controllo Fermentazione">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#C44536">
-    <title>Gestione Controllo Vasche - Cantina</title>
+    <title>Controllo Fermentazione - Cantina</title>
     <style>
         :root {
             --primary: #C44536;
             --primary-light: #D95F4F;
             --secondary: #E8927C;
+            --purple: #7B1FA2;
+            --purple-light: #9C4DCC;
+            --purple-secondary: #CE93D8;
             --bg-main: #FAFAFA;
             --bg-card: #FFFFFF;
             --text-primary: #333333;
@@ -172,18 +175,18 @@
 
         .desktop-header {
             background: var(--bg-card);
-            padding: 24px 32px;
+            padding: 12px 24px;
             border-radius: 8px;
             box-shadow: var(--shadow-sm);
-            margin-bottom: 24px;
+            margin-bottom: 16px;
             border-left: 4px solid var(--primary);
         }
 
         .desktop-header h1 {
             color: var(--primary);
-            font-size: 26px;
+            font-size: 22px;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin-bottom: 10px;
         }
 
         .desktop-tabs {
@@ -1167,9 +1170,373 @@
                 display: none;
             }
 
+            #splashScreen {
+                display: none;
+            }
+
+            #slideMenu, #slideMenuOverlay {
+                display: none;
+            }
+
             #landscapeWarning {
                 display: flex;
             }
+        }
+
+        /* ===== SECTION SWITCH (Desktop) ===== */
+        .section-switch {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 8px;
+        }
+
+        .section-switch-btn {
+            padding: 7px 18px;
+            border: 2px solid var(--border-medium);
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .section-switch-btn:first-child {
+            border-radius: 6px 0 0 6px;
+            border-right: 1px solid var(--border-medium);
+        }
+
+        .section-switch-btn:last-child {
+            border-radius: 0 6px 6px 0;
+            border-left: 1px solid var(--border-medium);
+        }
+
+        .section-switch-btn.active-vasche {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .section-switch-btn.active-barriques {
+            background: var(--purple);
+            border-color: var(--purple);
+            color: white;
+        }
+
+        /* ===== BARRIQUES THEME ===== */
+        .barriques-theme .desktop-header {
+            border-left-color: var(--purple);
+        }
+
+        .barriques-theme .desktop-header h1 {
+            color: var(--purple);
+        }
+
+        .barriques-theme .tab-btn.active {
+            color: var(--purple);
+            border-bottom-color: var(--purple);
+        }
+
+        .barriques-theme .tab-btn:hover {
+            color: var(--purple-light);
+        }
+
+        .barriques-theme .btn-primary {
+            background: var(--purple);
+        }
+
+        .barriques-theme .btn-primary:hover {
+            background: var(--purple-light);
+        }
+
+        .barriques-theme .btn-secondary {
+            background: var(--purple-secondary);
+        }
+
+        .barriques-theme .btn-secondary:hover {
+            background: #BA68C8;
+        }
+
+        .barriques-theme .search-bar:focus {
+            border-color: var(--purple);
+        }
+
+        .barriques-theme .filter-select:focus {
+            border-color: var(--purple);
+        }
+
+        .barriques-theme .data-table input:focus {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 3px rgba(123, 31, 162, 0.1);
+        }
+
+        .barriques-theme .date-group-header {
+            background: linear-gradient(to right, var(--purple), var(--purple-light));
+        }
+
+        .barriques-theme .data-table th:hover {
+            color: var(--purple);
+        }
+
+        .barriques-theme .data-table th.sortable.sort-asc::after,
+        .barriques-theme .data-table th.sortable.sort-desc::after {
+            color: var(--purple);
+        }
+
+        .barriques-theme .threshold-settings .threshold-title {
+            color: var(--purple);
+        }
+
+        .barriques-theme .threshold-settings input:focus {
+            border-color: var(--purple);
+        }
+
+        .barriques-theme .data-table tbody tr.drag-over-top {
+            border-top-color: var(--purple) !important;
+        }
+
+        .barriques-theme .data-table tbody tr.drag-over-bottom {
+            border-bottom-color: var(--purple) !important;
+        }
+
+        .barriques-theme .modal-header {
+            color: var(--purple);
+        }
+
+        .barriques-theme .modal-body input:focus,
+        .barriques-theme .modal-body select:focus {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 3px rgba(123, 31, 162, 0.1);
+        }
+
+        .barriques-theme .modal-btn-confirm {
+            background: var(--purple);
+        }
+
+        .barriques-theme .modal-btn-confirm:hover {
+            background: var(--purple-light);
+        }
+
+        /* ===== SPLASH SCREEN (Tablet) ===== */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99990;
+            padding: 40px 20px;
+            gap: 24px;
+        }
+
+        .splash-screen h1 {
+            color: white;
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .splash-screen p {
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .splash-btn {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            width: 85%;
+            max-width: 360px;
+            padding: 20px 24px;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 17px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .splash-btn:active {
+            transform: scale(0.97);
+        }
+
+        .splash-btn-vasche {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        }
+
+        .splash-btn-barriques {
+            background: linear-gradient(135deg, var(--purple), var(--purple-light));
+        }
+
+        .splash-btn .splash-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .splash-btn .splash-label {
+            text-align: left;
+            line-height: 1.3;
+        }
+
+        .splash-btn .splash-sublabel {
+            font-size: 12px;
+            font-weight: 400;
+            opacity: 0.85;
+        }
+
+        /* ===== HAMBURGER MENU (Tablet) ===== */
+        .hamburger-btn {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+            z-index: 110;
+            line-height: 1;
+        }
+
+        .hamburger-btn:active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .slide-menu {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: white;
+            z-index: 99980;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+            transition: left 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide-menu.open {
+            left: 0;
+        }
+
+        .slide-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99970;
+            display: none;
+        }
+
+        .slide-menu-overlay.open {
+            display: block;
+        }
+
+        .slide-menu-header {
+            padding: 20px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .slide-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            border: none;
+            background: none;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.2s;
+        }
+
+        .slide-menu-item:active {
+            background: #F5F5F5;
+        }
+
+        .slide-menu-item.active-item {
+            font-weight: 700;
+        }
+
+        .slide-menu-item .menu-icon {
+            font-size: 22px;
+            width: 32px;
+            text-align: center;
+        }
+
+        .slide-menu-item .menu-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .menu-dot-vasche {
+            background: var(--primary);
+        }
+
+        .menu-dot-barriques {
+            background: var(--purple);
+        }
+
+        /* Barriques tablet theme */
+        .barriques-tablet-theme .tablet-header {
+            background: linear-gradient(135deg, var(--purple), var(--purple-light));
+        }
+
+        .barriques-tablet-theme .tablet-table .tank-number {
+            color: var(--purple);
+        }
+
+        .barriques-tablet-theme .tablet-table .input-cell.active {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 4px rgba(123, 31, 162, 0.1);
+        }
+
+        .barriques-tablet-theme .section-divider {
+            border-top-color: var(--purple-light);
+        }
+
+        .barriques-tablet-theme .offline-banner {
+            background: linear-gradient(135deg, #9C4DCC, #7B1FA2);
+        }
+
+        body.keyboard-open.barriques-tablet-theme .tablet-table tbody tr.focused-row {
+            box-shadow: 0 0 0 3px var(--purple), 0 6px 20px rgba(0,0,0,0.25);
+        }
+
+        /* Barriques tablet: vigneto subtitle */
+        .tablet-vigneto-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 400;
+            line-height: 1.2;
+            margin-top: 2px;
         }
     </style>
 </head>
@@ -1183,7 +1550,11 @@
 
     <div id="desktopView" class="hidden desktop-view">
         <div class="desktop-header">
-            <h1>🍷 Gestione Controllo Vasche</h1>
+            <div class="section-switch">
+                <button class="section-switch-btn active-vasche" onclick="switchSection('vasche')">🍷 Vasche</button>
+                <button class="section-switch-btn" onclick="switchSection('barriques')">🛢️ Barriques</button>
+            </div>
+            <h1 id="desktopTitle">Controllo Fermentazione Vasche</h1>
             <div class="desktop-tabs">
                 <button class="tab-btn active" data-tab="data-management">Gestione Dati</button>
                 <button class="tab-btn" data-tab="tablet-preview">Vista Tablet</button>
@@ -1271,9 +1642,38 @@
         </div>
     </div>
 
+    <!-- SPLASH SCREEN (Tablet) -->
+    <div id="splashScreen" class="splash-screen hidden">
+        <h1>Controllo Fermentazione</h1>
+        <p>Seleziona la sezione da controllare</p>
+        <button class="splash-btn splash-btn-vasche" onclick="selectTabletSection('vasche')">
+            <span class="splash-icon">🍷</span>
+            <span class="splash-label">Controllo Vasche<br><span class="splash-sublabel">Fermentazione vasche in acciaio</span></span>
+        </button>
+        <button class="splash-btn splash-btn-barriques" onclick="selectTabletSection('barriques')">
+            <span class="splash-icon">🛢️</span>
+            <span class="splash-label">Controllo Barriques<br><span class="splash-sublabel">Fermentazione barriques in legno</span></span>
+        </button>
+    </div>
+
+    <!-- SLIDE MENU (Tablet) -->
+    <div id="slideMenuOverlay" class="slide-menu-overlay" onclick="closeSlideMenu()"></div>
+    <div id="slideMenu" class="slide-menu">
+        <div class="slide-menu-header">Navigazione</div>
+        <button class="slide-menu-item" onclick="switchTabletSection('vasche')">
+            <span class="menu-dot menu-dot-vasche"></span>
+            Controllo Vasche
+        </button>
+        <button class="slide-menu-item" onclick="switchTabletSection('barriques')">
+            <span class="menu-dot menu-dot-barriques"></span>
+            Controllo Barriques
+        </button>
+    </div>
+
     <div id="tabletView" class="hidden">
         <div class="tablet-header">
-            <h1>Controllo Vasche</h1>
+            <button class="hamburger-btn" onclick="openSlideMenu()">☰</button>
+            <h1 id="tabletTitle">Controllo Vasche</h1>
             <div class="current-date" id="tabletCurrentDate"></div>
 
             <div id="syncStatus" class="sync-status offline">
@@ -1333,18 +1733,55 @@
         const FIRESTORE_COLLECTION = 'vasche';
         const OFFLINE_QUEUE_KEY = 'cantina-offline-queue';
 
+        const BARRIQUES_STORAGE_KEY = 'cantina-barriques-data';
+        const BARRIQUES_FIRESTORE_COLLECTION = 'barriques';
+        const BARRIQUES_OFFLINE_QUEUE_KEY = 'cantina-offline-queue-barriques';
+
+        let currentSection = 'vasche'; // 'vasche' or 'barriques'
         let tanksData = [];
+        let barriquesData = [];
         let currentSort = { column: null, direction: 'asc' };
         let collapsedGroups = new Set();
         let firestoreListener = null;
+        let firestoreListenerBarriques = null;
         let isSyncing = false;
         let activeCell = null;
         let activeTankId = null;
         let activeField = null;
         let currentValue = '';
         let offlineQueue = [];
+        let offlineQueueBarriques = [];
         let isOnline = navigator.onLine;
-        let pendingRemoteUpdate = null; // deferred update when keypad is active
+        let pendingRemoteUpdate = null;
+
+        // ===== SECTION HELPERS =====
+        function getData() {
+            return currentSection === 'barriques' ? barriquesData : tanksData;
+        }
+        function setData(data) {
+            if (currentSection === 'barriques') { barriquesData = data; }
+            else { tanksData = data; }
+        }
+        function getStorageKey() {
+            return currentSection === 'barriques' ? BARRIQUES_STORAGE_KEY : STORAGE_KEY;
+        }
+        function getCollectionName() {
+            return currentSection === 'barriques' ? BARRIQUES_FIRESTORE_COLLECTION : FIRESTORE_COLLECTION;
+        }
+        function getOfflineQueueKey() {
+            return currentSection === 'barriques' ? BARRIQUES_OFFLINE_QUEUE_KEY : OFFLINE_QUEUE_KEY;
+        }
+        function getOfflineQueue() {
+            return currentSection === 'barriques' ? offlineQueueBarriques : offlineQueue;
+        }
+        function setOfflineQueue(q) {
+            if (currentSection === 'barriques') { offlineQueueBarriques = q; }
+            else { offlineQueue = q; }
+        }
+        function getIdentifierField() {
+            // Barriques match by vigneto, vasche by vasca
+            return currentSection === 'barriques' ? 'vigneto' : 'vasca';
+        }
 
         // ========== SOGLIE ALLERTA ==========
         const THRESHOLDS_KEY = 'cantina-alert-thresholds';
@@ -1390,17 +1827,18 @@
 
         // ========== CONFRONTO GIORNO PRECEDENTE ==========
         function getYesterdayTank(tank) {
-            // Trova la stessa vasca (stesso numero) con la data più recente PRIMA della data corrente
-            if (!tank.data || !tank.vasca) return null;
+            const idField = getIdentifierField();
+            if (!tank.data || !tank[idField]) return null;
 
             const currentDate = parseDate(tank.data);
             if (!currentDate) return null;
 
             let bestMatch = null;
             let bestDate = null;
+            const data = getData();
 
-            for (const t of tanksData) {
-                if (t.vasca !== tank.vasca || t.id === tank.id || !t.data) continue;
+            for (const t of data) {
+                if (t[idField] !== tank[idField] || t.id === tank.id || !t.data) continue;
                 const tDate = parseDate(t.data);
                 if (!tDate || tDate >= currentDate) continue;
 
@@ -1476,54 +1914,9 @@
             }
 
             try {
-                const { collection, getDocs, onSnapshot } = window.firestoreFunctions;
-                const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
-
-                const snapshot = await getDocs(tanksRef);
-                const remoteTanks = [];
-                snapshot.forEach(doc => remoteTanks.push(doc.data()));
-
-                console.log(`📥 Scaricati ${remoteTanks.length} record da Firebase`);
-
-                if (remoteTanks.length > 0) {
-                    tanksData = remoteTanks;
-                    saveLocalStorage();
-                }
-
-                firestoreListener = onSnapshot(tanksRef, (snapshot) => {
-                    if (isSyncing) return;
-
-                    const updated = [];
-                    snapshot.forEach(doc => updated.push(doc.data()));
-
-                    if (JSON.stringify(updated.sort((a,b) => a.id - b.id)) !== JSON.stringify(tanksData.sort((a,b) => a.id - b.id))) {
-                        // CONCURRENT EDIT PROTECTION: if keypad is active, smart merge
-                        if (activeCell && activeTankId !== null) {
-                            // Merge all tanks except the one being actively edited
-                            const mergedData = updated.map(remoteTank => {
-                                if (remoteTank.id === activeTankId) {
-                                    // Keep local version of actively edited tank
-                                    const localTank = tanksData.find(t => t.id === activeTankId);
-                                    return localTank || remoteTank;
-                                }
-                                return remoteTank;
-                            });
-                            tanksData = mergedData;
-                            saveLocalStorage();
-                            // Update non-active rows in tablet DOM without full re-render
-                            smartUpdateTabletRows();
-                            console.log('🔄 Smart merge: aggiornamento senza interrompere input attivo');
-                        } else {
-                            tanksData = updated;
-                            saveLocalStorage();
-                            renderCurrentView();
-                        }
-                    }
-                }, (error) => {
-                    console.error('❌ Listener error:', error);
-                    updateSyncStatus('offline');
-                });
-
+                // Init both collections
+                await initFirebaseCollection('vasche');
+                await initFirebaseCollection('barriques');
                 updateSyncStatus('synced');
                 return true;
             } catch (error) {
@@ -1533,10 +1926,65 @@
             }
         }
 
+        async function initFirebaseCollection(section) {
+            const { collection, getDocs, onSnapshot } = window.firestoreFunctions;
+            const collName = section === 'barriques' ? BARRIQUES_FIRESTORE_COLLECTION : FIRESTORE_COLLECTION;
+            const tanksRef = collection(window.firebaseDB, collName);
+
+            const snapshot = await getDocs(tanksRef);
+            const remoteTanks = [];
+            snapshot.forEach(doc => remoteTanks.push(doc.data()));
+            console.log(`📥 [${section}] Scaricati ${remoteTanks.length} record da Firebase`);
+
+            if (remoteTanks.length > 0) {
+                if (section === 'barriques') {
+                    barriquesData = remoteTanks;
+                    localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(barriquesData));
+                } else {
+                    tanksData = remoteTanks;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(tanksData));
+                }
+            }
+
+            const listener = onSnapshot(tanksRef, (snapshot) => {
+                if (isSyncing) return;
+
+                const updated = [];
+                snapshot.forEach(doc => updated.push(doc.data()));
+
+                const dataRef = section === 'barriques' ? barriquesData : tanksData;
+                if (JSON.stringify(updated.sort((a,b) => a.id - b.id)) !== JSON.stringify(dataRef.sort((a,b) => a.id - b.id))) {
+                    // Only do smart merge if this is the ACTIVE section AND keypad is open
+                    if (currentSection === section && activeCell && activeTankId !== null) {
+                        const mergedData = updated.map(remoteTank => {
+                            if (remoteTank.id === activeTankId) {
+                                const localTank = dataRef.find(t => t.id === activeTankId);
+                                return localTank || remoteTank;
+                            }
+                            return remoteTank;
+                        });
+                        if (section === 'barriques') { barriquesData = mergedData; localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(mergedData)); }
+                        else { tanksData = mergedData; localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedData)); }
+                        if (currentSection === section) smartUpdateTabletRows();
+                        console.log(`🔄 [${section}] Smart merge`);
+                    } else {
+                        if (section === 'barriques') { barriquesData = updated; localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(updated)); }
+                        else { tanksData = updated; localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); }
+                        if (currentSection === section) renderCurrentView();
+                    }
+                }
+            }, (error) => {
+                console.error(`❌ [${section}] Listener error:`, error);
+                if (currentSection === section) updateSyncStatus('offline');
+            });
+
+            if (section === 'barriques') { firestoreListenerBarriques = listener; }
+            else { firestoreListener = listener; }
+        }
+
         async function syncToFirestore() {
             if (!window.firebaseDB || isSyncing) {
-                // Queue for offline if no Firebase
-                if (!window.firebaseDB && offlineQueue.length === 0) {
+                if (!window.firebaseDB && getOfflineQueue().length === 0) {
                     queueCurrentState();
                 }
                 return;
@@ -1553,11 +2001,12 @@
             updateSyncStatus('syncing');
 
             try {
-                // Flush any pending offline queue first
                 await flushOfflineQueue();
 
                 const { collection, doc, setDoc, getDocs, writeBatch } = window.firestoreFunctions;
-                const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
+                const collName = getCollectionName();
+                const tanksRef = collection(window.firebaseDB, collName);
+                const data = getData();
 
                 const snapshot = await getDocs(tanksRef);
                 const firestoreIds = new Set();
@@ -1566,16 +2015,16 @@
                 const batch = writeBatch(window.firebaseDB);
                 let writeCount = 0;
 
-                for (const tank of tanksData) {
+                for (const tank of data) {
                     const tankId = String(tank.id);
-                    const tankRef = doc(window.firebaseDB, FIRESTORE_COLLECTION, tankId);
+                    const tankRef = doc(window.firebaseDB, collName, tankId);
                     batch.set(tankRef, tank);
                     firestoreIds.delete(tankId);
                     writeCount++;
                 }
 
                 for (const id of firestoreIds) {
-                    const tankRef = doc(window.firebaseDB, FIRESTORE_COLLECTION, id);
+                    const tankRef = doc(window.firebaseDB, collName, id);
                     batch.delete(tankRef);
                     writeCount++;
                 }
@@ -1583,7 +2032,7 @@
                 await batch.commit();
                 updateSyncStatus('synced');
                 updateOfflineBanner(false);
-                console.log(`✅ Sync completato: ${writeCount} operazioni`);
+                console.log(`✅ [${currentSection}] Sync completato: ${writeCount} operazioni`);
             } catch (error) {
                 console.error('❌ Sync error:', error);
                 queueCurrentState();
@@ -1599,26 +2048,20 @@
             if (detectDevice() !== 'tablet') return;
             const container = document.getElementById('tabletTableContainer');
             if (!container) return;
+            const data = getData();
 
-            // Update only non-active rows in the DOM
             const rows = container.querySelectorAll('tr[data-tank-id]');
             rows.forEach(row => {
                 const tankId = Number(row.getAttribute('data-tank-id'));
-                if (tankId === activeTankId) return; // skip active row
+                if (tankId === activeTankId) return;
 
-                const tank = tanksData.find(t => t.id === tankId);
+                const tank = data.find(t => t.id === tankId);
                 if (!tank) return;
 
-                // Update text cells
                 const cells = row.querySelectorAll('td');
-                if (cells.length >= 3) {
-                    cells[1].textContent = tank.tipoVino || '';
-                    cells[2].textContent = tank.uva || '';
-                }
-
-                // Update input cells only if not being edited
-                const tempCell = row.querySelector('.input-cell:first-of-type') || cells[3]?.querySelector('.input-cell');
-                const mvolCell = row.querySelector('.input-cell:last-of-type') || cells[4]?.querySelector('.input-cell');
+                // Update varies by section - just update input cells
+                const tempCell = row.querySelector('.input-cell:first-of-type') || cells[cells.length - 2]?.querySelector('.input-cell');
+                const mvolCell = row.querySelector('.input-cell:last-of-type') || cells[cells.length - 1]?.querySelector('.input-cell');
 
                 if (tempCell && !tempCell.classList.contains('active')) {
                     tempCell.textContent = tank.temperatura || '--';
@@ -1636,49 +2079,50 @@
             try {
                 const stored = localStorage.getItem(OFFLINE_QUEUE_KEY);
                 if (stored) offlineQueue = JSON.parse(stored);
-            } catch (e) {
-                offlineQueue = [];
-            }
+            } catch (e) { offlineQueue = []; }
+            try {
+                const stored = localStorage.getItem(BARRIQUES_OFFLINE_QUEUE_KEY);
+                if (stored) offlineQueueBarriques = JSON.parse(stored);
+            } catch (e) { offlineQueueBarriques = []; }
         }
 
         function saveOfflineQueue() {
-            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(offlineQueue));
+            localStorage.setItem(getOfflineQueueKey(), JSON.stringify(getOfflineQueue()));
         }
 
         function queueCurrentState() {
-            // Store field-level operations for later merge
             const op = {
                 timestamp: Date.now(),
-                snapshot: JSON.parse(JSON.stringify(tanksData))
+                snapshot: JSON.parse(JSON.stringify(getData()))
             };
-            offlineQueue = [op]; // Keep only latest snapshot (last-write-wins)
+            setOfflineQueue([op]);
             saveOfflineQueue();
-            console.log('📦 Stato salvato in coda offline');
+            console.log(`📦 [${currentSection}] Stato salvato in coda offline`);
         }
 
         async function flushOfflineQueue() {
-            if (offlineQueue.length === 0) return;
+            const queue = getOfflineQueue();
+            if (queue.length === 0) return;
             if (!window.firebaseDB || !navigator.onLine) return;
 
-            console.log(`📤 Flushing ${offlineQueue.length} operazioni offline...`);
+            console.log(`📤 [${currentSection}] Flushing ${queue.length} operazioni offline...`);
 
             try {
                 const { collection, getDocs } = window.firestoreFunctions;
-                const tanksRef = collection(window.firebaseDB, FIRESTORE_COLLECTION);
+                const collName = getCollectionName();
+                const tanksRef = collection(window.firebaseDB, collName);
                 const remoteSnapshot = await getDocs(tanksRef);
                 const remoteTanks = [];
                 remoteSnapshot.forEach(doc => remoteTanks.push(doc.data()));
 
-                // Field-level merge: local wins for fields modified offline
-                const queuedSnapshot = offlineQueue[offlineQueue.length - 1].snapshot;
-
+                const queuedSnapshot = queue[queue.length - 1].snapshot;
                 const mergedData = fieldLevelMerge(remoteTanks, queuedSnapshot);
-                tanksData = mergedData;
+                setData(mergedData);
                 saveLocalStorage();
 
-                offlineQueue = [];
+                setOfflineQueue([]);
                 saveOfflineQueue();
-                console.log('✅ Coda offline svuotata con merge campo-per-campo');
+                console.log(`✅ [${currentSection}] Coda offline svuotata con merge campo-per-campo`);
             } catch (error) {
                 console.error('❌ Errore flush coda offline:', error);
             }
@@ -1689,14 +2133,11 @@
             const localMap = new Map(localTanks.map(t => [t.id, t]));
             const merged = [];
 
-            // Process all local tanks (these have user's edits)
             for (const [id, localTank] of localMap) {
                 const remoteTank = remoteMap.get(id);
                 if (!remoteTank) {
-                    // Tank exists only locally (new or deleted remotely but edited locally)
                     merged.push(localTank);
                 } else {
-                    // Both exist: field-level merge, local wins for temperatura/mVol (user input fields)
                     const mergedTank = { ...remoteTank };
                     // Local wins for value fields the tablet edits
                     if (localTank.temperatura !== remoteTank.temperatura && localTank.temperatura) {
@@ -1707,19 +2148,21 @@
                     }
                     // Remote wins for structural fields (desktop edits)
                     mergedTank.data = remoteTank.data;
-                    mergedTank.tipoVino = remoteTank.tipoVino;
                     mergedTank.vigneto = remoteTank.vigneto;
                     mergedTank.uva = remoteTank.uva;
                     mergedTank.progressivo = remoteTank.progressivo;
                     mergedTank.daFare = remoteTank.daFare;
                     mergedTank.priority = remoteTank.priority;
+                    // Section-specific structural fields
+                    if (remoteTank.vasca !== undefined) mergedTank.vasca = remoteTank.vasca;
+                    if (remoteTank.tipoVino !== undefined) mergedTank.tipoVino = remoteTank.tipoVino;
+                    if (remoteTank.localeFila !== undefined) mergedTank.localeFila = remoteTank.localeFila;
 
                     merged.push(mergedTank);
                 }
                 remoteMap.delete(id);
             }
 
-            // Tanks that exist only remotely (added by desktop while tablet was offline)
             for (const [id, remoteTank] of remoteMap) {
                 merged.push(remoteTank);
             }
@@ -1754,11 +2197,11 @@
         window.addEventListener('online', () => {
             isOnline = true;
             updateOfflineBanner(false);
-            console.log('🟢 Connessione ripristinata');
-            if (!firestoreListener) {
+            console.log(`🟢 Connessione ripristinata — sincronizzazione solo [${currentSection}]`);
+            // Only sync the ACTIVE section to avoid overwriting other section's data
+            if (!firestoreListener && !firestoreListenerBarriques) {
                 initFirebase();
             } else {
-                // Flush offline queue then sync
                 flushOfflineQueue().then(() => syncToFirestore());
             }
         });
@@ -1774,10 +2217,7 @@
         function saveData() {
             saveLocalStorage();
             syncToFirestore();
-            // AUTO-AGGIORNA dopo ogni salvataggio
-            // Ma NON ri-rendere tablet se il tastierino è aperto (proteggi input attivo)
             if (activeCell && detectDevice() === 'tablet') {
-                // Solo aggiorna filtri desktop se necessario
                 return;
             }
             renderCurrentView();
@@ -1785,15 +2225,19 @@
         }
 
         function saveLocalStorage() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(tanksData));
+            localStorage.setItem(getStorageKey(), JSON.stringify(getData()));
         }
 
         function loadData() {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                tanksData = JSON.parse(stored);
-            }
-            return tanksData;
+            try {
+                const storedV = localStorage.getItem(STORAGE_KEY);
+                if (storedV) tanksData = JSON.parse(storedV);
+            } catch(e) { tanksData = []; }
+            try {
+                const storedB = localStorage.getItem(BARRIQUES_STORAGE_KEY);
+                if (storedB) barriquesData = JSON.parse(storedB);
+            } catch(e) { barriquesData = []; }
+            return getData();
         }
 
         // ========== VALIDAZIONE E FORMATTAZIONE ==========
@@ -1854,27 +2298,24 @@
         window.openKeypad = function(tankId, field, cellEl) {
             // SAME ROW: just switch field without closing keypad
             if (activeCell && activeTankId === tankId) {
-                // Save current field value first
                 saveCurrentValue();
-                // Remove active state from old cell
                 activeCell.classList.remove('active');
-                // Switch to new field
                 activeField = field;
-                const tank = tanksData.find(t => t.id === tankId);
+                const data = getData();
+                const tank = data.find(t => t.id === tankId);
                 currentValue = tank[field] ? String(tank[field]) : '';
                 activeCell = cellEl;
                 cellEl.classList.add('active');
-                // Update display
                 cellEl.textContent = currentValue || '--';
-                return; // keypad stays open, focused-row stays
+                return;
             }
 
-            // DIFFERENT ROW or first open: full close then open
             closeKeypad();
 
             activeTankId = tankId;
             activeField = field;
-            const tank = tanksData.find(t => t.id === tankId);
+            const data = getData();
+            const tank = data.find(t => t.id === tankId);
             currentValue = tank[field] ? String(tank[field]) : '';
             activeCell = cellEl;
 
@@ -1912,7 +2353,8 @@
         function saveCurrentValue() {
             if (!activeTankId || !activeField) return;
 
-            const tank = tanksData.find(t => t.id === activeTankId);
+            const data = getData();
+            const tank = data.find(t => t.id === activeTankId);
             if (!tank) return;
 
             const validation = activeField === 'temperatura' ? validateTemperature(currentValue) : validateMVol(currentValue);
@@ -2056,45 +2498,86 @@
                 return -1;
             };
 
-            const colIndexes = {
-                progressivo: findCol(['progressivo', 'prog', 'n°', 'n']),
-                vasca: findCol(['vasca']),
-                tipoVino: findCol(['tipo', 'vino']),
-                vigneto: findCol(['vigneto']),
-                uva: findCol(['uva']),
-                temperatura: findCol(['temperatura', 'temp']),
-                mVol: findCol(['m.vol', 'mvol', 'vol']),
-                data: findCol(['data']),
-                daFare: findCol(['da fare', 'dafare'])
-            };
-
-            if (colIndexes.vasca === -1 || colIndexes.data === -1) {
-                alert('Colonne VASCA e Data obbligatorie');
-                return;
-            }
-
             let importedCount = 0;
+            const data = getData();
 
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-
-                const newTank = {
-                    id: Date.now() + importedCount + Math.random(),
-                    progressivo: (row[colIndexes.progressivo] || '').trim(),
-                    vasca: (row[colIndexes.vasca] || '').trim(),
-                    tipoVino: (row[colIndexes.tipoVino] || '').trim(),
-                    vigneto: (row[colIndexes.vigneto] || '').replace(/\n/g, ' ').trim(),
-                    uva: (row[colIndexes.uva] || '').trim(),
-                    temperatura: (row[colIndexes.temperatura] || '').trim(),
-                    mVol: (row[colIndexes.mVol] || '').trim(),
-                    data: (row[colIndexes.data] || '').trim(),
-                    daFare: (row[colIndexes.daFare] || '').trim().toUpperCase() === 'X' ? 'X' : '',
-                    priority: false
+            if (currentSection === 'barriques') {
+                // BARRIQUES IMPORT
+                const colIndexes = {
+                    progressivo: findCol(['progressivo', 'prog', 'n°', 'n']),
+                    localeFila: findCol(['locale / fila', 'locale/fila', 'locale fila']),
+                    vigneto: findCol(['vigneto']),
+                    uva: findCol(['uva']),
+                    temperatura: findCol(['temperatura', 'temp']),
+                    mVol: findCol(['m.vol', 'mvol', 'vol']),
+                    data: findCol(['data']),
+                    daFare: findCol(['da fare', 'dafare'])
                 };
 
-                if (newTank.vasca) {
-                    tanksData.push(newTank);
-                    importedCount++;
+                if (colIndexes.vigneto === -1 || colIndexes.data === -1) {
+                    alert('Colonne VIGNETO e DATA obbligatorie per barriques');
+                    return;
+                }
+
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    const newItem = {
+                        id: Date.now() + importedCount + Math.random(),
+                        progressivo: (row[colIndexes.progressivo] || '').trim(),
+                        localeFila: colIndexes.localeFila >= 0 ? (row[colIndexes.localeFila] || '').replace(/\n/g, ' ').trim() : '',
+                        vigneto: (row[colIndexes.vigneto] || '').replace(/\n/g, ' ').trim(),
+                        uva: (row[colIndexes.uva] || '').trim(),
+                        temperatura: (row[colIndexes.temperatura] || '').trim(),
+                        mVol: (row[colIndexes.mVol] || '').trim(),
+                        data: (row[colIndexes.data] || '').trim(),
+                        daFare: (row[colIndexes.daFare] || '').trim().toUpperCase() === 'X' ? 'X' : '',
+                        priority: false
+                    };
+
+                    if (newItem.vigneto) {
+                        data.push(newItem);
+                        importedCount++;
+                    }
+                }
+            } else {
+                // VASCHE IMPORT (existing logic)
+                const colIndexes = {
+                    progressivo: findCol(['progressivo', 'prog', 'n°', 'n']),
+                    vasca: findCol(['vasca']),
+                    tipoVino: findCol(['tipo', 'vino']),
+                    vigneto: findCol(['vigneto']),
+                    uva: findCol(['uva']),
+                    temperatura: findCol(['temperatura', 'temp']),
+                    mVol: findCol(['m.vol', 'mvol', 'vol']),
+                    data: findCol(['data']),
+                    daFare: findCol(['da fare', 'dafare'])
+                };
+
+                if (colIndexes.vasca === -1 || colIndexes.data === -1) {
+                    alert('Colonne VASCA e Data obbligatorie');
+                    return;
+                }
+
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    const newTank = {
+                        id: Date.now() + importedCount + Math.random(),
+                        progressivo: (row[colIndexes.progressivo] || '').trim(),
+                        vasca: (row[colIndexes.vasca] || '').trim(),
+                        tipoVino: (row[colIndexes.tipoVino] || '').trim(),
+                        vigneto: (row[colIndexes.vigneto] || '').replace(/\n/g, ' ').trim(),
+                        uva: (row[colIndexes.uva] || '').trim(),
+                        temperatura: (row[colIndexes.temperatura] || '').trim(),
+                        mVol: (row[colIndexes.mVol] || '').trim(),
+                        data: (row[colIndexes.data] || '').trim(),
+                        daFare: (row[colIndexes.daFare] || '').trim().toUpperCase() === 'X' ? 'X' : '',
+                        priority: false
+                    };
+
+                    if (newTank.vasca) {
+                        data.push(newTank);
+                        importedCount++;
+                    }
                 }
             }
 
@@ -2116,9 +2599,10 @@
         // ========== COPIA VALORI NEGLI APPUNTI ==========
         window.copyFirstDateValues = function(field) {
             console.log('📋 Copia valori campo negli appunti:', field);
+            const data = getData();
 
             const grouped = {};
-            tanksData.forEach(tank => {
+            data.forEach(tank => {
                 const date = tank.data || 'Senza Data';
                 if (!grouped[date]) grouped[date] = [];
                 grouped[date].push(tank);
@@ -2151,7 +2635,8 @@
                 return;
             }
 
-            const text = values.join('\n');
+            // Wrap each value in quotes so Excel doesn't split "14,50" into two columns
+            const text = values.map(v => v ? `"${v}"` : '').join('\n');
 
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(() => {
@@ -2185,7 +2670,8 @@
 
         // ========== MODIFICA DESKTOP ==========
         function updateTank(id, field, value, inputElement) {
-            const tank = tanksData.find(t => t.id === id);
+            const data = getData();
+            const tank = data.find(t => t.id === id);
             if (!tank) return;
 
             if (field === 'temperatura') {
@@ -2232,11 +2718,12 @@
                 return;
             }
 
+            const itemLabel = currentSection === 'barriques' ? 'Barriques' : 'Vasche';
             const modal = document.createElement('div');
             modal.className = 'modal-overlay';
             modal.innerHTML = `
                 <div class="modal-content">
-                    <div class="modal-header">Modifica ${selected.length} Vasche Selezionate</div>
+                    <div class="modal-header">Modifica ${selected.length} ${itemLabel} Selezionate</div>
                     <div class="modal-body">
                         <div class="modal-info">I campi lasciati vuoti non verranno modificati</div>
                         <label>Tipo Vino</label>
@@ -2268,9 +2755,10 @@
             const data = dataInput ? formatDateFromInput(dataInput) : null;
 
             console.log('🔧 applyBulkEdit:', { selected, tipoVino, uva, data });
+            const allData = getData();
 
             selected.forEach(id => {
-                const tank = tanksData.find(t => t.id === id);
+                const tank = allData.find(t => t.id === id);
                 if (!tank) return;
 
                 if (tipoVino) {
@@ -2286,15 +2774,16 @@
 
             saveData();
             closeBulkEditModal();
-            showToast(`✅ Modificate ${selected.length} vasche`);
+            showToast(`✅ Modificate ${selected.length} ${currentSection === 'barriques' ? 'barriques' : 'vasche'}`);
         };
 
         window.closeBulkEditModal = closeBulkEditModal;
 
         // ========== AGGIUNGI RIGA ==========
         window.showAddRowModal = function() {
+            const data = getData();
             const grouped = {};
-            tanksData.forEach(tank => {
+            data.forEach(tank => {
                 const date = tank.data || 'Senza Data';
                 if (!grouped[date]) grouped[date] = [];
                 grouped[date].push(tank);
@@ -2320,70 +2809,130 @@
 
             const modal = document.createElement('div');
             modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <div class="modal-header">Aggiungi Nuova Vasca</div>
-                    <div class="modal-body">
-                        <label>Progressivo</label>
-                        <input type="number" id="newProgressivo" placeholder="Es: 1">
-                        <label>Vasca</label>
-                        <input type="text" id="newVasca" placeholder="Es: 42" required>
-                        <label>Tipo Vino</label>
-                        <input type="text" id="newTipoVino" placeholder="Es: Amarone">
-                        <label>Vigneto</label>
-                        <input type="text" id="newVigneto" placeholder="Es: Vigneto Monte">
-                        <label>Uva</label>
-                        <input type="text" id="newUva" placeholder="Es: Corvina">
-                        <label>Data</label>
-                        <input type="date" id="newData" value="${formatDateForInput(expandedDate)}">
-                        <label>Temperatura °C</label>
-                        <input type="text" inputmode="numeric" id="newTemperatura" placeholder="Es: 18,5">
-                        <label>M.Vol</label>
-                        <input type="text" inputmode="numeric" id="newMVol" placeholder="Es: 1025">
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="newPriority" style="width: auto; margin: 0;">
-                            Priorità
-                        </label>
-                        <label>Da Fare (X = non trasmettere al tablet)</label>
-                        <input type="text" id="newDaFare" placeholder="X oppure vuoto" style="width:80px;text-transform:uppercase">
+
+            if (currentSection === 'barriques') {
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <div class="modal-header">Aggiungi Nuova Barrique</div>
+                        <div class="modal-body">
+                            <label>Progressivo</label>
+                            <input type="number" id="newProgressivo" placeholder="Es: 1">
+                            <label>Locale / Fila</label>
+                            <input type="text" id="newLocaleFila" placeholder="Es: LOC. G (Nord) FILA: 1-2">
+                            <label>Vigneto *</label>
+                            <input type="text" id="newVigneto" placeholder="Es: VILLA 1-2-3-5" required>
+                            <label>Uva</label>
+                            <input type="text" id="newUva" placeholder="Es: PN">
+                            <label>Data</label>
+                            <input type="date" id="newData" value="${formatDateForInput(expandedDate)}">
+                            <label>Temperatura °C</label>
+                            <input type="text" inputmode="numeric" id="newTemperatura" placeholder="Es: 18,5">
+                            <label>M.Vol</label>
+                            <input type="text" inputmode="numeric" id="newMVol" placeholder="Es: 1025">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="newPriority" style="width: auto; margin: 0;">
+                                Priorità
+                            </label>
+                            <label>Da Fare (X = non trasmettere al tablet)</label>
+                            <input type="text" id="newDaFare" placeholder="X oppure vuoto" style="width:80px;text-transform:uppercase">
+                        </div>
+                        <div class="modal-footer">
+                            <button class="modal-btn-cancel" onclick="this.closest('.modal-overlay').remove()">Annulla</button>
+                            <button class="modal-btn-confirm" onclick="addNewRow()">Aggiungi</button>
+                        </div>
                     </div>
-                    <div class="modal-footer">
-                        <button class="modal-btn-cancel" onclick="this.closest('.modal-overlay').remove()">Annulla</button>
-                        <button class="modal-btn-confirm" onclick="addNewRow()">Aggiungi</button>
+                `;
+            } else {
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <div class="modal-header">Aggiungi Nuova Vasca</div>
+                        <div class="modal-body">
+                            <label>Progressivo</label>
+                            <input type="number" id="newProgressivo" placeholder="Es: 1">
+                            <label>Vasca</label>
+                            <input type="text" id="newVasca" placeholder="Es: 42" required>
+                            <label>Tipo Vino</label>
+                            <input type="text" id="newTipoVino" placeholder="Es: Amarone">
+                            <label>Vigneto</label>
+                            <input type="text" id="newVigneto" placeholder="Es: Vigneto Monte">
+                            <label>Uva</label>
+                            <input type="text" id="newUva" placeholder="Es: Corvina">
+                            <label>Data</label>
+                            <input type="date" id="newData" value="${formatDateForInput(expandedDate)}">
+                            <label>Temperatura °C</label>
+                            <input type="text" inputmode="numeric" id="newTemperatura" placeholder="Es: 18,5">
+                            <label>M.Vol</label>
+                            <input type="text" inputmode="numeric" id="newMVol" placeholder="Es: 1025">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="newPriority" style="width: auto; margin: 0;">
+                                Priorità
+                            </label>
+                            <label>Da Fare (X = non trasmettere al tablet)</label>
+                            <input type="text" id="newDaFare" placeholder="X oppure vuoto" style="width:80px;text-transform:uppercase">
+                        </div>
+                        <div class="modal-footer">
+                            <button class="modal-btn-cancel" onclick="this.closest('.modal-overlay').remove()">Annulla</button>
+                            <button class="modal-btn-confirm" onclick="addNewRow()">Aggiungi</button>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
             document.body.appendChild(modal);
-            document.getElementById('newVasca').focus();
+            if (currentSection === 'barriques') {
+                document.getElementById('newVigneto').focus();
+            } else {
+                document.getElementById('newVasca').focus();
+            }
         };
 
         window.addNewRow = function() {
-            const vasca = document.getElementById('newVasca').value.trim();
-            if (!vasca) {
-                alert('Il numero vasca è obbligatorio');
-                return;
+            const data = getData();
+            const newId = data.length > 0 ? Math.max(...data.map(t => t.id)) + 1 : 1;
+
+            if (currentSection === 'barriques') {
+                const vigneto = document.getElementById('newVigneto').value.trim();
+                if (!vigneto) {
+                    alert('Il vigneto è obbligatorio');
+                    return;
+                }
+                const newItem = {
+                    id: newId,
+                    progressivo: document.getElementById('newProgressivo').value || '',
+                    localeFila: document.getElementById('newLocaleFila').value || '',
+                    vigneto: vigneto,
+                    uva: document.getElementById('newUva').value || '',
+                    temperatura: document.getElementById('newTemperatura').value || '',
+                    mVol: document.getElementById('newMVol').value || '',
+                    data: formatDateFromInput(document.getElementById('newData').value) || getTodayString(),
+                    priority: document.getElementById('newPriority').checked,
+                    daFare: (document.getElementById('newDaFare').value || '').trim().toUpperCase() === 'X' ? 'X' : ''
+                };
+                data.push(newItem);
+            } else {
+                const vasca = document.getElementById('newVasca').value.trim();
+                if (!vasca) {
+                    alert('Il numero vasca è obbligatorio');
+                    return;
+                }
+                const newTank = {
+                    id: newId,
+                    progressivo: document.getElementById('newProgressivo').value || '',
+                    vasca: vasca,
+                    tipoVino: document.getElementById('newTipoVino').value || '',
+                    vigneto: document.getElementById('newVigneto').value || '',
+                    uva: document.getElementById('newUva').value || '',
+                    temperatura: document.getElementById('newTemperatura').value || '',
+                    mVol: document.getElementById('newMVol').value || '',
+                    data: formatDateFromInput(document.getElementById('newData').value) || getTodayString(),
+                    priority: document.getElementById('newPriority').checked,
+                    daFare: (document.getElementById('newDaFare').value || '').trim().toUpperCase() === 'X' ? 'X' : ''
+                };
+                data.push(newTank);
             }
 
-            const newId = tanksData.length > 0 ? Math.max(...tanksData.map(t => t.id)) + 1 : 1;
-
-            const newTank = {
-                id: newId,
-                progressivo: document.getElementById('newProgressivo').value || '',
-                vasca: vasca,
-                tipoVino: document.getElementById('newTipoVino').value || '',
-                vigneto: document.getElementById('newVigneto').value || '',
-                uva: document.getElementById('newUva').value || '',
-                temperatura: document.getElementById('newTemperatura').value || '',
-                mVol: document.getElementById('newMVol').value || '',
-                data: formatDateFromInput(document.getElementById('newData').value) || getTodayString(),
-                priority: document.getElementById('newPriority').checked,
-                daFare: (document.getElementById('newDaFare').value || '').trim().toUpperCase() === 'X' ? 'X' : ''
-            };
-
-            tanksData.push(newTank);
             saveData();
             document.querySelector('.modal-overlay').remove();
-            showToast('✅ Vasca aggiunta');
+            showToast(currentSection === 'barriques' ? '✅ Barrique aggiunta' : '✅ Vasca aggiunta');
         };
 
         // ========== RENDER VIEWS ==========
@@ -2419,15 +2968,20 @@
                 todayEl.textContent = formatDateLong(today);
             }
 
-            // Mostra solo vasche NON flaggate "da fare" (persistente)
-            const todayTanks = tanksData.filter(t => t.data === today && !t.daFare);
+            const data = getData();
+            // Mostra solo items NON flaggati "da fare"
+            const todayTanks = data.filter(t => t.data === today && !t.daFare);
             const toDo = todayTanks.filter(t => !t.temperatura || !t.mVol);
             const completed = todayTanks.filter(t => t.temperatura && t.mVol);
 
+            const idField = getIdentifierField();
             const sortTanks = (tanks) => {
                 return tanks.sort((a, b) => {
                     if (a.priority && !b.priority) return -1;
                     if (!a.priority && b.priority) return 1;
+                    if (currentSection === 'barriques') {
+                        return (a.vigneto || '').localeCompare(b.vigneto || '', 'it');
+                    }
                     return (parseInt(a.vasca) || 0) - (parseInt(b.vasca) || 0);
                 });
             };
@@ -2435,24 +2989,31 @@
             const container = document.getElementById('tabletTableContainer');
             if (!container) return;
 
+            const noDataLabel = currentSection === 'barriques' ? 'Nessuna barrique da controllare oggi' : 'Nessuna vasca da controllare oggi';
             if (todayTanks.length === 0) {
-                container.innerHTML = '<div class="no-data">Nessuna vasca da controllare oggi</div>';
+                container.innerHTML = `<div class="no-data">${noDataLabel}</div>`;
                 return;
             }
 
             let html = '<table class="tablet-table"><thead><tr>';
-            html += '<th>Vasca</th><th>Tipo</th><th>Uva</th><th>Temp °C</th><th>M.Vol</th>';
+            if (currentSection === 'barriques') {
+                html += '<th>Vigneto</th><th>Uva</th><th>Temp °C</th><th>M.Vol</th>';
+            } else {
+                html += '<th>Vasca</th><th>Tipo</th><th>Uva</th><th>Temp °C</th><th>M.Vol</th>';
+            }
             html += '</tr></thead><tbody>';
 
+            const colSpan = currentSection === 'barriques' ? 4 : 5;
+
             if (toDo.length > 0) {
-                html += '<tr><td colspan="5" class="section-divider">Da Controllare (' + toDo.length + ')</td></tr>';
+                html += `<tr><td colspan="${colSpan}" class="section-divider">Da Controllare (${toDo.length})</td></tr>`;
                 sortTanks(toDo).forEach(tank => {
                     html += createTabletRow(tank);
                 });
             }
 
             if (completed.length > 0) {
-                html += '<tr><td colspan="5" class="section-divider completed">Completate (' + completed.length + ')</td></tr>';
+                html += `<tr><td colspan="${colSpan}" class="section-divider completed">Completate (${completed.length})</td></tr>`;
                 sortTanks(completed).forEach(tank => {
                     html += createTabletRow(tank);
                 });
@@ -2472,19 +3033,32 @@
             const tempAlert = renderAlertIcon(alerts.temp, 'tablet');
             const mvolAlert = renderAlertIcon(alerts.mVol, 'tablet');
 
-            return `<tr class="${rowClass}" data-tank-id="${tank.id}">
-                <td><span class="tank-number">${priority}${tank.vasca}</span></td>
-                <td>${tank.tipoVino || ''}</td>
-                <td>${tank.uva || ''}</td>
-                <td><div class="input-cell ${tempClass}" onclick="openKeypad(${tank.id}, 'temperatura', this)">${tank.temperatura || '--'}${tempAlert}</div></td>
-                <td><div class="input-cell ${mvolClass}" onclick="openKeypad(${tank.id}, 'mVol', this)">${tank.mVol || '--'}${mvolAlert}</div></td>
-            </tr>`;
+            if (currentSection === 'barriques') {
+                const localeSub = tank.localeFila ? `<div class="tablet-vigneto-sub">${tank.localeFila}</div>` : '';
+                return `<tr class="${rowClass}" data-tank-id="${tank.id}">
+                    <td><span class="tank-number">${priority}<span style="font-weight:700">${tank.vigneto || ''}</span></span>${localeSub}</td>
+                    <td>${tank.uva || ''}</td>
+                    <td><div class="input-cell ${tempClass}" onclick="openKeypad(${tank.id}, 'temperatura', this)">${tank.temperatura || '--'}${tempAlert}</div></td>
+                    <td><div class="input-cell ${mvolClass}" onclick="openKeypad(${tank.id}, 'mVol', this)">${tank.mVol || '--'}${mvolAlert}</div></td>
+                </tr>`;
+            } else {
+                return `<tr class="${rowClass}" data-tank-id="${tank.id}">
+                    <td><span class="tank-number">${priority}${tank.vasca}</span></td>
+                    <td>${tank.tipoVino || ''}</td>
+                    <td>${tank.uva || ''}</td>
+                    <td><div class="input-cell ${tempClass}" onclick="openKeypad(${tank.id}, 'temperatura', this)">${tank.temperatura || '--'}${tempAlert}</div></td>
+                    <td><div class="input-cell ${mvolClass}" onclick="openKeypad(${tank.id}, 'mVol', this)">${tank.mVol || '--'}${mvolAlert}</div></td>
+                </tr>`;
+            }
         }
 
         // ========== RENDER DESKTOP TABLE ==========
         function renderDesktopTable() {
             const tbody = document.getElementById('tableBody');
             if (!tbody) return;
+
+            // Update table headers based on section
+            updateDesktopTableHeaders();
 
             const filtered = getFilteredData();
 
@@ -2501,7 +3075,6 @@
                 return parseDate(b) - parseDate(a);
             });
 
-            // Apply intra-group sorting if a sort column is active
             if (currentSort.column) {
                 const col = currentSort.column;
                 const dir = currentSort.direction === 'asc' ? 1 : -1;
@@ -2511,7 +3084,6 @@
                         const valA = (a[col] || '').toString().toLowerCase();
                         const valB = (b[col] || '').toString().toLowerCase();
 
-                        // Try numeric comparison first
                         const numA = parseFloat(valA);
                         const numB = parseFloat(valB);
                         if (!isNaN(numA) && !isNaN(numB)) {
@@ -2524,10 +3096,12 @@
             }
 
             tbody.innerHTML = '';
+            const itemLabel = currentSection === 'barriques' ? 'barriques' : 'vasche';
+            const colSpan = currentSection === 'barriques' ? 11 : 12;
 
             sortedDates.forEach(date => {
                 const headerRow = document.createElement('tr');
-                headerRow.innerHTML = `<td colspan="12" class="date-group-header ${collapsedGroups.has(date) ? 'collapsed' : ''}" onclick="toggleDateGroup('${date}')">${date} (${grouped[date].length} vasche)</td>`;
+                headerRow.innerHTML = `<td colspan="${colSpan}" class="date-group-header ${collapsedGroups.has(date) ? 'collapsed' : ''}" onclick="toggleDateGroup('${date}')">${date} (${grouped[date].length} ${itemLabel})</td>`;
                 tbody.appendChild(headerRow);
 
                 if (!collapsedGroups.has(date)) {
@@ -2536,6 +3110,42 @@
                     });
                 }
             });
+        }
+
+        function updateDesktopTableHeaders() {
+            const thead = document.querySelector('#dataTable thead tr');
+            if (!thead) return;
+
+            if (currentSection === 'barriques') {
+                thead.innerHTML = `
+                    <th style="width: 40px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                    <th class="sortable" onclick="sortTable('progressivo')">N°</th>
+                    <th class="sortable" onclick="sortTable('localeFila')">Locale/Fila</th>
+                    <th class="sortable" onclick="sortTable('vigneto')">Vigneto</th>
+                    <th class="sortable" onclick="sortTable('uva')">Uva</th>
+                    <th class="copy-action" onclick="copyFirstDateValues('temperatura')" title="Clicca per copiare">Temp</th>
+                    <th class="copy-action" onclick="copyFirstDateValues('mVol')" title="Clicca per copiare">M.Vol</th>
+                    <th>Data</th>
+                    <th style="width: 50px;">★</th>
+                    <th style="width: 60px;">Da Fare</th>
+                    <th style="width: 50px;">Azioni</th>
+                `;
+            } else {
+                thead.innerHTML = `
+                    <th style="width: 40px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                    <th class="sortable" onclick="sortTable('progressivo')">N°</th>
+                    <th class="sortable" onclick="sortTable('vasca')">Vasca</th>
+                    <th class="sortable" onclick="sortTable('tipoVino')">Tipo Vino</th>
+                    <th class="sortable" onclick="sortTable('vigneto')">Vigneto</th>
+                    <th class="sortable" onclick="sortTable('uva')">Uva</th>
+                    <th class="copy-action" onclick="copyFirstDateValues('temperatura')" title="Clicca per copiare">Temp</th>
+                    <th class="copy-action" onclick="copyFirstDateValues('mVol')" title="Clicca per copiare">M.Vol</th>
+                    <th>Data</th>
+                    <th style="width: 50px;">★</th>
+                    <th style="width: 60px;">Da Fare</th>
+                    <th style="width: 50px;">Azioni</th>
+                `;
+            }
         }
 
         function createTableRow(tank) {
@@ -2552,20 +3162,36 @@
             const tempAlertHtml = renderAlertIcon(alerts.temp, '');
             const mvolAlertHtml = renderAlertIcon(alerts.mVol, '');
 
-            tr.innerHTML = `
-                <td><span class="drag-handle" title="Trascina per riordinare">⠿</span> <input type="checkbox" class="row-select" data-id="${tank.id}"></td>
-                <td><input type="text" value="${tank.progressivo || ''}" data-id="${tank.id}" data-field="progressivo" style="width:50px;color:#999;font-weight:400"></td>
-                <td><input type="text" value="${tank.vasca}" data-id="${tank.id}" data-field="vasca" style="width:60px;font-weight:700"></td>
-                <td><input type="text" value="${tank.tipoVino || ''}" data-id="${tank.id}" data-field="tipoVino" style="min-width:100px"></td>
-                <td class="col-vigneto"><input type="text" value="${tank.vigneto || ''}" data-id="${tank.id}" data-field="vigneto" style="min-width:150px"></td>
-                <td><input type="text" value="${tank.uva || ''}" data-id="${tank.id}" data-field="uva" style="min-width:80px"></td>
-                <td style="white-space:nowrap"><input type="text" inputmode="numeric" value="${tank.temperatura || ''}" data-id="${tank.id}" data-field="temperatura" class="temp-input" style="min-width:70px;display:inline-block;width:calc(100% - 22px)">${tempAlertHtml}</td>
-                <td style="white-space:nowrap"><input type="text" inputmode="numeric" value="${tank.mVol || ''}" data-id="${tank.id}" data-field="mVol" class="mvol-input" style="min-width:70px;display:inline-block;width:calc(100% - 22px)">${mvolAlertHtml}</td>
-                <td><input type="text" value="${tank.data || ''}" data-id="${tank.id}" data-field="data" placeholder="gg/mm/aaaa" style="min-width:90px"></td>
-                <td style="text-align:center"><span class="priority-star ${tank.priority ? 'active' : 'inactive'}" onclick="togglePriority(${tank.id})">★</span></td>
-                <td style="text-align:center"><input type="text" value="${tank.daFare || ''}" data-id="${tank.id}" data-field="daFare" class="dafare-input" style="width:40px;text-align:center;text-transform:uppercase"></td>
-                <td style="text-align:center"><button class="delete-icon" onclick="deleteTank(${tank.id})" title="Elimina">✖</button></td>
-            `;
+            if (currentSection === 'barriques') {
+                tr.innerHTML = `
+                    <td><span class="drag-handle" title="Trascina per riordinare">⠿</span> <input type="checkbox" class="row-select" data-id="${tank.id}"></td>
+                    <td><input type="text" value="${tank.progressivo || ''}" data-id="${tank.id}" data-field="progressivo" style="width:50px;color:#999;font-weight:400"></td>
+                    <td><input type="text" value="${tank.localeFila || ''}" data-id="${tank.id}" data-field="localeFila" style="min-width:160px;color:#999;font-weight:400"></td>
+                    <td class="col-vigneto"><input type="text" value="${tank.vigneto || ''}" data-id="${tank.id}" data-field="vigneto" style="min-width:200px;font-weight:700"></td>
+                    <td><input type="text" value="${tank.uva || ''}" data-id="${tank.id}" data-field="uva" style="min-width:80px"></td>
+                    <td style="white-space:nowrap"><input type="text" inputmode="numeric" value="${tank.temperatura || ''}" data-id="${tank.id}" data-field="temperatura" class="temp-input" style="min-width:70px;display:inline-block;width:calc(100% - 22px)">${tempAlertHtml}</td>
+                    <td style="white-space:nowrap"><input type="text" inputmode="numeric" value="${tank.mVol || ''}" data-id="${tank.id}" data-field="mVol" class="mvol-input" style="min-width:70px;display:inline-block;width:calc(100% - 22px)">${mvolAlertHtml}</td>
+                    <td><input type="text" value="${tank.data || ''}" data-id="${tank.id}" data-field="data" placeholder="gg/mm/aaaa" style="min-width:90px"></td>
+                    <td style="text-align:center"><span class="priority-star ${tank.priority ? 'active' : 'inactive'}" onclick="togglePriority(${tank.id})">★</span></td>
+                    <td style="text-align:center"><input type="text" value="${tank.daFare || ''}" data-id="${tank.id}" data-field="daFare" class="dafare-input" style="width:40px;text-align:center;text-transform:uppercase"></td>
+                    <td style="text-align:center"><button class="delete-icon" onclick="deleteTank(${tank.id})" title="Elimina">✖</button></td>
+                `;
+            } else {
+                tr.innerHTML = `
+                    <td><span class="drag-handle" title="Trascina per riordinare">⠿</span> <input type="checkbox" class="row-select" data-id="${tank.id}"></td>
+                    <td><input type="text" value="${tank.progressivo || ''}" data-id="${tank.id}" data-field="progressivo" style="width:50px;color:#999;font-weight:400"></td>
+                    <td><input type="text" value="${tank.vasca}" data-id="${tank.id}" data-field="vasca" style="width:60px;font-weight:700"></td>
+                    <td><input type="text" value="${tank.tipoVino || ''}" data-id="${tank.id}" data-field="tipoVino" style="min-width:100px"></td>
+                    <td class="col-vigneto"><input type="text" value="${tank.vigneto || ''}" data-id="${tank.id}" data-field="vigneto" style="min-width:150px"></td>
+                    <td><input type="text" value="${tank.uva || ''}" data-id="${tank.id}" data-field="uva" style="min-width:80px"></td>
+                    <td style="white-space:nowrap"><input type="text" inputmode="numeric" value="${tank.temperatura || ''}" data-id="${tank.id}" data-field="temperatura" class="temp-input" style="min-width:70px;display:inline-block;width:calc(100% - 22px)">${tempAlertHtml}</td>
+                    <td style="white-space:nowrap"><input type="text" inputmode="numeric" value="${tank.mVol || ''}" data-id="${tank.id}" data-field="mVol" class="mvol-input" style="min-width:70px;display:inline-block;width:calc(100% - 22px)">${mvolAlertHtml}</td>
+                    <td><input type="text" value="${tank.data || ''}" data-id="${tank.id}" data-field="data" placeholder="gg/mm/aaaa" style="min-width:90px"></td>
+                    <td style="text-align:center"><span class="priority-star ${tank.priority ? 'active' : 'inactive'}" onclick="togglePriority(${tank.id})">★</span></td>
+                    <td style="text-align:center"><input type="text" value="${tank.daFare || ''}" data-id="${tank.id}" data-field="daFare" class="dafare-input" style="width:40px;text-align:center;text-transform:uppercase"></td>
+                    <td style="text-align:center"><button class="delete-icon" onclick="deleteTank(${tank.id})" title="Elimina">✖</button></td>
+                `;
+            }
 
             // Event listeners per TUTTI gli input
             const allInputs = tr.querySelectorAll('input[type="text"]');
@@ -2592,7 +3218,7 @@
                             value = formatDateFromInput(value);
                             this.value = value;
                         }
-                        const tank = tanksData.find(t => t.id === id);
+                        const tank = getData().find(t => t.id === id);
                         if (tank && tank.data !== value) {
                             tank.data = value;
                             saveData();
@@ -2664,7 +3290,7 @@
                     // Escape: cancel edit, restore original value
                     if (key === 'Escape') {
                         e.preventDefault();
-                        const tank = tanksData.find(t => t.id === Number(this.dataset.id));
+                        const tank = getData().find(t => t.id === Number(this.dataset.id));
                         if (tank) this.value = tank[field] || '';
                         this.blur();
                         return;
@@ -2792,9 +3418,9 @@
 
         // ========== DRAG & DROP REORDER ==========
         function reorderTankInGroup(draggedId, targetId, dateGroup, insertAfter) {
-            // Get all tanks in this date group, in current order
-            const groupTanks = tanksData.filter(t => (t.data || 'Senza Data') === dateGroup);
-            const otherTanks = tanksData.filter(t => (t.data || 'Senza Data') !== dateGroup);
+            const data = getData();
+            const groupTanks = data.filter(t => (t.data || 'Senza Data') === dateGroup);
+            const otherTanks = data.filter(t => (t.data || 'Senza Data') !== dateGroup);
 
             // Remove dragged tank from group
             const draggedIndex = groupTanks.findIndex(t => t.id === draggedId);
@@ -2815,22 +3441,20 @@
             let groupIdx = 0;
             let insertedGroup = false;
 
-            for (const tank of tanksData) {
+            for (const tank of data) {
                 if ((tank.data || 'Senza Data') === dateGroup) {
                     if (!insertedGroup) {
-                        // Insert all reordered group tanks at the position of the first group tank
                         newTanksData.push(...groupTanks);
                         insertedGroup = true;
                     }
-                    // Skip original group tanks (already inserted)
                 } else {
                     newTanksData.push(tank);
                 }
             }
 
-            tanksData = newTanksData;
+            setData(newTanksData);
             saveData();
-            console.log(`↕️ Riordinata vasca ${draggedTank.vasca} nel gruppo ${dateGroup}`);
+            console.log(`↕️ Riordinato ${draggedId} nel gruppo ${dateGroup}`);
         }
 
         // ========== UTILITY FUNCTIONS ==========
@@ -2848,7 +3472,8 @@
         }
 
         function togglePriority(id) {
-            const tank = tanksData.find(t => t.id === id);
+            const data = getData();
+            const tank = data.find(t => t.id === id);
             if (tank) {
                 tank.priority = !tank.priority;
                 saveData();
@@ -2856,18 +3481,20 @@
         }
 
         function deleteTank(id) {
-            if (confirm('Eliminare questa vasca?')) {
-                const index = tanksData.findIndex(t => t.id === id);
+            const label = currentSection === 'barriques' ? 'barrique' : 'vasca';
+            if (confirm(`Eliminare questa ${label}?`)) {
+                const data = getData();
+                const index = data.findIndex(t => t.id === id);
                 if (index !== -1) {
-                    tanksData.splice(index, 1);
+                    data.splice(index, 1);
                     saveData();
-                    showToast('✅ Vasca eliminata');
+                    showToast(`✅ ${label.charAt(0).toUpperCase() + label.slice(1)} eliminata`);
                 }
             }
         }
 
         function getFilteredData() {
-            let filtered = [...tanksData];
+            let filtered = [...getData()];
 
             const search = document.getElementById('searchBar');
             if (search && search.value) {
@@ -2877,7 +3504,8 @@
                     (t.tipoVino && t.tipoVino.toLowerCase().includes(searchText)) ||
                     (t.vigneto && t.vigneto.toLowerCase().includes(searchText)) ||
                     (t.uva && t.uva.toLowerCase().includes(searchText)) ||
-                    (t.progressivo && t.progressivo.toString().toLowerCase().includes(searchText))
+                    (t.progressivo && t.progressivo.toString().toLowerCase().includes(searchText)) ||
+                    (t.localeFila && t.localeFila.toLowerCase().includes(searchText))
                 );
             }
 
@@ -2944,10 +3572,10 @@
                 select.value = current;
             };
 
-            updateSelect('filterTipoVino', new Set(tanksData.map(t => t.tipoVino).filter(v => v)));
-            updateSelect('filterUva', new Set(tanksData.map(t => t.uva).filter(v => v)));
+            updateSelect('filterTipoVino', new Set(getData().map(t => t.tipoVino).filter(v => v)));
+            updateSelect('filterUva', new Set(getData().map(t => t.uva).filter(v => v)));
 
-            const dateSet = new Set(tanksData.map(t => t.data).filter(v => v));
+            const dateSet = new Set(getData().map(t => t.data).filter(v => v));
             const dateSelect = document.getElementById('filterDate');
             if (dateSelect) {
                 const currentDate = dateSelect.value;
@@ -2985,52 +3613,74 @@
                 return;
             }
 
-            if (confirm(`Eliminare ${selected.length} vasche?`)) {
-                // FIX 3: Elimina correttamente usando splice in loop inverso
-                console.log('Before delete:', tanksData.length);
+            const data = getData();
+            const label = currentSection === 'barriques' ? 'barriques' : 'vasche';
+            if (confirm(`Eliminare ${selected.length} ${label}?`)) {
+                console.log('Before delete:', data.length);
 
-                for (let i = tanksData.length - 1; i >= 0; i--) {
-                    if (selected.includes(tanksData[i].id)) {
-                        console.log('Removing tank:', tanksData[i].vasca, 'id:', tanksData[i].id);
-                        tanksData.splice(i, 1);
+                for (let i = data.length - 1; i >= 0; i--) {
+                    if (selected.includes(data[i].id)) {
+                        console.log('Removing:', data[i].id);
+                        data.splice(i, 1);
                     }
                 }
 
-                console.log('After delete:', tanksData.length);
+                console.log('After delete:', data.length);
                 saveData();
-                showToast(`✅ ${selected.length} vasche eliminate`);
+                showToast(`✅ ${selected.length} ${label} eliminate`);
             }
         }
 
         function exportToCSV() {
-            if (tanksData.length === 0) {
+            const data = getData();
+            if (data.length === 0) {
                 alert('Nessun dato da esportare');
                 return;
             }
 
-            const headers = ['PROGRESSIVO', 'VASCA', 'TIPO VINO', 'VIGNETO', 'UVA', 'Temperatura', 'M.Vol', 'Data', 'Priorità', 'Da Fare'];
-            let csv = headers.join(',') + '\n';
-
-            tanksData.forEach(tank => {
-                const row = [
-                    tank.progressivo || '',
-                    tank.vasca || '',
-                    tank.tipoVino || '',
-                    tank.vigneto || '',
-                    tank.uva || '',
-                    tank.temperatura || '',
-                    tank.mVol || '',
-                    tank.data || '',
-                    tank.priority ? 'Sì' : 'No',
-                    tank.daFare ? 'X' : ''
-                ];
-                csv += row.map(cell => `"${cell}"`).join(',') + '\n';
-            });
+            let headers, csv;
+            if (currentSection === 'barriques') {
+                headers = ['PROGRESSIVO', 'LOCALE/FILA', 'VIGNETO', 'UVA', 'Temperatura', 'M.Vol', 'Data', 'Priorità', 'Da Fare'];
+                csv = headers.join(',') + '\n';
+                data.forEach(tank => {
+                    const row = [
+                        tank.progressivo || '',
+                        tank.localeFila || '',
+                        tank.vigneto || '',
+                        tank.uva || '',
+                        tank.temperatura || '',
+                        tank.mVol || '',
+                        tank.data || '',
+                        tank.priority ? 'Sì' : 'No',
+                        tank.daFare ? 'X' : ''
+                    ];
+                    csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+                });
+            } else {
+                headers = ['PROGRESSIVO', 'VASCA', 'TIPO VINO', 'VIGNETO', 'UVA', 'Temperatura', 'M.Vol', 'Data', 'Priorità', 'Da Fare'];
+                csv = headers.join(',') + '\n';
+                data.forEach(tank => {
+                    const row = [
+                        tank.progressivo || '',
+                        tank.vasca || '',
+                        tank.tipoVino || '',
+                        tank.vigneto || '',
+                        tank.uva || '',
+                        tank.temperatura || '',
+                        tank.mVol || '',
+                        tank.data || '',
+                        tank.priority ? 'Sì' : 'No',
+                        tank.daFare ? 'X' : ''
+                    ];
+                    csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+                });
+            }
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `controllo-vasche-${getTodayString().replace(/\//g, '-')}.csv`;
+            const prefix = currentSection === 'barriques' ? 'controllo-barriques' : 'controllo-vasche';
+            link.download = `${prefix}-${getTodayString().replace(/\//g, '-')}.csv`;
             link.click();
         }
 
@@ -3039,8 +3689,7 @@
         }
 
         function sortTable(column) {
-            // Only allow sorting for these columns
-            const sortableColumns = ['progressivo', 'vasca', 'tipoVino', 'vigneto', 'uva'];
+            const sortableColumns = ['progressivo', 'vasca', 'tipoVino', 'vigneto', 'uva', 'localeFila'];
             if (!sortableColumns.includes(column)) return;
 
             // Toggle direction
@@ -3070,6 +3719,97 @@
                 document.querySelectorAll('.row-select').forEach(cb => cb.checked = checked);
             }
         }
+
+        // ========== SECTION SWITCHING ==========
+        function switchSection(section) {
+            if (currentSection === section) return;
+            currentSection = section;
+            currentSort = { column: null, direction: 'asc' };
+            collapsedGroups.clear();
+
+            // Update desktop switch buttons
+            document.querySelectorAll('.section-switch-btn').forEach(btn => {
+                btn.classList.remove('active-vasche', 'active-barriques');
+            });
+            const btns = document.querySelectorAll('.section-switch-btn');
+            if (section === 'barriques') {
+                btns[1].classList.add('active-barriques');
+                document.getElementById('desktopView').classList.add('barriques-theme');
+            } else {
+                btns[0].classList.add('active-vasche');
+                document.getElementById('desktopView').classList.remove('barriques-theme');
+            }
+
+            // Update title
+            const title = document.getElementById('desktopTitle');
+            if (title) {
+                title.textContent = section === 'barriques' ? 'Controllo Fermentazione Barriques' : 'Controllo Fermentazione Vasche';
+            }
+
+            renderDesktopTable();
+            updateFilterOptions();
+        }
+        window.switchSection = switchSection;
+
+        // Tablet splash screen
+        function selectTabletSection(section) {
+            currentSection = section;
+            document.getElementById('splashScreen').classList.add('hidden');
+            document.getElementById('tabletView').classList.remove('hidden');
+
+            // Apply theme
+            if (section === 'barriques') {
+                document.body.classList.add('barriques-tablet-theme');
+                document.getElementById('tabletTitle').textContent = 'Controllo Barriques';
+            } else {
+                document.body.classList.remove('barriques-tablet-theme');
+                document.getElementById('tabletTitle').textContent = 'Controllo Vasche';
+            }
+
+            renderTabletView();
+            // Init sync for current section
+            if (!navigator.onLine) updateOfflineBanner(true);
+        }
+        window.selectTabletSection = selectTabletSection;
+
+        // Tablet slide menu
+        function openSlideMenu() {
+            document.getElementById('slideMenu').classList.add('open');
+            document.getElementById('slideMenuOverlay').classList.add('open');
+            // Mark active item
+            document.querySelectorAll('.slide-menu-item').forEach(item => item.classList.remove('active-item'));
+            const items = document.querySelectorAll('.slide-menu-item');
+            if (currentSection === 'barriques') items[1].classList.add('active-item');
+            else items[0].classList.add('active-item');
+        }
+        window.openSlideMenu = openSlideMenu;
+
+        function closeSlideMenu() {
+            document.getElementById('slideMenu').classList.remove('open');
+            document.getElementById('slideMenuOverlay').classList.remove('open');
+        }
+        window.closeSlideMenu = closeSlideMenu;
+
+        function switchTabletSection(section) {
+            closeSlideMenu();
+            if (currentSection === section) return;
+
+            // Close keypad if open
+            if (activeCell) closeKeypad();
+
+            currentSection = section;
+
+            if (section === 'barriques') {
+                document.body.classList.add('barriques-tablet-theme');
+                document.getElementById('tabletTitle').textContent = 'Controllo Barriques';
+            } else {
+                document.body.classList.remove('barriques-tablet-theme');
+                document.getElementById('tabletTitle').textContent = 'Controllo Vasche';
+            }
+
+            renderTabletView();
+        }
+        window.switchTabletSection = switchTabletSection;
 
         // Rendi funzioni globali
         window.copyFirstDateValues = window.copyFirstDateValues;
@@ -3139,10 +3879,13 @@
                     if (tabId === 'tablet-preview') {
                         const previewContainer = document.getElementById('tabletPreviewContainer');
                         if (previewContainer) {
+                            const isBarriques = currentSection === 'barriques';
+                            const headerBg = isBarriques ? 'background: linear-gradient(135deg, var(--purple), var(--purple-light));' : '';
+                            const previewTitle = isBarriques ? 'Controllo Barriques' : 'Controllo Vasche';
                             previewContainer.innerHTML = `
                                 <div style="max-width: 600px; margin: 0 auto; box-shadow: var(--shadow-lg); border-radius: 8px; overflow: hidden;">
-                                    <div class="tablet-header">
-                                        <h1>Controllo Vasche</h1>
+                                    <div class="tablet-header" style="${headerBg}">
+                                        <h1>${previewTitle}</h1>
                                         <div class="current-date">${formatDateLong(getTodayString())}</div>
                                     </div>
                                     <div class="tablet-table-container" id="previewTable"></div>
@@ -3152,7 +3895,8 @@
                             const previewTable = document.getElementById('previewTable');
                             if (previewTable) {
                                 const today = getTodayString();
-                                const todayTanks = tanksData.filter(t => t.data === today && !t.daFare);
+                                const data = getData();
+                                const todayTanks = data.filter(t => t.data === today && !t.daFare);
                                 const toDo = todayTanks.filter(t => !t.temperatura || !t.mVol);
                                 const completed = todayTanks.filter(t => t.temperatura && t.mVol);
 
@@ -3160,42 +3904,68 @@
                                     return tanks.sort((a, b) => {
                                         if (a.priority && !b.priority) return -1;
                                         if (!a.priority && b.priority) return 1;
+                                        if (isBarriques) return (a.vigneto || '').localeCompare(b.vigneto || '', 'it');
                                         return (parseInt(a.vasca) || 0) - (parseInt(b.vasca) || 0);
                                     });
                                 };
 
                                 if (todayTanks.length === 0) {
-                                    previewTable.innerHTML = '<div class="no-data">Nessuna vasca da controllare oggi</div>';
+                                    const noLabel = isBarriques ? 'Nessuna barrique da controllare oggi' : 'Nessuna vasca da controllare oggi';
+                                    previewTable.innerHTML = `<div class="no-data">${noLabel}</div>`;
                                 } else {
                                     let html = '<table class="tablet-table"><thead><tr>';
-                                    html += '<th>Vasca</th><th>Tipo</th><th>Uva</th><th>Temp</th><th>M.Vol</th>';
+                                    if (isBarriques) {
+                                        html += '<th>Vigneto</th><th>Uva</th><th>Temp</th><th>M.Vol</th>';
+                                    } else {
+                                        html += '<th>Vasca</th><th>Tipo</th><th>Uva</th><th>Temp</th><th>M.Vol</th>';
+                                    }
                                     html += '</tr></thead><tbody>';
+                                    const colSpan = isBarriques ? 4 : 5;
 
                                     if (toDo.length > 0) {
-                                        html += '<tr><td colspan="5" class="section-divider">Da Controllare (' + toDo.length + ')</td></tr>';
+                                        html += `<tr><td colspan="${colSpan}" class="section-divider">Da Controllare (${toDo.length})</td></tr>`;
                                         sortTanks(toDo).forEach(tank => {
                                             const priority = tank.priority ? '<span class="priority-indicator">★</span>' : '';
-                                            html += `<tr class="${tank.priority ? 'priority' : ''}">
-                                                <td><span class="tank-number">${priority}${tank.vasca}</span></td>
-                                                <td>${tank.tipoVino || ''}</td>
-                                                <td>${tank.uva || ''}</td>
-                                                <td>${tank.temperatura || '--'}</td>
-                                                <td>${tank.mVol || '--'}</td>
-                                            </tr>`;
+                                            if (isBarriques) {
+                                                const localeSub = tank.localeFila ? `<div class="tablet-vigneto-sub">${tank.localeFila}</div>` : '';
+                                                html += `<tr class="${tank.priority ? 'priority' : ''}">
+                                                    <td><span class="tank-number">${priority}<span style="font-weight:700">${tank.vigneto || ''}</span></span>${localeSub}</td>
+                                                    <td>${tank.uva || ''}</td>
+                                                    <td>${tank.temperatura || '--'}</td>
+                                                    <td>${tank.mVol || '--'}</td>
+                                                </tr>`;
+                                            } else {
+                                                html += `<tr class="${tank.priority ? 'priority' : ''}">
+                                                    <td><span class="tank-number">${priority}${tank.vasca}</span></td>
+                                                    <td>${tank.tipoVino || ''}</td>
+                                                    <td>${tank.uva || ''}</td>
+                                                    <td>${tank.temperatura || '--'}</td>
+                                                    <td>${tank.mVol || '--'}</td>
+                                                </tr>`;
+                                            }
                                         });
                                     }
 
                                     if (completed.length > 0) {
-                                        html += '<tr><td colspan="5" class="section-divider completed">Completate (' + completed.length + ')</td></tr>';
+                                        html += `<tr><td colspan="${colSpan}" class="section-divider completed">Completate (${completed.length})</td></tr>`;
                                         sortTanks(completed).forEach(tank => {
                                             const priority = tank.priority ? '<span class="priority-indicator">★</span>' : '';
-                                            html += `<tr class="completed">
-                                                <td><span class="tank-number">${priority}${tank.vasca}</span></td>
-                                                <td>${tank.tipoVino || ''}</td>
-                                                <td>${tank.uva || ''}</td>
-                                                <td>${tank.temperatura}</td>
-                                                <td>${tank.mVol}</td>
-                                            </tr>`;
+                                            if (isBarriques) {
+                                                html += `<tr class="completed">
+                                                    <td><span class="tank-number">${priority}<span style="font-weight:700">${tank.vigneto || ''}</span></span></td>
+                                                    <td>${tank.uva || ''}</td>
+                                                    <td>${tank.temperatura}</td>
+                                                    <td>${tank.mVol}</td>
+                                                </tr>`;
+                                            } else {
+                                                html += `<tr class="completed">
+                                                    <td><span class="tank-number">${priority}${tank.vasca}</span></td>
+                                                    <td>${tank.tipoVino || ''}</td>
+                                                    <td>${tank.uva || ''}</td>
+                                                    <td>${tank.temperatura}</td>
+                                                    <td>${tank.mVol}</td>
+                                                </tr>`;
+                                            }
                                         });
                                     }
 
@@ -3210,14 +3980,14 @@
 
             async function init() {
                 const device = detectDevice();
-                loadData();
+                loadData(); // loads both vasche and barriques from localStorage
                 loadOfflineQueue();
                 loadThresholds();
                 isOnline = navigator.onLine;
 
                 if (device === 'tablet') {
-                    document.getElementById('tabletView').classList.remove('hidden');
-                    renderTabletView();
+                    // Show splash screen for section selection
+                    document.getElementById('splashScreen').classList.remove('hidden');
                     if (!isOnline) updateOfflineBanner(true);
                 } else {
                     document.getElementById('desktopView').classList.remove('hidden');
