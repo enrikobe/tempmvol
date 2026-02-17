@@ -1555,6 +1555,7 @@
                 <button class="section-switch-btn" onclick="switchSection('barriques')">🛢️ Barriques</button>
             </div>
             <h1 id="desktopTitle">Controllo Fermentazione Vasche</h1>
+            <div id="desktopSyncIndicator" style="font-size:13px;font-weight:500;min-height:18px;margin-bottom:4px"></div>
             <div class="desktop-tabs">
                 <button class="tab-btn active" data-tab="data-management">Gestione Dati</button>
                 <button class="tab-btn" data-tab="tablet-preview">Vista Tablet</button>
@@ -1905,22 +1906,26 @@
 
         // ========== GESTIONE FIREBASE SYNC ==========
         async function initFirebase() {
-            console.log('🔄 Init Firebase sync...');
+            console.log('🔄 Init Firebase sync... (entrambe le collection)');
 
             if (!window.firebaseDB) {
-                console.warn('⚠️ Firebase non disponibile');
+                console.warn('⚠️ Firebase non disponibile — window.firebaseDB è', window.firebaseDB);
                 updateSyncStatus('offline');
                 return false;
             }
 
             try {
                 // Init both collections
+                console.log('🔌 Inizializzazione collection vasche...');
                 await initFirebaseCollection('vasche');
+                console.log('🔌 Inizializzazione collection barriques...');
                 await initFirebaseCollection('barriques');
+                console.log('✅ Entrambe le collection inizializzate. tanksData:', tanksData.length, 'barriquesData:', barriquesData.length);
                 updateSyncStatus('synced');
                 return true;
             } catch (error) {
                 console.error('❌ Firebase init error:', error);
+                console.error('❌ Error details:', error.code, error.message);
                 updateSyncStatus('offline');
                 return false;
             }
@@ -1931,26 +1936,32 @@
             const collName = section === 'barriques' ? BARRIQUES_FIRESTORE_COLLECTION : FIRESTORE_COLLECTION;
             const tanksRef = collection(window.firebaseDB, collName);
 
+            console.log(`🔌 [${section}] Inizializzazione collection "${collName}"...`);
             const snapshot = await getDocs(tanksRef);
             const remoteTanks = [];
-            snapshot.forEach(doc => remoteTanks.push(doc.data()));
-            console.log(`📥 [${section}] Scaricati ${remoteTanks.length} record da Firebase`);
+            snapshot.forEach(d => remoteTanks.push(d.data()));
+            console.log(`📥 [${section}] Scaricati ${remoteTanks.length} record da Firebase (collection: ${collName})`);
 
             if (remoteTanks.length > 0) {
                 if (section === 'barriques') {
                     barriquesData = remoteTanks;
                     localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(barriquesData));
+                    console.log(`📦 [${section}] barriquesData aggiornato: ${barriquesData.length} record`);
                 } else {
                     tanksData = remoteTanks;
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(tanksData));
+                    console.log(`📦 [${section}] tanksData aggiornato: ${tanksData.length} record`);
                 }
+            } else {
+                const localCount = section === 'barriques' ? barriquesData.length : tanksData.length;
+                console.log(`ℹ️ [${section}] Nessun dato remoto. Dati locali: ${localCount} record`);
             }
 
-            const listener = onSnapshot(tanksRef, (snapshot) => {
+            const listener = onSnapshot(tanksRef, (snapshotEvt) => {
                 if (isSyncing) return;
 
                 const updated = [];
-                snapshot.forEach(doc => updated.push(doc.data()));
+                snapshotEvt.forEach(d => updated.push(d.data()));
 
                 const dataRef = section === 'barriques' ? barriquesData : tanksData;
                 if (JSON.stringify(updated.sort((a,b) => a.id - b.id)) !== JSON.stringify(dataRef.sort((a,b) => a.id - b.id))) {
@@ -1982,15 +1993,30 @@
             else { firestoreListener = listener; }
         }
 
-        async function syncToFirestore() {
-            if (!window.firebaseDB || isSyncing) {
-                if (!window.firebaseDB && getOfflineQueue().length === 0) {
-                    queueCurrentState();
-                }
+        let pendingSyncSection = null; // tracks if a sync was requested while busy
+
+        async function syncToFirestore(sectionOverride) {
+            // CAPTURE section-dependent values IMMEDIATELY (before any await)
+            const syncSection = sectionOverride || currentSection;
+            const syncCollName = syncSection === 'barriques' ? BARRIQUES_FIRESTORE_COLLECTION : FIRESTORE_COLLECTION;
+            const syncData = JSON.parse(JSON.stringify(syncSection === 'barriques' ? barriquesData : tanksData)); // deep copy
+
+            console.log(`🔄 syncToFirestore chiamato per [${syncSection}], collection: ${syncCollName}, records: ${syncData.length}`);
+
+            if (!window.firebaseDB) {
+                console.warn(`⚠️ [${syncSection}] Firebase non disponibile, accodo offline`);
+                queueCurrentState();
+                return;
+            }
+
+            if (isSyncing) {
+                console.log(`⏳ [${syncSection}] Sync già in corso, accodo per retry`);
+                pendingSyncSection = syncSection;
                 return;
             }
 
             if (!navigator.onLine) {
+                console.log(`📡 [${syncSection}] Offline, accodo stato`);
                 queueCurrentState();
                 updateSyncStatus('offline');
                 updateOfflineBanner(true);
@@ -1999,47 +2025,77 @@
 
             isSyncing = true;
             updateSyncStatus('syncing');
+            updateDesktopSyncStatus('syncing', syncSection);
 
             try {
                 await flushOfflineQueue();
 
-                const { collection, doc, setDoc, getDocs, writeBatch } = window.firestoreFunctions;
-                const collName = getCollectionName();
-                const tanksRef = collection(window.firebaseDB, collName);
-                const data = getData();
+                const { collection, doc: docRef, getDocs, writeBatch } = window.firestoreFunctions;
+                const tanksRef = collection(window.firebaseDB, syncCollName);
 
+                console.log(`📤 [${syncSection}] Lettura collection Firebase "${syncCollName}"...`);
                 const snapshot = await getDocs(tanksRef);
                 const firestoreIds = new Set();
-                snapshot.forEach(doc => firestoreIds.add(doc.id));
+                snapshot.forEach(d => firestoreIds.add(d.id));
+                console.log(`📥 [${syncSection}] Trovati ${firestoreIds.size} documenti remoti`);
 
                 const batch = writeBatch(window.firebaseDB);
                 let writeCount = 0;
 
-                for (const tank of data) {
+                for (const tank of syncData) {
                     const tankId = String(tank.id);
-                    const tankRef = doc(window.firebaseDB, collName, tankId);
-                    batch.set(tankRef, tank);
+                    const ref = docRef(window.firebaseDB, syncCollName, tankId);
+                    batch.set(ref, tank);
                     firestoreIds.delete(tankId);
                     writeCount++;
                 }
 
                 for (const id of firestoreIds) {
-                    const tankRef = doc(window.firebaseDB, collName, id);
-                    batch.delete(tankRef);
+                    const ref = docRef(window.firebaseDB, syncCollName, id);
+                    batch.delete(ref);
                     writeCount++;
                 }
 
+                console.log(`📝 [${syncSection}] Batch commit: ${writeCount} operazioni (${syncData.length} write, ${firestoreIds.size} delete)...`);
                 await batch.commit();
+                console.log(`✅ [${syncSection}] Sync completato con successo!`);
+
                 updateSyncStatus('synced');
+                updateDesktopSyncStatus('synced', syncSection);
                 updateOfflineBanner(false);
-                console.log(`✅ [${currentSection}] Sync completato: ${writeCount} operazioni`);
             } catch (error) {
-                console.error('❌ Sync error:', error);
+                console.error(`❌ [${syncSection}] Sync ERRORE:`, error);
+                console.error(`❌ [${syncSection}] Error code:`, error.code, 'message:', error.message);
                 queueCurrentState();
                 updateSyncStatus('offline');
+                updateDesktopSyncStatus('error', syncSection);
                 updateOfflineBanner(true);
             } finally {
                 isSyncing = false;
+
+                // Process pending sync if one was requested during this sync
+                if (pendingSyncSection) {
+                    const pending = pendingSyncSection;
+                    pendingSyncSection = null;
+                    console.log(`🔄 [${pending}] Eseguo sync accodato...`);
+                    syncToFirestore(pending);
+                }
+            }
+        }
+
+        function updateDesktopSyncStatus(status, section) {
+            const indicator = document.getElementById('desktopSyncIndicator');
+            if (!indicator) return;
+            if (status === 'syncing') {
+                indicator.textContent = `⏳ Sincronizzazione ${section}...`;
+                indicator.style.color = '#F0AD4E';
+            } else if (status === 'synced') {
+                indicator.textContent = `✅ ${section} sincronizzato`;
+                indicator.style.color = '#5CB85C';
+                setTimeout(() => { if (indicator.textContent.includes('sincronizzato')) indicator.textContent = ''; }, 3000);
+            } else if (status === 'error') {
+                indicator.textContent = `❌ Errore sync ${section} — controlla console (F12)`;
+                indicator.style.color = '#D9534F';
             }
         }
 
@@ -2197,12 +2253,13 @@
         window.addEventListener('online', () => {
             isOnline = true;
             updateOfflineBanner(false);
-            console.log(`🟢 Connessione ripristinata — sincronizzazione solo [${currentSection}]`);
+            const section = currentSection; // capture NOW
+            console.log(`🟢 Connessione ripristinata — sincronizzazione solo [${section}]`);
             // Only sync the ACTIVE section to avoid overwriting other section's data
             if (!firestoreListener && !firestoreListenerBarriques) {
                 initFirebase();
             } else {
-                flushOfflineQueue().then(() => syncToFirestore());
+                flushOfflineQueue().then(() => syncToFirestore(section));
             }
         });
 
@@ -2215,8 +2272,9 @@
 
         // ========== SALVATAGGIO E CARICAMENTO DATI ==========
         function saveData() {
+            const section = currentSection; // capture NOW
             saveLocalStorage();
-            syncToFirestore();
+            syncToFirestore(section); // pass explicitly
             if (activeCell && detectDevice() === 'tablet') {
                 return;
             }
@@ -3754,6 +3812,8 @@
         // Tablet splash screen
         function selectTabletSection(section) {
             currentSection = section;
+            const data = getData();
+            console.log(`📱 Tablet: selezionato [${section}], dati disponibili: ${data.length} record`);
             document.getElementById('splashScreen').classList.add('hidden');
             document.getElementById('tabletView').classList.remove('hidden');
 
