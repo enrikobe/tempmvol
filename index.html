@@ -1538,6 +1538,44 @@
             line-height: 1.2;
             margin-top: 2px;
         }
+        /* ===== DROPDOWN MENU ===== */
+        .dropdown-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid var(--border-medium);
+            border-radius: 6px;
+            box-shadow: var(--shadow-lg);
+            min-width: 230px;
+            z-index: 1000;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .dropdown-menu.open { display: block; }
+        .dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            text-align: left;
+            transition: background 0.15s;
+        }
+        .dropdown-item:hover { background: #F5F5F5; }
+        .dropdown-item:not(:last-child) { border-bottom: 1px solid var(--border-light); }
+        .dropdown-item.danger { color: var(--danger); }
+        .dropdown-item.danger:hover { background: #FFF0F0; }
+
     </style>
 </head>
 <body>
@@ -1567,8 +1605,14 @@
                 <button class="btn-primary" onclick="showAddRowModal()">➕ Aggiungi Riga</button>
                 <button class="btn-primary" onclick="showPasteArea()">📋 Incolla da Excel</button>
                 <button class="btn-secondary" onclick="exportToCSV()">💾 Esporta CSV</button>
-                <button class="btn-warning" onclick="showBulkEditModal()">✏️ Modifica Selezionate</button>
-                <button class="btn-outline" onclick="deleteSelected()">🗑️ Elimina Selezionate</button>
+                <div class="dropdown-wrapper">
+                    <button class="btn-warning" onclick="toggleEditDropdown(event)">✏️ Modifica Selezionate ▾</button>
+                    <div class="dropdown-menu" id="editDropdownMenu">
+                        <button class="dropdown-item" onclick="closeEditDropdown(); showBulkDateModal()">📅 Modifica Data</button>
+                        <button class="dropdown-item" onclick="closeEditDropdown(); showCopyModal()">📋 Copia Selezionate</button>
+                        <button class="dropdown-item danger" onclick="closeEditDropdown(); deleteSelected()">🗑️ Elimina Selezionate</button>
+                    </div>
+                </div>
                 <button class="btn-outline" onclick="toggleThresholdSettings()">⚠️ Soglie Alert</button>
             </div>
 
@@ -1754,6 +1798,7 @@
         let offlineQueueBarriques = [];
         let isOnline = navigator.onLine;
         let pendingRemoteUpdate = null;
+        let lastCheckedCheckbox = null; // for shift+click multi-select
 
         // ===== SECTION HELPERS =====
         function getData() {
@@ -2005,7 +2050,7 @@
 
             if (!window.firebaseDB) {
                 console.warn(`⚠️ [${syncSection}] Firebase non disponibile, accodo offline`);
-                queueCurrentState();
+                try { queueCurrentStateForSection(syncSection); } catch(e) { console.error('Queue error:', e); }
                 return;
             }
 
@@ -2017,7 +2062,7 @@
 
             if (!navigator.onLine) {
                 console.log(`📡 [${syncSection}] Offline, accodo stato`);
-                queueCurrentState();
+                try { queueCurrentStateForSection(syncSection); } catch(e) { console.error('Queue error:', e); }
                 updateSyncStatus('offline');
                 updateOfflineBanner(true);
                 return;
@@ -2027,8 +2072,9 @@
             updateSyncStatus('syncing');
             updateDesktopSyncStatus('syncing', syncSection);
 
+            let syncOk = false;
             try {
-                await flushOfflineQueue();
+                await flushOfflineQueueForSection(syncSection);
 
                 const { collection, doc: docRef, getDocs, writeBatch } = window.firestoreFunctions;
                 const tanksRef = collection(window.firebaseDB, syncCollName);
@@ -2039,39 +2085,55 @@
                 snapshot.forEach(d => firestoreIds.add(d.id));
                 console.log(`📥 [${syncSection}] Trovati ${firestoreIds.size} documenti remoti`);
 
-                const batch = writeBatch(window.firebaseDB);
-                let writeCount = 0;
-
+                // Build list of operations
+                const ops = [];
                 for (const tank of syncData) {
                     const tankId = String(tank.id);
-                    const ref = docRef(window.firebaseDB, syncCollName, tankId);
-                    batch.set(ref, tank);
+                    ops.push({ type: 'set', id: tankId, data: tank });
                     firestoreIds.delete(tankId);
-                    writeCount++;
                 }
-
                 for (const id of firestoreIds) {
-                    const ref = docRef(window.firebaseDB, syncCollName, id);
-                    batch.delete(ref);
-                    writeCount++;
+                    ops.push({ type: 'delete', id: id });
                 }
 
-                console.log(`📝 [${syncSection}] Batch commit: ${writeCount} operazioni (${syncData.length} write, ${firestoreIds.size} delete)...`);
-                await batch.commit();
-                console.log(`✅ [${syncSection}] Sync completato con successo!`);
+                console.log(`📝 [${syncSection}] Operazioni totali: ${ops.length} (${syncData.length} write, ${ops.length - syncData.length} delete)`);
 
-                updateSyncStatus('synced');
-                updateDesktopSyncStatus('synced', syncSection);
-                updateOfflineBanner(false);
+                // Firestore batch limit = 500 — chunk operations
+                const BATCH_LIMIT = 450;
+                for (let start = 0; start < ops.length; start += BATCH_LIMIT) {
+                    const chunk = ops.slice(start, start + BATCH_LIMIT);
+                    const batch = writeBatch(window.firebaseDB);
+                    for (const op of chunk) {
+                        const ref = docRef(window.firebaseDB, syncCollName, op.id);
+                        if (op.type === 'set') {
+                            batch.set(ref, op.data);
+                        } else {
+                            batch.delete(ref);
+                        }
+                    }
+                    console.log(`📝 [${syncSection}] Commit batch ${Math.floor(start / BATCH_LIMIT) + 1}: ${chunk.length} operazioni...`);
+                    await batch.commit();
+                }
+
+                console.log(`✅ [${syncSection}] Sync completato con successo!`);
+                syncOk = true;
             } catch (error) {
                 console.error(`❌ [${syncSection}] Sync ERRORE:`, error);
                 console.error(`❌ [${syncSection}] Error code:`, error.code, 'message:', error.message);
-                queueCurrentState();
-                updateSyncStatus('offline');
-                updateDesktopSyncStatus('error', syncSection);
-                updateOfflineBanner(true);
+                try { queueCurrentStateForSection(syncSection); } catch(e) { console.error('Queue fallback error:', e); }
             } finally {
                 isSyncing = false;
+
+                // ALWAYS update status in finally (prevents stuck "syncing")
+                if (syncOk) {
+                    updateSyncStatus('synced');
+                    updateDesktopSyncStatus('synced', syncSection);
+                    updateOfflineBanner(false);
+                } else {
+                    updateSyncStatus('offline');
+                    updateDesktopSyncStatus('error', syncSection);
+                    updateOfflineBanner(true);
+                }
 
                 // Process pending sync if one was requested during this sync
                 if (pendingSyncSection) {
@@ -2147,40 +2209,58 @@
         }
 
         function queueCurrentState() {
+            queueCurrentStateForSection(currentSection);
+        }
+
+        function queueCurrentStateForSection(section) {
+            const data = section === 'barriques' ? barriquesData : tanksData;
+            const queueKey = section === 'barriques' ? BARRIQUES_OFFLINE_QUEUE_KEY : OFFLINE_QUEUE_KEY;
             const op = {
                 timestamp: Date.now(),
-                snapshot: JSON.parse(JSON.stringify(getData()))
+                snapshot: JSON.parse(JSON.stringify(data))
             };
-            setOfflineQueue([op]);
-            saveOfflineQueue();
-            console.log(`📦 [${currentSection}] Stato salvato in coda offline`);
+            if (section === 'barriques') { offlineQueueBarriques = [op]; }
+            else { offlineQueue = [op]; }
+            localStorage.setItem(queueKey, JSON.stringify([op]));
+            console.log(`📦 [${section}] Stato salvato in coda offline (${data.length} record)`);
         }
 
         async function flushOfflineQueue() {
-            const queue = getOfflineQueue();
+            await flushOfflineQueueForSection(currentSection);
+        }
+
+        async function flushOfflineQueueForSection(section) {
+            const queue = section === 'barriques' ? offlineQueueBarriques : offlineQueue;
             if (queue.length === 0) return;
             if (!window.firebaseDB || !navigator.onLine) return;
 
-            console.log(`📤 [${currentSection}] Flushing ${queue.length} operazioni offline...`);
+            const collName = section === 'barriques' ? BARRIQUES_FIRESTORE_COLLECTION : FIRESTORE_COLLECTION;
+            const queueKey = section === 'barriques' ? BARRIQUES_OFFLINE_QUEUE_KEY : OFFLINE_QUEUE_KEY;
+            console.log(`📤 [${section}] Flushing ${queue.length} operazioni offline (collection: ${collName})...`);
 
             try {
                 const { collection, getDocs } = window.firestoreFunctions;
-                const collName = getCollectionName();
                 const tanksRef = collection(window.firebaseDB, collName);
                 const remoteSnapshot = await getDocs(tanksRef);
                 const remoteTanks = [];
-                remoteSnapshot.forEach(doc => remoteTanks.push(doc.data()));
+                remoteSnapshot.forEach(d => remoteTanks.push(d.data()));
 
                 const queuedSnapshot = queue[queue.length - 1].snapshot;
                 const mergedData = fieldLevelMerge(remoteTanks, queuedSnapshot);
-                setData(mergedData);
-                saveLocalStorage();
 
-                setOfflineQueue([]);
-                saveOfflineQueue();
-                console.log(`✅ [${currentSection}] Coda offline svuotata con merge campo-per-campo`);
+                if (section === 'barriques') {
+                    barriquesData = mergedData;
+                    localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(mergedData));
+                    offlineQueueBarriques = [];
+                } else {
+                    tanksData = mergedData;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedData));
+                    offlineQueue = [];
+                }
+                localStorage.setItem(queueKey, JSON.stringify([]));
+                console.log(`✅ [${section}] Coda offline svuotata con merge campo-per-campo`);
             } catch (error) {
-                console.error('❌ Errore flush coda offline:', error);
+                console.error(`❌ [${section}] Errore flush coda offline:`, error);
             }
         }
 
@@ -2768,74 +2848,189 @@
             saveData();
         }
 
-        // ========== MODIFICA MASSIVA SELEZIONATE ==========
-        window.showBulkEditModal = function() {
-            const selected = getSelectedTankIds();
-            if (selected.length === 0) {
-                alert('Seleziona almeno una riga');
-                return;
+        // ========== DROPDOWN MENU + MODIFICA SELEZIONATE ==========
+        function toggleEditDropdown(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('editDropdownMenu');
+            if (!menu) return;
+            const isOpen = menu.classList.contains('open');
+            closeEditDropdown();
+            if (!isOpen) {
+                const selected = getSelectedTankIds();
+                if (selected.length === 0) {
+                    alert('Seleziona almeno una riga');
+                    return;
+                }
+                menu.classList.add('open');
             }
+        }
+        function closeEditDropdown() {
+            const menu = document.getElementById('editDropdownMenu');
+            if (menu) menu.classList.remove('open');
+        }
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-wrapper')) closeEditDropdown();
+        });
+        window.toggleEditDropdown = toggleEditDropdown;
+        window.closeEditDropdown = closeEditDropdown;
 
+        // ---- Modifica Data ----
+        function showBulkDateModal() {
+            const selected = getSelectedTankIds();
+            if (selected.length === 0) { alert('Seleziona almeno una riga'); return; }
             const itemLabel = currentSection === 'barriques' ? 'Barriques' : 'Vasche';
             const modal = document.createElement('div');
             modal.className = 'modal-overlay';
             modal.innerHTML = `
                 <div class="modal-content">
-                    <div class="modal-header">Modifica ${selected.length} ${itemLabel} Selezionate</div>
+                    <div class="modal-header">📅 Modifica Data — ${selected.length} ${itemLabel}</div>
                     <div class="modal-body">
-                        <div class="modal-info">I campi lasciati vuoti non verranno modificati</div>
-                        <label>Tipo Vino</label>
-                        <input type="text" id="bulkTipoVino" placeholder="Lascia vuoto per non modificare">
-                        <label>Uva</label>
-                        <input type="text" id="bulkUva" placeholder="Lascia vuoto per non modificare">
-                        <label>Data</label>
-                        <input type="date" id="bulkData">
+                        <label>Nuova Data</label>
+                        <input type="date" id="bulkNewDate">
                     </div>
                     <div class="modal-footer">
                         <button class="modal-btn-cancel" onclick="closeBulkEditModal()">Annulla</button>
-                        <button class="modal-btn-confirm" onclick="applyBulkEdit()">Applica Modifiche</button>
+                        <button class="modal-btn-confirm" onclick="applyBulkDate()">Applica</button>
                     </div>
                 </div>
             `;
             document.body.appendChild(modal);
+        }
+        window.showBulkDateModal = showBulkDateModal;
+
+        window.applyBulkDate = function() {
+            const selected = getSelectedTankIds();
+            const dateInput = document.getElementById('bulkNewDate').value;
+            if (!dateInput) { alert('Seleziona una data'); return; }
+            const newDate = formatDateFromInput(dateInput);
+            const allData = getData();
+            selected.forEach(id => {
+                const tank = allData.find(t => t.id === id);
+                if (tank) tank.data = newDate;
+            });
+            saveData();
+            closeBulkEditModal();
+            showToast(`✅ Data aggiornata per ${selected.length} righe`);
+        };
+
+        // ---- Copia Selezionate ----
+        function showCopyModal() {
+            const selected = getSelectedTankIds();
+            if (selected.length === 0) { alert('Seleziona almeno una riga'); return; }
+            const itemLabel = currentSection === 'barriques' ? 'barriques' : 'vasche';
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">📋 Copia ${selected.length} ${itemLabel}</div>
+                    <div class="modal-body">
+                        <div class="modal-info">Le righe copiate manterranno tutti i campi strutturali (vasca, vigneto, uva, ecc.).<br>"Eliminando i dati" azzera solo Temperatura e M.Vol.</div>
+                        <label>Data per le copie</label>
+                        <input type="date" id="copyTargetDate">
+                    </div>
+                    <div class="modal-footer" style="flex-wrap:wrap;gap:8px">
+                        <button class="modal-btn-cancel" onclick="closeBulkEditModal()">Annulla</button>
+                        <button class="modal-btn-confirm" onclick="executeCopy(true)">Copia mantenendo i dati</button>
+                        <button class="modal-btn-confirm" style="background:var(--secondary)" onclick="executeCopy(false)">Copia eliminando i dati</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        window.showCopyModal = showCopyModal;
+
+        window.executeCopy = function(keepData) {
+            const selected = getSelectedTankIds();
+            const dateInput = document.getElementById('copyTargetDate').value;
+            const newDate = dateInput ? formatDateFromInput(dateInput) : getTodayString();
+            const allData = getData();
+            let copiedCount = 0;
+            selected.forEach(id => {
+                const original = allData.find(t => t.id === id);
+                if (!original) return;
+                const copy = JSON.parse(JSON.stringify(original));
+                copy.id = Date.now() + copiedCount + Math.floor(Math.random() * 10000);
+                copy.data = newDate;
+                if (!keepData) {
+                    copy.temperatura = '';
+                    copy.mVol = '';
+                }
+                allData.push(copy);
+                copiedCount++;
+            });
+            saveData();
+            closeBulkEditModal();
+            showToast(`✅ ${copiedCount} righe copiate ${keepData ? 'con dati' : 'senza dati'}`);
         };
 
         function closeBulkEditModal() {
             const modal = document.querySelector('.modal-overlay');
             if (modal) modal.remove();
         }
+        window.closeBulkEditModal = closeBulkEditModal;
 
-        window.applyBulkEdit = function() {
-            const selected = getSelectedTankIds();
-            const tipoVino = document.getElementById('bulkTipoVino').value.trim();
-            const uva = document.getElementById('bulkUva').value.trim();
-            const dataInput = document.getElementById('bulkData').value;
-            const data = dataInput ? formatDateFromInput(dataInput) : null;
+        // ========== INCOLLA MULTIPLO DA EXCEL (Temp/M.Vol) ==========
+        function handleMultiPaste(field, startTankId, dateGroup, values) {
+            const data = getData();
+            const startTank = data.find(t => t.id === startTankId);
+            if (!startTank) return;
 
-            console.log('🔧 applyBulkEdit:', { selected, tipoVino, uva, data });
-            const allData = getData();
+            // Get tanks in this date group, in current display order
+            const groupTanks = data.filter(t => (t.data || 'Senza Data') === dateGroup);
+            const startIdx = groupTanks.findIndex(t => t.id === startTankId);
+            if (startIdx === -1) return;
 
-            selected.forEach(id => {
-                const tank = allData.find(t => t.id === id);
-                if (!tank) return;
+            const targetTanks = groupTanks.slice(startIdx);
+            const validate = field === 'temperatura' ? validateTemperature : validateMVol;
+            let pastedCount = 0, createdCount = 0;
 
-                if (tipoVino) {
-                    tank.tipoVino = tipoVino;
+            for (let i = 0; i < values.length; i++) {
+                const rawVal = values[i].split('\t')[0].trim().replace(',', '.');
+                if (!rawVal) continue;
+                const validation = validate(rawVal);
+                const finalVal = validation.valid ? validation.value : '';
+
+                if (i < targetTanks.length) {
+                    targetTanks[i][field] = finalVal;
+                    pastedCount++;
+                } else {
+                    const newRow = createEmptyRow(dateGroup);
+                    newRow[field] = finalVal;
+                    data.push(newRow);
+                    pastedCount++;
+                    createdCount++;
                 }
-                if (uva) {
-                    tank.uva = uva;
-                }
-                if (data) {
-                    tank.data = data;
-                }
-            });
+            }
 
             saveData();
-            closeBulkEditModal();
-            showToast(`✅ Modificate ${selected.length} ${currentSection === 'barriques' ? 'barriques' : 'vasche'}`);
-        };
+            const fieldLabel = field === 'temperatura' ? 'Temperatura' : 'M.Vol';
+            let msg = `✅ Incollati ${pastedCount} valori di ${fieldLabel}`;
+            if (createdCount > 0) msg += ` (${createdCount} nuove righe create)`;
+            showToast(msg);
+        }
 
-        window.closeBulkEditModal = closeBulkEditModal;
+        function createEmptyRow(dateGroup) {
+            const newId = Date.now() + Math.floor(Math.random() * 100000);
+            const base = {
+                id: newId,
+                progressivo: '',
+                vigneto: '',
+                uva: '',
+                temperatura: '',
+                mVol: '',
+                data: dateGroup === 'Senza Data' ? '' : dateGroup,
+                daFare: '',
+                priority: false
+            };
+            if (currentSection === 'barriques') {
+                base.localeFila = '';
+            } else {
+                base.vasca = '';
+                base.tipoVino = '';
+            }
+            return base;
+        }
+        window.handleMultiPaste = handleMultiPaste;
 
         // ========== AGGIUNGI RIGA ==========
         window.showAddRowModal = function() {
@@ -3414,6 +3609,41 @@
                 reorderTankInGroup(draggedId, targetId, targetDate, insertAfter);
             });
 
+            // Shift+Click multi-select on checkbox
+            const rowCheckbox = tr.querySelector('.row-select');
+            if (rowCheckbox) {
+                rowCheckbox.addEventListener('click', function(e) {
+                    const allCheckboxes = Array.from(document.querySelectorAll('#tableBody .row-select'));
+                    if (e.shiftKey && lastCheckedCheckbox) {
+                        const startIdx = allCheckboxes.indexOf(lastCheckedCheckbox);
+                        const endIdx = allCheckboxes.indexOf(this);
+                        if (startIdx !== -1 && endIdx !== -1) {
+                            const [from, to] = [Math.min(startIdx, endIdx), Math.max(startIdx, endIdx)];
+                            for (let i = from; i <= to; i++) {
+                                allCheckboxes[i].checked = this.checked;
+                            }
+                        }
+                    }
+                    lastCheckedCheckbox = this;
+                });
+            }
+
+            // Paste from Excel into temp/mVol cells
+            tr.querySelectorAll('.temp-input, .mvol-input').forEach(input => {
+                input.addEventListener('paste', function(e) {
+                    const clipText = (e.clipboardData || window.clipboardData).getData('text');
+                    if (!clipText) return;
+                    const lines = clipText.split(/\r?\n/).filter(l => l.trim() !== '');
+                    if (lines.length <= 1) return; // single value = normal paste
+                    e.preventDefault();
+                    const field = this.dataset.field;
+                    const tankId = Number(this.dataset.id);
+                    const thisTank = getData().find(t => t.id === tankId);
+                    if (!thisTank) return;
+                    handleMultiPaste(field, tankId, thisTank.data || 'Senza Data', lines);
+                });
+            });
+
             return tr;
         }
 
@@ -3876,14 +4106,14 @@
         window.togglePriority = togglePriority;
         window.deleteTank = deleteTank;
         window.deleteSelected = deleteSelected;
+        // showBulkDateModal, showCopyModal, executeCopy already exposed above
         window.exportToCSV = exportToCSV;
         window.showAddRowModal = showAddRowModal;
         window.addNewRow = addNewRow;
         window.showPasteArea = showPasteArea;
         window.processPastedData = processPastedData;
         window.closePasteArea = closePasteArea;
-        window.showBulkEditModal = showBulkEditModal;
-        window.applyBulkEdit = applyBulkEdit;
+        // Old bulk edit exports removed — replaced by dropdown menu functions
         window.applyFilters = applyFilters;
         window.sortTable = sortTable;
         window.toggleSelectAll = toggleSelectAll;
