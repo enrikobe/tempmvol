@@ -2808,6 +2808,7 @@
 
         // ========== MODIFICA DESKTOP ==========
         function updateTank(id, field, value, inputElement) {
+            if (isPasting) return; // non sovrascrivere durante incolla multiplo
             const data = getData();
             const tank = data.find(t => t.id === id);
             if (!tank) return;
@@ -2985,10 +2986,15 @@
             let pastedCount = 0, createdCount = 0;
 
             for (let i = 0; i < values.length; i++) {
-                const rawVal = values[i].split('\t')[0].trim().replace(',', '.');
-                if (!rawVal) continue;
-                const validation = validate(rawVal);
-                const finalVal = validation.valid ? validation.value : '';
+                const rawVal = values[i].split('\t')[0].trim()
+                    .replace(/\./g, '')  // Rimuovi separatori migliaia (punti)
+                    .replace(',', '.');   // Converti separatore decimale (virgola -> punto)
+                // Mantieni celle vuote: non saltare righe con valore vuoto
+                let finalVal = '';
+                if (rawVal) {
+                    const validation = validate(rawVal);
+                    finalVal = validation.valid ? validation.value : '';
+                }
 
                 if (i < targetTanks.length) {
                     targetTanks[i][field] = finalVal;
@@ -3008,6 +3014,41 @@
             if (createdCount > 0) msg += ` (${createdCount} nuove righe create)`;
             showToast(msg);
         }
+
+        // Incolla multiplo per campi testo (vasca, tipoVino, vigneto, uva, progressivo)
+        function handleMultiPasteText(field, startTankId, dateGroup, values) {
+            const data = getData();
+            const startTank = data.find(t => t.id === startTankId);
+            if (!startTank) return;
+
+            const groupTanks = data.filter(t => (t.data || 'Senza Data') === dateGroup);
+            const startIdx = groupTanks.findIndex(t => t.id === startTankId);
+            if (startIdx === -1) return;
+
+            const targetTanks = groupTanks.slice(startIdx);
+            let pastedCount = 0, createdCount = 0;
+
+            for (let i = 0; i < values.length; i++) {
+                const finalVal = values[i].split('\t')[0].replace(/\r/g, '');
+
+                if (i < targetTanks.length) {
+                    targetTanks[i][field] = finalVal;
+                    pastedCount++;
+                } else {
+                    const newRow = createEmptyRow(dateGroup);
+                    newRow[field] = finalVal;
+                    data.push(newRow);
+                    pastedCount++;
+                    createdCount++;
+                }
+            }
+
+            saveData();
+            let msg = `${pastedCount} valori incollati in ${field}`;
+            if (createdCount > 0) msg += ` (${createdCount} righe create)`;
+            showToast(msg);
+        }
+
 
         function createEmptyRow(dateGroup) {
             const newId = Date.now() + Math.floor(Math.random() * 100000);
@@ -3628,19 +3669,45 @@
                 });
             }
 
-            // Paste from Excel into temp/mVol cells
+            // Paste from Excel into temp/mVol cells (mantiene celle vuote nella sequenza)
             tr.querySelectorAll('.temp-input, .mvol-input').forEach(input => {
                 input.addEventListener('paste', function(e) {
                     const clipText = (e.clipboardData || window.clipboardData).getData('text');
                     if (!clipText) return;
-                    const lines = clipText.split(/\r?\n/).filter(l => l.trim() !== '');
+                    // NON filtrare righe vuote: preserva la sequenza originale da Excel
+                    const lines = clipText.split(/\r?\n/);
+                    if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
                     if (lines.length <= 1) return; // single value = normal paste
                     e.preventDefault();
                     const field = this.dataset.field;
                     const tankId = Number(this.dataset.id);
                     const thisTank = getData().find(t => t.id === tankId);
                     if (!thisTank) return;
+                    // isPasting blocca blur dall'azzerare la prima cella durante il re-render
+                    isPasting = true;
                     handleMultiPaste(field, tankId, thisTank.data || 'Senza Data', lines);
+                    isPasting = false;
+                });
+            });
+
+            // Paste from Excel into text fields (vasca, tipoVino, vigneto, uva, progressivo)
+            tr.querySelectorAll('input[data-field="vasca"], input[data-field="tipoVino"], input[data-field="vigneto"], input[data-field="uva"], input[data-field="progressivo"]').forEach(input => {
+                input.addEventListener('paste', function(e) {
+                    const clipText = (e.clipboardData || window.clipboardData).getData('text');
+                    if (!clipText) return;
+                    // NON filtrare righe vuote: preserva la sequenza originale da Excel
+                    const lines = clipText.split(/\r?\n/);
+                    if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+                    if (lines.length <= 1) return; // single value = normal paste
+                    e.preventDefault();
+                    const field = this.dataset.field;
+                    const tankId = Number(this.dataset.id);
+                    const thisTank = getData().find(t => t.id === tankId);
+                    if (!thisTank) return;
+                    // isPasting blocca blur dall'azzerare la prima cella durante il re-render
+                    isPasting = true;
+                    handleMultiPasteText(field, tankId, thisTank.data || 'Senza Data', lines);
+                    isPasting = false;
                 });
             });
 
