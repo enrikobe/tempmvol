@@ -2296,12 +2296,11 @@
         let pendingSyncSection = null; // tracks if a sync was requested while busy
 
         async function syncToFirestore(sectionOverride) {
-            // CAPTURE section-dependent values IMMEDIATELY (before any await)
+            // CAPTURE section IMMEDIATELY (before any await) — but data AFTER flush
             const syncSection = sectionOverride || currentSection;
             const syncCollName = syncSection === 'barriques' ? BARRIQUES_FIRESTORE_COLLECTION : FIRESTORE_COLLECTION;
-            const syncData = JSON.parse(JSON.stringify(syncSection === 'barriques' ? barriquesData : tanksData)); // deep copy
 
-            console.log(`🔄 syncToFirestore chiamato per [${syncSection}], collection: ${syncCollName}, records: ${syncData.length}`);
+            console.log(`🔄 syncToFirestore chiamato per [${syncSection}], collection: ${syncCollName}`);
 
             if (!window.firebaseDB) {
                 console.warn(`⚠️ [${syncSection}] Firebase non disponibile, accodo offline`);
@@ -2330,6 +2329,10 @@
             let syncOk = false;
             try {
                 await flushOfflineQueueForSection(syncSection);
+
+                // CAPTURE data AFTER flush — so it includes the timestamp-merged result
+                const syncData = JSON.parse(JSON.stringify(syncSection === 'barriques' ? barriquesData : tanksData));
+                console.log(`📦 [${syncSection}] Dati post-merge: ${syncData.length} record`);
 
                 const { collection, doc: docRef, getDocs, writeBatch } = window.firestoreFunctions;
                 const tanksRef = collection(window.firebaseDB, syncCollName);
