@@ -1629,6 +1629,37 @@
             cursor: not-allowed;
         }
 
+        /* ===== PRESENCE INDICATORS (Airtable-style) ===== */
+        .cell-presence {
+            position: absolute;
+            top: -1px;
+            right: -1px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 9px;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            z-index: 5;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            animation: presencePulse 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .cell-presence-border {
+            outline: 2px solid;
+            outline-offset: -1px;
+            border-radius: 4px;
+        }
+        @keyframes presencePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        td { position: relative; }
+
         /* ===== ALERT POPUP (tablet threshold warning) ===== */
         .threshold-popup {
             position: fixed;
@@ -2298,6 +2329,115 @@
             else { firestoreListener = listener; }
         }
 
+        // ========== PRESENCE SYSTEM (Airtable-style editing indicators) ==========
+        const PRESENCE_COLLECTION = '_presence';
+        const PRESENCE_TTL = 60000; // 60s stale threshold
+        let deviceId = sessionStorage.getItem('_deviceId');
+        if (!deviceId) {
+            deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+            sessionStorage.setItem('_deviceId', deviceId);
+        }
+        let presenceListener = null;
+        let remotePresence = {}; // { 'section_tankId_field': { user, color, initial, ts } }
+        const PRESENCE_COLORS = ['#4285F4', '#EA4335', '#34A853', '#FBBC05', '#8E24AA', '#00ACC1'];
+
+        function getPresenceColor(uid) {
+            let hash = 0;
+            for (let i = 0; i < uid.length; i++) hash = ((hash << 5) - hash) + uid.charCodeAt(i);
+            return PRESENCE_COLORS[Math.abs(hash) % PRESENCE_COLORS.length];
+        }
+
+        async function setPresence(section, tankId, field) {
+            if (!window.firebaseDB) return;
+            try {
+                const { doc: docRef, setDoc } = window.firestoreFunctions;
+                const user = window.firebaseAuth?.currentUser;
+                const email = user?.email || 'anonimo';
+                const initial = email.charAt(0).toUpperCase();
+                const ref = docRef(window.firebaseDB, PRESENCE_COLLECTION, deviceId);
+                await setDoc(ref, {
+                    section, tankId: String(tankId), field, email, initial,
+                    device: detectDevice(),
+                    ts: Date.now()
+                });
+            } catch (e) { /* silent */ }
+        }
+
+        async function clearPresence() {
+            if (!window.firebaseDB) return;
+            try {
+                const { doc: docRef, deleteDoc } = window.firestoreFunctions;
+                const ref = docRef(window.firebaseDB, PRESENCE_COLLECTION, deviceId);
+                await deleteDoc(ref);
+            } catch (e) { /* silent */ }
+        }
+
+        function initPresenceListener() {
+            if (!window.firebaseDB || presenceListener) return;
+            try {
+                const { collection, onSnapshot } = window.firestoreFunctions;
+                const presRef = collection(window.firebaseDB, PRESENCE_COLLECTION);
+                presenceListener = onSnapshot(presRef, (snap) => {
+                    const now = Date.now();
+                    const newPresence = {};
+                    snap.forEach(d => {
+                        const data = d.data();
+                        if (d.id === deviceId) return; // skip self
+                        if (now - data.ts > PRESENCE_TTL) return; // stale
+                        const key = `${data.section}_${data.tankId}_${data.field}`;
+                        newPresence[key] = {
+                            email: data.email,
+                            initial: data.initial,
+                            color: getPresenceColor(data.email),
+                            device: data.device
+                        };
+                    });
+                    remotePresence = newPresence;
+                    renderPresenceIndicators();
+                });
+            } catch (e) { console.error('Presence listener error:', e); }
+        }
+
+        function renderPresenceIndicators() {
+            // Remove existing indicators
+            document.querySelectorAll('.cell-presence').forEach(el => el.remove());
+            document.querySelectorAll('.cell-presence-border').forEach(el => {
+                el.classList.remove('cell-presence-border');
+                el.style.outlineColor = '';
+            });
+
+            // Add indicators for remote editors
+            for (const [key, info] of Object.entries(remotePresence)) {
+                const [section, tankId, field] = key.split('_');
+                if (section !== currentSection) continue;
+
+                // Find the cell: look for inputs/cells with matching data-id and data-field
+                const selector = `[data-id="${tankId}"][data-field="${field}"]`;
+                let cell = document.querySelector(selector);
+                if (cell && cell.tagName !== 'TD') cell = cell.closest('td');
+                if (!cell) {
+                    // Tablet: look for td with onclick containing the tankId and field
+                    document.querySelectorAll('td[onclick]').forEach(td => {
+                        const onclick = td.getAttribute('onclick') || '';
+                        if (onclick.includes(tankId) && onclick.includes(field)) {
+                            cell = td;
+                        }
+                    });
+                }
+                if (!cell) continue;
+
+                cell.classList.add('cell-presence-border');
+                cell.style.outlineColor = info.color;
+
+                const dot = document.createElement('span');
+                dot.className = 'cell-presence';
+                dot.style.background = info.color;
+                dot.textContent = info.initial;
+                dot.title = `${info.email} sta modificando (${info.device})`;
+                cell.appendChild(dot);
+            }
+        }
+
         // ========== POLLING FALLBACK (for devices where onSnapshot doesn't work) ==========
         let pollInterval = null;
         const POLL_INTERVAL_MS = 20000; // 20 seconds
@@ -2356,6 +2496,17 @@
                 console.log('👁️ App tornata in primo piano — check aggiornamenti');
                 pollForUpdates('vasche');
                 pollForUpdates('barriques');
+            } else if (document.visibilityState === 'hidden') {
+                // Clear presence when app goes to background
+                clearPresence();
+            }
+        });
+
+        // Clean up presence on page close
+        window.addEventListener('beforeunload', () => {
+            if (window.firebaseDB && deviceId) {
+                // Use sendBeacon-style cleanup (fire and forget)
+                clearPresence();
             }
         });
 
@@ -2794,6 +2945,7 @@
                 activeCell = cellEl;
                 cellEl.classList.add('active');
                 cellEl.textContent = currentValue || '--';
+                setPresence(currentSection, tankId, field);
                 return;
             }
 
@@ -2807,6 +2959,7 @@
             activeCell = cellEl;
 
             cellEl.classList.add('active');
+            setPresence(currentSection, tankId, field);
 
             document.querySelectorAll('tr').forEach(tr => tr.classList.remove('focused-row'));
             const row = cellEl.closest('tr');
@@ -2821,6 +2974,7 @@
             if (!activeCell) return;
 
             saveCurrentValue();
+            clearPresence();
 
             activeCell.classList.remove('active');
             document.querySelectorAll('tr').forEach(tr => tr.classList.remove('focused-row'));
@@ -3617,6 +3771,8 @@
             } else {
                 renderDesktopTable();
             }
+            // Re-apply presence indicators after DOM update
+            renderPresenceIndicators();
         }
 
         function detectDevice() {
@@ -3878,11 +4034,17 @@
 
                 const field = input.dataset.field;
 
-                // ---- BLUR: save value ----
+                // ---- FOCUS: set presence ----
+                input.addEventListener('focus', function() {
+                    setPresence(currentSection, Number(this.dataset.id), field);
+                });
+
+                // ---- BLUR: save value + clear presence ----
                 if (field === 'temperatura' || field === 'mVol') {
                     input.addEventListener('blur', function() {
                         const id = Number(this.dataset.id);
                         updateTank(id, field, this.value.trim(), this);
+                        clearPresence();
                     });
                 } else if (field === 'data') {
                     input.addEventListener('blur', function() {
@@ -3897,11 +4059,13 @@
                             setField(tank, 'data', value);
                             saveData();
                         }
+                        clearPresence();
                     });
                 } else {
                     input.addEventListener('blur', function() {
                         const id = Number(this.dataset.id);
                         updateTank(id, field, this.value.trim(), this);
+                        clearPresence();
                     });
                 }
 
@@ -4618,6 +4782,8 @@
             window.doLogout = async function() {
                 try {
                     stopPolling();
+                    await clearPresence();
+                    if (presenceListener) { presenceListener(); presenceListener = null; }
                     await window.firebaseAuth.signOut();
                     console.log('✅ Logout eseguito');
                     showLoginScreen();
@@ -4843,7 +5009,8 @@
 
                 // Start polling fallback for devices where onSnapshot doesn't work reliably
                 startPolling();
-                console.log('🔄 Polling fallback attivo (ogni 20s)');
+                initPresenceListener();
+                console.log('🔄 Polling + Presence attivi');
             }
 
             // bootApp() is called by onAuthStateChanged listener above
