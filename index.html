@@ -2298,6 +2298,67 @@
             else { firestoreListener = listener; }
         }
 
+        // ========== POLLING FALLBACK (for devices where onSnapshot doesn't work) ==========
+        let pollInterval = null;
+        const POLL_INTERVAL_MS = 20000; // 20 seconds
+
+        async function pollForUpdates(section) {
+            if (!window.firebaseDB || !navigator.onLine || isSyncing) return;
+
+            try {
+                const { collection, getDocs } = window.firestoreFunctions;
+                const collName = section === 'barriques' ? BARRIQUES_FIRESTORE_COLLECTION : FIRESTORE_COLLECTION;
+                const tanksRef = collection(window.firebaseDB, collName);
+                const snapshot = await getDocs(tanksRef);
+                const remoteTanks = [];
+                snapshot.forEach(d => remoteTanks.push(d.data()));
+
+                const localData = section === 'barriques' ? [...barriquesData] : [...tanksData];
+
+                // Quick check: same count and same stringified?
+                const remoteStr = JSON.stringify([...remoteTanks].sort((a,b) => a.id - b.id));
+                const localStr = JSON.stringify([...localData].sort((a,b) => a.id - b.id));
+                if (remoteStr === localStr) return; // no changes
+
+                const mergedData = fieldLevelMerge(remoteTanks, localData);
+                if (section === 'barriques') { barriquesData = mergedData; localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(mergedData)); }
+                else { tanksData = mergedData; localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedData)); }
+
+                if (currentSection === section) {
+                    if (!(activeCell && activeTankId !== null)) {
+                        renderCurrentView();
+                    }
+                }
+                console.log(`🔄 [${section}] Poll: aggiornamento rilevato e applicato`);
+            } catch (e) {
+                // Silent fail — poll is best-effort
+            }
+        }
+
+        function startPolling() {
+            if (pollInterval) return;
+            pollInterval = setInterval(() => {
+                pollForUpdates('vasche');
+                pollForUpdates('barriques');
+            }, POLL_INTERVAL_MS);
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+
+        // Sync when user returns to the app (tab focus, app foreground)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && navigator.onLine && window.firebaseDB) {
+                console.log('👁️ App tornata in primo piano — check aggiornamenti');
+                pollForUpdates('vasche');
+                pollForUpdates('barriques');
+            }
+        });
+
         let pendingSyncSection = null; // tracks if a sync was requested while busy
 
         async function syncToFirestore(sectionOverride) {
@@ -4543,8 +4604,9 @@
 
             window.doLogout = async function() {
                 try {
+                    stopPolling();
                     await window.firebaseAuth.signOut();
-                    console.log('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Esci eseguito');
+                    console.log('✅ Logout eseguito');
                     showLoginScreen();
                 } catch (error) {
                     console.error('❌ Logout error:', error);
@@ -4765,6 +4827,10 @@
                     collapseAllExceptLatest();
                     renderDesktopTable();
                 }
+
+                // Start polling fallback for devices where onSnapshot doesn't work reliably
+                startPolling();
+                console.log('🔄 Polling fallback attivo (ogni 20s)');
             }
 
             // bootApp() is called by onAuthStateChanged listener above
