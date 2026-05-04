@@ -2405,42 +2405,55 @@
 
                 console.log(`📤 [${syncSection}] Lettura collection Firebase "${syncCollName}"...`);
                 const snapshot = await getDocs(tanksRef);
-                const firestoreIds = new Set();
-                snapshot.forEach(d => firestoreIds.add(d.id));
-                console.log(`📥 [${syncSection}] Trovati ${firestoreIds.size} documenti remoti`);
+                const remoteMap = new Map();
+                snapshot.forEach(d => remoteMap.set(d.id, d.data()));
+                console.log(`📥 [${syncSection}] Trovati ${remoteMap.size} documenti remoti`);
 
-                // Build list of operations
+                // Build list of operations — ONLY changed/new/deleted records
                 const ops = [];
+                const localIds = new Set();
                 for (const tank of syncData) {
                     const tankId = String(tank.id);
-                    ops.push({ type: 'set', id: tankId, data: tank });
-                    firestoreIds.delete(tankId);
-                }
-                for (const id of firestoreIds) {
-                    ops.push({ type: 'delete', id: id });
-                }
-
-                console.log(`📝 [${syncSection}] Operazioni totali: ${ops.length} (${syncData.length} write, ${ops.length - syncData.length} delete)`);
-
-                // Firestore batch limit = 500 — chunk operations
-                const BATCH_LIMIT = 450;
-                for (let start = 0; start < ops.length; start += BATCH_LIMIT) {
-                    const chunk = ops.slice(start, start + BATCH_LIMIT);
-                    const batch = writeBatch(window.firebaseDB);
-                    for (const op of chunk) {
-                        const ref = docRef(window.firebaseDB, syncCollName, op.id);
-                        if (op.type === 'set') {
-                            batch.set(ref, op.data);
-                        } else {
-                            batch.delete(ref);
-                        }
+                    localIds.add(tankId);
+                    const remoteTank = remoteMap.get(tankId);
+                    // Write only if new or different
+                    if (!remoteTank || JSON.stringify(remoteTank) !== JSON.stringify(tank)) {
+                        ops.push({ type: 'set', id: tankId, data: tank });
                     }
-                    console.log(`📝 [${syncSection}] Commit batch ${Math.floor(start / BATCH_LIMIT) + 1}: ${chunk.length} operazioni...`);
-                    await batch.commit();
+                }
+                // Delete remote records not in local
+                for (const [id] of remoteMap) {
+                    if (!localIds.has(id)) {
+                        ops.push({ type: 'delete', id: id });
+                    }
                 }
 
-                console.log(`✅ [${syncSection}] Sync completato con successo!`);
-                syncOk = true;
+                if (ops.length === 0) {
+                    console.log(`✅ [${syncSection}] Nessuna modifica da sincronizzare`);
+                    syncOk = true;
+                } else {
+                    console.log(`📝 [${syncSection}] Operazioni: ${ops.filter(o=>o.type==='set').length} write, ${ops.filter(o=>o.type==='delete').length} delete (su ${syncData.length} totali)`);
+
+                    // Firestore batch limit = 500 — chunk operations
+                    const BATCH_LIMIT = 450;
+                    for (let start = 0; start < ops.length; start += BATCH_LIMIT) {
+                        const chunk = ops.slice(start, start + BATCH_LIMIT);
+                        const batch = writeBatch(window.firebaseDB);
+                        for (const op of chunk) {
+                            const ref = docRef(window.firebaseDB, syncCollName, op.id);
+                            if (op.type === 'set') {
+                                batch.set(ref, op.data);
+                            } else {
+                                batch.delete(ref);
+                            }
+                        }
+                        console.log(`📝 [${syncSection}] Commit batch ${Math.floor(start / BATCH_LIMIT) + 1}: ${chunk.length} operazioni...`);
+                        await batch.commit();
+                    }
+
+                    console.log(`✅ [${syncSection}] Sync completato con successo!`);
+                    syncOk = true;
+                } // end else (ops.length > 0)
             } catch (error) {
                 console.error(`❌ [${syncSection}] Sync ERRORE:`, error);
                 console.error(`❌ [${syncSection}] Error code:`, error.code, 'message:', error.message);
