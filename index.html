@@ -2267,20 +2267,15 @@
             const listener = onSnapshot(tanksRef, (snapshotEvt) => {
                 if (isSyncing) return;
 
-                // Block onSnapshot if offline queue is pending — flush will handle the merge
-                const queue = section === 'barriques' ? offlineQueueBarriques : offlineQueue;
-                if (queue.length > 0) {
-                    console.log(`⏸️ [${section}] onSnapshot ignorato — coda offline presente (${queue.length} ops)`);
-                    return;
-                }
-
                 const updated = [];
                 snapshotEvt.forEach(d => updated.push(d.data()));
 
-                const localData = section === 'barriques' ? barriquesData : tanksData;
-                if (JSON.stringify(updated.sort((a,b) => a.id - b.id)) !== JSON.stringify(localData.sort((a,b) => a.id - b.id))) {
+                const localData = section === 'barriques' ? [...barriquesData] : [...tanksData];
+                const updatedSorted = JSON.stringify([...updated].sort((a,b) => a.id - b.id));
+                const localSorted = JSON.stringify([...localData].sort((a,b) => a.id - b.id));
 
-                    // ALWAYS use timestamp merge — never blind overwrite
+                if (updatedSorted !== localSorted) {
+                    // Always timestamp merge — never blind overwrite
                     const mergedData = fieldLevelMerge(updated, localData);
 
                     if (section === 'barriques') { barriquesData = mergedData; localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(mergedData)); }
@@ -2293,7 +2288,6 @@
                             renderCurrentView();
                         }
                     }
-                    console.log(`🔄 [${section}] onSnapshot: timestamp merge (${updated.length} remote, ${localData.length} local → ${mergedData.length} merged)`);
                 }
             }, (error) => {
                 console.error(`❌ [${section}] Listener error:`, error);
