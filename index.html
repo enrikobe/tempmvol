@@ -1538,6 +1538,139 @@
             line-height: 1.2;
             margin-top: 2px;
         }
+        /* ===== LOGIN SCREEN ===== */
+        .login-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+        .login-screen.hidden { display: none; }
+        .login-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px 36px;
+            max-width: 380px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .login-logo { font-size: 48px; margin-bottom: 8px; }
+        .login-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 0 0 4px;
+        }
+        .login-subtitle {
+            font-size: 14px;
+            color: #888;
+            margin: 0 0 28px;
+        }
+        .login-field {
+            text-align: left;
+            margin-bottom: 16px;
+        }
+        .login-field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 6px;
+        }
+        .login-field input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        .login-field input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139,0,0,0.1);
+        }
+        .login-error {
+            background: #FFF0F0;
+            color: #D32F2F;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+        .login-error.hidden { display: none; }
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #8B0000, #A0522D);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .login-btn:hover { opacity: 0.9; }
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ===== LOGOUT BUTTON ===== */
+        .logout-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .desktop-logout {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            background: white;
+            border: 1px solid var(--border-medium);
+            color: var(--text-secondary);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .desktop-logout:hover {
+            background: #F5F5F5;
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+        .slide-menu-logout {
+            display: block;
+            width: calc(100% - 20px);
+            margin: 20px 10px 10px;
+            padding: 12px;
+            background: none;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            color: #999;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .slide-menu-logout:hover { color: var(--danger); border-color: var(--danger); }
+
         /* ===== DROPDOWN MENU ===== */
         .dropdown-wrapper {
             position: relative;
@@ -1580,6 +1713,27 @@
 </head>
 <body>
 
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <div class="login-logo">🍇</div>
+            <h1 class="login-title">Controllo Fermentazione</h1>
+            <p class="login-subtitle">Accedi per continuare</p>
+            <div class="login-form">
+                <div class="login-field">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="email@cantina.it" autocomplete="email">
+                </div>
+                <div class="login-field">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+                </div>
+                <div id="loginError" class="login-error hidden"></div>
+                <button id="loginBtn" class="login-btn" onclick="doLogin()">Accedi</button>
+            </div>
+        </div>
+    </div>
+
     <div id="landscapeWarning">
         <div class="rotate-icon">📱</div>
         <h2>Posiziona il dispositivo in modalità verticale</h2>
@@ -1587,7 +1741,8 @@
     </div>
 
     <div id="desktopView" class="hidden desktop-view">
-        <div class="desktop-header">
+        <div class="desktop-header" style="position:relative">
+            <button class="desktop-logout" onclick="doLogout()" title="Esci">🚪 Logout</button>
             <div class="section-switch">
                 <button class="section-switch-btn active-vasche" onclick="switchSection('vasche')">🍷 Vasche</button>
                 <button class="section-switch-btn" onclick="switchSection('barriques')">🛢️ Barriques</button>
@@ -1713,6 +1868,7 @@
             <span class="menu-dot menu-dot-barriques"></span>
             Controllo Barriques
         </button>
+        <button class="slide-menu-logout" onclick="doLogout()">🚪 Logout</button>
     </div>
 
     <div id="tabletView" class="hidden">
@@ -1724,6 +1880,7 @@
             <div id="syncStatus" class="sync-status offline">
                 <span id="syncIcon">⚠️</span>
             </div>
+            <button class="logout-btn" onclick="doLogout()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%)">🚪</button>
         </div>
         <div class="offline-banner" id="offlineBanner">📡 Modalità offline — le modifiche verranno sincronizzate alla riconnessione</div>
         <div class="tablet-table-container" id="tabletTableContainer">
@@ -1754,6 +1911,7 @@
         // ========== FIREBASE SETUP ==========
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBvjIO8b0hBI0DDm-VF-Vr6LCwcAFpGkw",
@@ -1766,11 +1924,17 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Persist login across sessions ("Resta Loggato")
+        setPersistence(auth, browserLocalPersistence).catch(e => console.error('Auth persistence error:', e));
 
         window.firebaseDB = db;
+        window.firebaseAuth = auth;
         window.firestoreFunctions = { collection, doc, setDoc, onSnapshot, deleteDoc, getDocs, writeBatch };
+        window.authFunctions = { signInWithEmailAndPassword, onAuthStateChanged };
 
-        console.log("✅ Firebase initialized");
+        console.log("✅ Firebase + Auth initialized");
     </script>
     <script>
         // ========== CONFIGURAZIONE GLOBALE ==========
@@ -2808,7 +2972,6 @@
 
         // ========== MODIFICA DESKTOP ==========
         function updateTank(id, field, value, inputElement) {
-            if (isPasting) return; // non sovrascrivere durante incolla multiplo
             const data = getData();
             const tank = data.find(t => t.id === id);
             if (!tank) return;
@@ -2986,15 +3149,10 @@
             let pastedCount = 0, createdCount = 0;
 
             for (let i = 0; i < values.length; i++) {
-                const rawVal = values[i].split('\t')[0].trim()
-                    .replace(/\./g, '')  // Rimuovi separatori migliaia (punti)
-                    .replace(',', '.');   // Converti separatore decimale (virgola -> punto)
-                // Mantieni celle vuote: non saltare righe con valore vuoto
-                let finalVal = '';
-                if (rawVal) {
-                    const validation = validate(rawVal);
-                    finalVal = validation.valid ? validation.value : '';
-                }
+                const rawVal = values[i].split('\t')[0].trim().replace(',', '.');
+                if (!rawVal) continue;
+                const validation = validate(rawVal);
+                const finalVal = validation.valid ? validation.value : '';
 
                 if (i < targetTanks.length) {
                     targetTanks[i][field] = finalVal;
@@ -3014,41 +3172,6 @@
             if (createdCount > 0) msg += ` (${createdCount} nuove righe create)`;
             showToast(msg);
         }
-
-        // Incolla multiplo per campi testo (vasca, tipoVino, vigneto, uva, progressivo)
-        function handleMultiPasteText(field, startTankId, dateGroup, values) {
-            const data = getData();
-            const startTank = data.find(t => t.id === startTankId);
-            if (!startTank) return;
-
-            const groupTanks = data.filter(t => (t.data || 'Senza Data') === dateGroup);
-            const startIdx = groupTanks.findIndex(t => t.id === startTankId);
-            if (startIdx === -1) return;
-
-            const targetTanks = groupTanks.slice(startIdx);
-            let pastedCount = 0, createdCount = 0;
-
-            for (let i = 0; i < values.length; i++) {
-                const finalVal = values[i].split('\t')[0].replace(/\r/g, '');
-
-                if (i < targetTanks.length) {
-                    targetTanks[i][field] = finalVal;
-                    pastedCount++;
-                } else {
-                    const newRow = createEmptyRow(dateGroup);
-                    newRow[field] = finalVal;
-                    data.push(newRow);
-                    pastedCount++;
-                    createdCount++;
-                }
-            }
-
-            saveData();
-            let msg = `${pastedCount} valori incollati in ${field}`;
-            if (createdCount > 0) msg += ` (${createdCount} righe create)`;
-            showToast(msg);
-        }
-
 
         function createEmptyRow(dateGroup) {
             const newId = Date.now() + Math.floor(Math.random() * 100000);
@@ -3669,45 +3792,19 @@
                 });
             }
 
-            // Paste from Excel into temp/mVol cells (mantiene celle vuote nella sequenza)
+            // Paste from Excel into temp/mVol cells
             tr.querySelectorAll('.temp-input, .mvol-input').forEach(input => {
                 input.addEventListener('paste', function(e) {
                     const clipText = (e.clipboardData || window.clipboardData).getData('text');
                     if (!clipText) return;
-                    // NON filtrare righe vuote: preserva la sequenza originale da Excel
-                    const lines = clipText.split(/\r?\n/);
-                    if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+                    const lines = clipText.split(/\r?\n/).filter(l => l.trim() !== '');
                     if (lines.length <= 1) return; // single value = normal paste
                     e.preventDefault();
                     const field = this.dataset.field;
                     const tankId = Number(this.dataset.id);
                     const thisTank = getData().find(t => t.id === tankId);
                     if (!thisTank) return;
-                    // isPasting blocca blur dall'azzerare la prima cella durante il re-render
-                    isPasting = true;
                     handleMultiPaste(field, tankId, thisTank.data || 'Senza Data', lines);
-                    isPasting = false;
-                });
-            });
-
-            // Paste from Excel into text fields (vasca, tipoVino, vigneto, uva, progressivo)
-            tr.querySelectorAll('input[data-field="vasca"], input[data-field="tipoVino"], input[data-field="vigneto"], input[data-field="uva"], input[data-field="progressivo"]').forEach(input => {
-                input.addEventListener('paste', function(e) {
-                    const clipText = (e.clipboardData || window.clipboardData).getData('text');
-                    if (!clipText) return;
-                    // NON filtrare righe vuote: preserva la sequenza originale da Excel
-                    const lines = clipText.split(/\r?\n/);
-                    if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
-                    if (lines.length <= 1) return; // single value = normal paste
-                    e.preventDefault();
-                    const field = this.dataset.field;
-                    const tankId = Number(this.dataset.id);
-                    const thisTank = getData().find(t => t.id === tankId);
-                    if (!thisTank) return;
-                    // isPasting blocca blur dall'azzerare la prima cella durante il re-render
-                    isPasting = true;
-                    handleMultiPasteText(field, tankId, thisTank.data || 'Senza Data', lines);
-                    isPasting = false;
                 });
             });
 
@@ -4190,6 +4287,93 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 DOMContentLoaded');
 
+            // ========== AUTH: Login / Logout ==========
+            function showLoginScreen() {
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('desktopView').classList.add('hidden');
+                document.getElementById('splashScreen').classList.add('hidden');
+                document.getElementById('tabletView').classList.add('hidden');
+            }
+
+            function hideLoginScreen() {
+                document.getElementById('loginScreen').classList.add('hidden');
+            }
+
+            window.doLogin = async function() {
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                const errorEl = document.getElementById('loginError');
+                const btn = document.getElementById('loginBtn');
+
+                errorEl.classList.add('hidden');
+                if (!email || !password) {
+                    errorEl.textContent = 'Inserisci email e password';
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = 'Accesso in corso...';
+
+                try {
+                    const { signInWithEmailAndPassword } = window.authFunctions;
+                    await signInWithEmailAndPassword(window.firebaseAuth, email, password);
+                    console.log('✅ Login riuscito');
+                    // onAuthStateChanged will handle the rest
+                } catch (error) {
+                    console.error('❌ Login error:', error.code);
+                    let msg = 'Errore di accesso';
+                    if (error.code === 'auth/invalid-email') msg = 'Email non valida';
+                    else if (error.code === 'auth/user-not-found') msg = 'Utente non trovato';
+                    else if (error.code === 'auth/wrong-password') msg = 'Password errata';
+                    else if (error.code === 'auth/invalid-credential') msg = 'Credenziali non valide';
+                    else if (error.code === 'auth/too-many-requests') msg = 'Troppi tentativi — riprova tra qualche minuto';
+                    else if (error.code === 'auth/network-request-failed') msg = 'Errore di rete — controlla la connessione';
+                    errorEl.textContent = msg;
+                    errorEl.classList.remove('hidden');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Accedi';
+                }
+            };
+
+            window.doLogout = async function() {
+                try {
+                    await window.firebaseAuth.signOut();
+                    console.log('🚪 Logout eseguito');
+                    showLoginScreen();
+                } catch (error) {
+                    console.error('❌ Logout error:', error);
+                }
+            };
+
+            // Enter key triggers login
+            document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') window.doLogin();
+            });
+            document.getElementById('loginEmail').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') document.getElementById('loginPassword').focus();
+            });
+
+            // ========== AUTH STATE LISTENER ==========
+            let appInitialized = false;
+
+            const { onAuthStateChanged } = window.authFunctions;
+            onAuthStateChanged(window.firebaseAuth, (user) => {
+                if (user) {
+                    console.log(`✅ Utente autenticato: ${user.email}`);
+                    hideLoginScreen();
+                    if (!appInitialized) {
+                        appInitialized = true;
+                        bootApp();
+                    }
+                } else {
+                    console.log('🔒 Nessun utente autenticato');
+                    showLoginScreen();
+                    appInitialized = false;
+                }
+            });
+
             const overlay = document.getElementById('keypadOverlay');
             if (overlay) {
                 overlay.addEventListener('click', (e) => {
@@ -4335,7 +4519,8 @@
                 });
             });
 
-            async function init() {
+            async function bootApp() {
+                console.log('🚀 App boot after auth');
                 const device = detectDevice();
                 loadData(); // loads both vasche and barriques from localStorage
                 loadOfflineQueue();
@@ -4355,7 +4540,7 @@
                 await initFirebase();
             }
 
-            init();
+            // bootApp() is called by onAuthStateChanged listener above
         });
     </script>
 
