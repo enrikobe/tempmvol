@@ -2009,6 +2009,39 @@
         let barriquesData = [];
         let currentSort = { column: null, direction: 'asc' };
         let collapsedGroups = new Set();
+
+        // ========== TIMESTAMP-BASED FIELD TRACKING ==========
+        // Every field modification goes through setField() to record when it changed.
+        // Merge uses these timestamps: most recent edit wins per-field.
+        const TRACKED_FIELDS = ['progressivo','vasca','tipoVino','vigneto','uva','localeFila','temperatura','mVol','data','daFare','priority'];
+
+        function setField(tank, field, value) {
+            tank[field] = value;
+            if (!tank._ts) tank._ts = {};
+            tank._ts[field] = Date.now();
+        }
+
+        function setFields(tank, fieldMap) {
+            if (!tank._ts) tank._ts = {};
+            const now = Date.now();
+            for (const [field, value] of Object.entries(fieldMap)) {
+                tank[field] = value;
+                tank._ts[field] = now;
+            }
+        }
+
+        function stampAllFields(tank) {
+            if (!tank._ts) tank._ts = {};
+            const now = Date.now();
+            for (const f of TRACKED_FIELDS) {
+                if (tank[f] !== undefined) tank._ts[f] = now;
+            }
+            return tank;
+        }
+
+        function getTs(tank, field) {
+            return (tank._ts && tank._ts[field]) || 0;
+        }
         let firestoreListener = null;
         let firestoreListenerBarriques = null;
         let isSyncing = false;
@@ -2494,37 +2527,40 @@
             for (const [id, localTank] of localMap) {
                 const remoteTank = remoteMap.get(id);
                 if (!remoteTank) {
+                    // Only exists locally (created offline)
                     merged.push(localTank);
                 } else {
+                    // Exists in both: merge field-by-field using timestamps
                     const mergedTank = { ...remoteTank };
-                    // Local wins for value fields the tablet edits
-                    if (localTank.temperatura !== remoteTank.temperatura && localTank.temperatura) {
-                        mergedTank.temperatura = localTank.temperatura;
+                    if (!mergedTank._ts) mergedTank._ts = {};
+
+                    for (const field of TRACKED_FIELDS) {
+                        const localTs = getTs(localTank, field);
+                        const remoteTs = getTs(remoteTank, field);
+
+                        if (localTs > remoteTs && localTank[field] !== undefined) {
+                            // Local edit is newer — local wins
+                            mergedTank[field] = localTank[field];
+                            mergedTank._ts[field] = localTs;
+                        } else {
+                            // Remote is newer or equal — remote wins (already in mergedTank)
+                            if (remoteTank._ts && remoteTank._ts[field]) {
+                                mergedTank._ts[field] = remoteTs;
+                            }
+                        }
                     }
-                    if (localTank.mVol !== remoteTank.mVol && localTank.mVol) {
-                        mergedTank.mVol = localTank.mVol;
-                    }
-                    // Remote wins for structural fields (desktop edits)
-                    mergedTank.data = remoteTank.data;
-                    mergedTank.vigneto = remoteTank.vigneto;
-                    mergedTank.uva = remoteTank.uva;
-                    mergedTank.progressivo = remoteTank.progressivo;
-                    mergedTank.daFare = remoteTank.daFare;
-                    mergedTank.priority = remoteTank.priority;
-                    // Section-specific structural fields
-                    if (remoteTank.vasca !== undefined) mergedTank.vasca = remoteTank.vasca;
-                    if (remoteTank.tipoVino !== undefined) mergedTank.tipoVino = remoteTank.tipoVino;
-                    if (remoteTank.localeFila !== undefined) mergedTank.localeFila = remoteTank.localeFila;
 
                     merged.push(mergedTank);
                 }
                 remoteMap.delete(id);
             }
 
+            // Records only on remote (created on another device)
             for (const [id, remoteTank] of remoteMap) {
                 merged.push(remoteTank);
             }
 
+            console.log(`🔀 Timestamp merge: ${merged.length} record (${localMap.size} local, ${remoteTanks.length} remote)`);
             return merged;
         }
 
@@ -2720,7 +2756,7 @@
             const validation = activeField === 'temperatura' ? validateTemperature(currentValue) : validateMVol(currentValue);
 
             if (validation.valid) {
-                tank[activeField] = validation.value;
+                setField(tank, activeField, validation.value);
                 saveData();
 
                 if (activeCell) {
@@ -2739,7 +2775,7 @@
             } else {
                 if (currentValue !== '') {
                     alert(validation.message);
-                    tank[activeField] = '';
+                    setField(tank, activeField, '');
                     if (activeCell) {
                         activeCell.textContent = '--';
                         activeCell.classList.remove('filled');
@@ -2965,7 +3001,7 @@
                     };
 
                     if (newItem.vigneto) {
-                        data.push(newItem);
+                        data.push(stampAllFields(newItem));
                         importedCount++;
                     }
                 }
@@ -3005,7 +3041,7 @@
                     };
 
                     if (newTank.vasca) {
-                        data.push(newTank);
+                        data.push(stampAllFields(newTank));
                         importedCount++;
                     }
                 }
@@ -3110,31 +3146,30 @@
                     if (value !== '') {
                         alert(validation.message);
                     }
-                    tank[field] = '';
+                    setField(tank, field, '');
                     if (inputElement) inputElement.value = '';
                     saveData();
                     return;
                 }
-                tank[field] = validation.value;
+                setField(tank, field, validation.value);
             } else if (field === 'mVol') {
                 const validation = validateMVol(value);
                 if (!validation.valid) {
                     if (value !== '') {
                         alert(validation.message);
                     }
-                    tank[field] = '';
+                    setField(tank, field, '');
                     if (inputElement) inputElement.value = '';
                     saveData();
                     return;
                 }
-                tank[field] = validation.value;
+                setField(tank, field, validation.value);
             } else if (field === 'daFare') {
-                // Normalize: 'X' or empty string
                 const normalized = String(value).trim().toUpperCase() === 'X' ? 'X' : '';
-                tank[field] = normalized;
+                setField(tank, field, normalized);
                 if (inputElement) inputElement.value = normalized;
             } else {
-                tank[field] = value;
+                setField(tank, field, value);
             }
 
             saveData();
@@ -3198,7 +3233,7 @@
             const allData = getData();
             selected.forEach(id => {
                 const tank = allData.find(t => t.id === id);
-                if (tank) tank.data = newDate;
+                if (tank) setField(tank, 'data', newDate);
             });
             saveData();
             closeBulkEditModal();
@@ -3242,11 +3277,14 @@
                 if (!original) return;
                 const copy = JSON.parse(JSON.stringify(original));
                 copy.id = Date.now() + copiedCount + Math.floor(Math.random() * 10000);
-                copy.data = newDate;
+                copy._ts = {}; // fresh timestamps
+                setField(copy, 'data', newDate);
                 if (!keepData) {
-                    copy.temperatura = '';
-                    copy.mVol = '';
+                    setField(copy, 'temperatura', '');
+                    setField(copy, 'mVol', '');
                 }
+                // Stamp all other fields as "now" for the copy
+                stampAllFields(copy);
                 allData.push(copy);
                 copiedCount++;
             });
@@ -3283,11 +3321,11 @@
                 const finalVal = validation.valid ? validation.value : '';
 
                 if (i < targetTanks.length) {
-                    targetTanks[i][field] = finalVal;
+                    setField(targetTanks[i], field, finalVal);
                     pastedCount++;
                 } else {
                     const newRow = createEmptyRow(dateGroup);
-                    newRow[field] = finalVal;
+                    setField(newRow, field, finalVal);
                     data.push(newRow);
                     pastedCount++;
                     createdCount++;
@@ -3320,7 +3358,7 @@
                 base.vasca = '';
                 base.tipoVino = '';
             }
-            return base;
+            return stampAllFields(base);
         }
         window.handleMultiPaste = handleMultiPaste;
 
@@ -3452,7 +3490,7 @@
                     priority: document.getElementById('newPriority').checked,
                     daFare: (document.getElementById('newDaFare').value || '').trim().toUpperCase() === 'X' ? 'X' : ''
                 };
-                data.push(newItem);
+                data.push(stampAllFields(newItem));
             } else {
                 const vasca = document.getElementById('newVasca').value.trim();
                 if (!vasca) {
@@ -3472,7 +3510,7 @@
                     priority: document.getElementById('newPriority').checked,
                     daFare: (document.getElementById('newDaFare').value || '').trim().toUpperCase() === 'X' ? 'X' : ''
                 };
-                data.push(newTank);
+                data.push(stampAllFields(newTank));
             }
 
             saveData();
@@ -3765,7 +3803,7 @@
                         }
                         const tank = getData().find(t => t.id === id);
                         if (tank && tank.data !== value) {
-                            tank.data = value;
+                            setField(tank, 'data', value);
                             saveData();
                         }
                     });
@@ -4068,7 +4106,7 @@
             const data = getData();
             const tank = data.find(t => t.id === id);
             if (tank) {
-                tank.priority = !tank.priority;
+                setField(tank, 'priority', !tank.priority);
                 saveData();
             }
         }
