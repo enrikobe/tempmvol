@@ -2243,14 +2243,21 @@
             console.log(`📥 [${section}] Scaricati ${remoteTanks.length} record da Firebase (collection: ${collName})`);
 
             if (remoteTanks.length > 0) {
-                if (section === 'barriques') {
-                    barriquesData = remoteTanks;
-                    localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(barriquesData));
-                    console.log(`📦 [${section}] barriquesData aggiornato: ${barriquesData.length} record`);
+                const localData = section === 'barriques' ? barriquesData : tanksData;
+                const queue = section === 'barriques' ? offlineQueueBarriques : offlineQueue;
+
+                if (localData.length > 0 && queue.length > 0) {
+                    // Have local edits AND offline queue — merge with timestamps
+                    const queuedData = queue[queue.length - 1].snapshot;
+                    const mergedData = fieldLevelMerge(remoteTanks, queuedData);
+                    if (section === 'barriques') { barriquesData = mergedData; localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(mergedData)); }
+                    else { tanksData = mergedData; localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedData)); }
+                    console.log(`📦 [${section}] Init con timestamp merge: ${mergedData.length} record (queue presente)`);
                 } else {
-                    tanksData = remoteTanks;
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(tanksData));
-                    console.log(`📦 [${section}] tanksData aggiornato: ${tanksData.length} record`);
+                    // No offline queue — safe to take remote directly
+                    if (section === 'barriques') { barriquesData = remoteTanks; localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(barriquesData)); }
+                    else { tanksData = remoteTanks; localStorage.setItem(STORAGE_KEY, JSON.stringify(tanksData)); }
+                    console.log(`📦 [${section}] Init da remoto: ${remoteTanks.length} record`);
                 }
             } else {
                 const localCount = section === 'barriques' ? barriquesData.length : tanksData.length;
@@ -2260,29 +2267,33 @@
             const listener = onSnapshot(tanksRef, (snapshotEvt) => {
                 if (isSyncing) return;
 
+                // Block onSnapshot if offline queue is pending — flush will handle the merge
+                const queue = section === 'barriques' ? offlineQueueBarriques : offlineQueue;
+                if (queue.length > 0) {
+                    console.log(`⏸️ [${section}] onSnapshot ignorato — coda offline presente (${queue.length} ops)`);
+                    return;
+                }
+
                 const updated = [];
                 snapshotEvt.forEach(d => updated.push(d.data()));
 
-                const dataRef = section === 'barriques' ? barriquesData : tanksData;
-                if (JSON.stringify(updated.sort((a,b) => a.id - b.id)) !== JSON.stringify(dataRef.sort((a,b) => a.id - b.id))) {
-                    // Only do smart merge if this is the ACTIVE section AND keypad is open
-                    if (currentSection === section && activeCell && activeTankId !== null) {
-                        const mergedData = updated.map(remoteTank => {
-                            if (remoteTank.id === activeTankId) {
-                                const localTank = dataRef.find(t => t.id === activeTankId);
-                                return localTank || remoteTank;
-                            }
-                            return remoteTank;
-                        });
-                        if (section === 'barriques') { barriquesData = mergedData; localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(mergedData)); }
-                        else { tanksData = mergedData; localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedData)); }
-                        if (currentSection === section) smartUpdateTabletRows();
-                        console.log(`🔄 [${section}] Smart merge`);
-                    } else {
-                        if (section === 'barriques') { barriquesData = updated; localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(updated)); }
-                        else { tanksData = updated; localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); }
-                        if (currentSection === section) renderCurrentView();
+                const localData = section === 'barriques' ? barriquesData : tanksData;
+                if (JSON.stringify(updated.sort((a,b) => a.id - b.id)) !== JSON.stringify(localData.sort((a,b) => a.id - b.id))) {
+
+                    // ALWAYS use timestamp merge — never blind overwrite
+                    const mergedData = fieldLevelMerge(updated, localData);
+
+                    if (section === 'barriques') { barriquesData = mergedData; localStorage.setItem(BARRIQUES_STORAGE_KEY, JSON.stringify(mergedData)); }
+                    else { tanksData = mergedData; localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedData)); }
+
+                    if (currentSection === section) {
+                        if (activeCell && activeTankId !== null) {
+                            smartUpdateTabletRows();
+                        } else {
+                            renderCurrentView();
+                        }
                     }
+                    console.log(`🔄 [${section}] onSnapshot: timestamp merge (${updated.length} remote, ${localData.length} local → ${mergedData.length} merged)`);
                 }
             }, (error) => {
                 console.error(`❌ [${section}] Listener error:`, error);
@@ -2526,6 +2537,7 @@
             const remoteMap = new Map(remoteTanks.map(t => [t.id, t]));
             const localMap = new Map(localTanks.map(t => [t.id, t]));
             const merged = [];
+            let conflictsResolved = 0;
 
             for (const [id, localTank] of localMap) {
                 const remoteTank = remoteMap.get(id);
@@ -2545,8 +2557,16 @@
                             // Local edit is newer — local wins
                             mergedTank[field] = localTank[field];
                             mergedTank._ts[field] = localTs;
-                        } else {
-                            // Remote is newer or equal — remote wins (already in mergedTank)
+                            if (localTank[field] !== remoteTank[field]) {
+                                console.log(`  🏆 [${id}] ${field}: LOCAL vince (${localTank[field]}) ts=${localTs} > remote(${remoteTank[field]}) ts=${remoteTs}`);
+                                conflictsResolved++;
+                            }
+                        } else if (remoteTs > localTs && remoteTank[field] !== undefined) {
+                            // Remote is newer
+                            if (localTank[field] !== remoteTank[field]) {
+                                console.log(`  🌐 [${id}] ${field}: REMOTE vince (${remoteTank[field]}) ts=${remoteTs} > local(${localTank[field]}) ts=${localTs}`);
+                                conflictsResolved++;
+                            }
                             if (remoteTank._ts && remoteTank._ts[field]) {
                                 mergedTank._ts[field] = remoteTs;
                             }
@@ -2563,7 +2583,7 @@
                 merged.push(remoteTank);
             }
 
-            console.log(`🔀 Timestamp merge: ${merged.length} record (${localMap.size} local, ${remoteTanks.length} remote)`);
+            console.log(`🔀 Timestamp merge: ${merged.length} record (${localMap.size} local, ${remoteTanks.length} remote, ${conflictsResolved} conflitti risolti)`);
             return merged;
         }
 
@@ -4735,6 +4755,16 @@
                 }
 
                 await initFirebase();
+
+                // Flush any pending offline queues from previous session
+                if (offlineQueue.length > 0 || offlineQueueBarriques.length > 0) {
+                    console.log(`📤 Boot flush: vasche queue=${offlineQueue.length}, barriques queue=${offlineQueueBarriques.length}`);
+                    if (offlineQueue.length > 0) await flushOfflineQueueForSection('vasche');
+                    if (offlineQueueBarriques.length > 0) await flushOfflineQueueForSection('barriques');
+                    // Sync after flush
+                    if (offlineQueue.length === 0) await syncToFirestore('vasche');
+                    if (offlineQueueBarriques.length === 0) await syncToFirestore('barriques');
+                }
 
                 // Re-apply collapse after Firebase data arrives (handles first load with empty localStorage)
                 if (device !== 'tablet') {
