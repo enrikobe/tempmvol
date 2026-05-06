@@ -2987,8 +2987,12 @@
             activeField = null;
             currentValue = '';
 
-            // Full reconciliation render after keypad closes
-            renderCurrentView();
+            // Delayed render: wait for alarm popup to close if shown, otherwise 300ms
+            const popupVisible = document.getElementById('thresholdPopup')?.classList.contains('visible');
+            const delay = popupVisible ? 3100 : 300; // 3000ms popup + 100ms buffer, or 300ms
+            setTimeout(() => {
+                renderCurrentView();
+            }, delay);
         }
 
         function saveCurrentValue() {
@@ -4946,7 +4950,12 @@
 
                                     if (completed.length > 0) {
                                         html += `<tr><td colspan="${colSpan}" class="section-divider completed">Completate (${completed.length})</td></tr>`;
-                                        sortTanks(completed).forEach(tank => {
+                                        completed.sort((a, b) => {
+                                            const aTs = Math.max(getTs(a, 'temperatura'), getTs(a, 'mVol'));
+                                            const bTs = Math.max(getTs(b, 'temperatura'), getTs(b, 'mVol'));
+                                            return bTs - aTs;
+                                        });
+                                        completed.forEach(tank => {
                                             const priority = tank.priority ? '<span class="priority-indicator">★</span>' : '';
                                             if (isBarriques) {
                                                 html += `<tr class="completed">
