@@ -3844,7 +3844,13 @@
 
             if (completed.length > 0) {
                 html += `<tr><td colspan="${colSpan}" class="section-divider completed">Completate (${completed.length})</td></tr>`;
-                sortTanks(completed).forEach(tank => {
+                // Most recently completed first: use max of temp/mVol timestamp
+                completed.sort((a, b) => {
+                    const aTs = Math.max(getTs(a, 'temperatura'), getTs(a, 'mVol'));
+                    const bTs = Math.max(getTs(b, 'temperatura'), getTs(b, 'mVol'));
+                    return bTs - aTs; // descending — newest on top
+                });
+                completed.forEach(tank => {
                     html += createTabletRow(tank);
                 });
             }
